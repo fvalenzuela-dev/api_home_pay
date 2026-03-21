@@ -1,0 +1,24 @@
+name: Build and Deploy to GCP (PROD)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    permissions:
+      contents: read
+      id-token: write
+    uses: fvalenzuela-dev/.github/.github/workflows/build-and-push-docker-gcp.yml@main
+    with:
+      image_name: "mi-app-next-prod"
+      dockerfile_path: "./Dockerfile"
+      artifact_registry_region: "us-central1"
+      artifact_registry_repository: "app-frontend-react-repo"
+      cloudrun_service: "prod-deploy"
+      cloudrun_region: "us-central1"
+    secrets:
+      gcp_project_id: ${{ secrets.GCP_PROJECT_ID_PROD }}
+      gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_PROD }}
+      gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_PROD }}

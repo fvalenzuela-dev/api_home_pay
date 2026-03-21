@@ -1,0 +1,45 @@
+name: Pipeline Backend Ejemplo
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - qa
+      - develop
+
+jobs:
+  verificar_version:
+    name: Control de Versiones
+    uses: fvalenzuela-dev/.github/.github/workflows/version-check-new.yml@main
+    with:
+      version_file: "package.json"
+      base_branch: "main"
+    secrets:
+      GITHUB_TOKEN_CUSTOM: ${{ secrets.GITHUB_TOKEN }}
+
+  # ----------------------------------------------------
+  # PASO 2: Run Tests + Upload Coverages to Codacys prueba
+  # ----------------------------------------------------
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Run Tests (Jest)
+        run: npm run test -- --coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          retention-days: 1
+
+  cobertura:
+    needs: [build_and_test]
+    uses: fvalenzuela-dev/.github/.github/workflows/codacy-coverage.yml@main
+    with:
+      coverage_report_path: "coverage/lcov.info"
+    secrets:
+      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}

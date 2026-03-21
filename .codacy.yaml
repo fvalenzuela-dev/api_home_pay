@@ -1,0 +1,5 @@
+---
+# Configuración de análisis de ramas
+branches:
+  exclude:
+    - main
