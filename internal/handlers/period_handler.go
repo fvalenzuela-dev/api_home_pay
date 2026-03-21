@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -49,6 +50,7 @@ func (h *PeriodHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(userID, &period); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -83,6 +85,7 @@ func (h *PeriodHandler) GetByID(c *gin.Context) {
 
 	period, err := h.service.GetByID(userID, id)
 	if err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -109,6 +112,7 @@ func (h *PeriodHandler) GetAll(c *gin.Context) {
 
 	periods, err := h.service.GetAll(userID)
 	if err != nil {
+		slog.Error("failed to retrieve periods", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve periods")
 		return
 	}
@@ -155,6 +159,7 @@ func (h *PeriodHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(userID, &period); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -187,6 +192,7 @@ func (h *PeriodHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/fernandovalenzuela/api-home-pay/internal/models"
 )
@@ -48,6 +49,7 @@ func (r *incomeRepository) Create(userID string, income *models.Income) error {
 	).Scan(&income.ID, &income.CreatedAt)
 
 	if err != nil {
+		slog.Error("db error: failed to create income", "error", err)
 		return fmt.Errorf("failed to create income: %w", err)
 	}
 
@@ -89,6 +91,7 @@ func (r *incomeRepository) GetByID(userID string, id int) (*models.Income, error
 		return nil, nil
 	}
 	if err != nil {
+		slog.Error("db error: failed to get income by ID", "error", err)
 		return nil, fmt.Errorf("failed to get income by ID: %w", err)
 	}
 
@@ -136,6 +139,7 @@ func (r *incomeRepository) GetAll(userID string, periodID *int) ([]models.Income
 	}
 
 	if err != nil {
+		slog.Error("db error: failed to get incomes", "error", err)
 		return nil, fmt.Errorf("failed to get incomes: %w", err)
 	}
 	defer rows.Close()
@@ -160,6 +164,7 @@ func (r *incomeRepository) GetAll(userID string, periodID *int) ([]models.Income
 			&period.YearNumber,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan income", "error", err)
 			return nil, fmt.Errorf("failed to scan income: %w", err)
 		}
 
@@ -176,6 +181,7 @@ func (r *incomeRepository) GetAll(userID string, periodID *int) ([]models.Income
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating incomes", "error", err)
 		return nil, fmt.Errorf("error iterating incomes: %w", err)
 	}
 
@@ -216,6 +222,7 @@ func (r *incomeRepository) Update(userID string, income *models.Income) error {
 		return fmt.Errorf("income not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to update income", "error", err)
 		return fmt.Errorf("failed to update income: %w", err)
 	}
 
@@ -235,11 +242,13 @@ func (r *incomeRepository) Delete(userID string, id int) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, id, userID)
 	if err != nil {
+		slog.Error("db error: failed to delete income", "error", err)
 		return fmt.Errorf("failed to delete income: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -265,6 +274,7 @@ func (r *incomeRepository) PeriodExistsAndBelongsToUser(userID string, periodID 
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, periodID, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check period existence", "error", err)
 		return false, fmt.Errorf("failed to check period existence: %w", err)
 	}
 
@@ -273,7 +283,7 @@ func (r *incomeRepository) PeriodExistsAndBelongsToUser(userID string, periodID 
 
 func (r *incomeRepository) GetTotalByPeriod(userID string, periodID int) (float64, int, error) {
 	query := `
-		SELECT 
+		SELECT
 			COALESCE(SUM(amount), 0) as total_amount,
 			COUNT(*) as income_count
 		FROM incomes
@@ -288,6 +298,7 @@ func (r *incomeRepository) GetTotalByPeriod(userID string, periodID int) (float6
 	var incomeCount int
 	err := r.db.QueryRowContext(r.ctx, query, userID, periodID).Scan(&totalAmount, &incomeCount)
 	if err != nil {
+		slog.Error("db error: failed to get income total", "error", err)
 		return 0, 0, fmt.Errorf("failed to get income total: %w", err)
 	}
 

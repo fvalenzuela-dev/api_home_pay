@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -13,6 +13,7 @@ import (
 	_ "github.com/fernandovalenzuela/api-home-pay/docs"
 	"github.com/fernandovalenzuela/api-home-pay/internal/config"
 	"github.com/fernandovalenzuela/api-home-pay/internal/handlers"
+	"github.com/fernandovalenzuela/api-home-pay/internal/logger"
 	"github.com/fernandovalenzuela/api-home-pay/internal/middleware"
 	"github.com/fernandovalenzuela/api-home-pay/internal/repository"
 	"github.com/fernandovalenzuela/api-home-pay/internal/services"
@@ -39,6 +40,8 @@ import (
 // @description Type "Bearer" followed by a space and the JWT token.
 
 func main() {
+	logger.Init()
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
@@ -50,13 +53,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		db.Close()
+		slog.Info("server stopped")
+	}()
 
 	gin.SetMode(cfg.GinMode)
 
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(middleware.ResponseMiddleware())
+	router.Use(middleware.LoggingMiddleware())
 
 	router.GET("/health", func(c *gin.Context) {
 		utils.SuccessResponse(c, gin.H{
@@ -175,9 +182,9 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Printf("Server starting on port %s\n", port)
+	slog.Info("server starting", "port", port)
 	if err := router.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		slog.Error("server failed to start", "error", err)
 		os.Exit(1)
 	}
 }

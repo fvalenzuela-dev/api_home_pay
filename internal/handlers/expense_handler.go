@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -60,6 +61,7 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(userID, &expense); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -94,6 +96,7 @@ func (h *ExpenseHandler) GetByID(c *gin.Context) {
 
 	expense, err := h.service.GetByID(userID, id)
 	if err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -151,6 +154,7 @@ func (h *ExpenseHandler) GetAll(c *gin.Context) {
 
 	expenses, err := h.service.GetAll(userID, filters)
 	if err != nil {
+		slog.Error("failed to retrieve expenses", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve expenses")
 		return
 	}
@@ -207,6 +211,7 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(userID, &expense); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -239,6 +244,7 @@ func (h *ExpenseHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -271,6 +277,7 @@ func (h *ExpenseHandler) MarkAsPaid(c *gin.Context) {
 	}
 
 	if err := h.service.MarkAsPaid(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -315,6 +322,7 @@ func (h *ExpenseHandler) GetPending(c *gin.Context) {
 
 	expenses, err := h.service.GetPendingExpenses(userID, daysAhead, overdueOnly)
 	if err != nil {
+		slog.Error("failed to retrieve pending expenses", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve pending expenses")
 		return
 	}

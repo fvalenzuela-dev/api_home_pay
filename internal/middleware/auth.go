@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -15,6 +16,7 @@ func ClerkAuthMiddleware() gin.HandlerFunc {
 		// Extract Bearer token from Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			slog.Warn("auth failed: missing token", "path", c.Request.URL.Path)
 			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: missing token")
 			c.Abort()
 			return
@@ -22,6 +24,7 @@ func ClerkAuthMiddleware() gin.HandlerFunc {
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == authHeader {
+			slog.Warn("auth failed: invalid authorization format", "path", c.Request.URL.Path)
 			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: invalid authorization format")
 			c.Abort()
 			return
@@ -32,6 +35,7 @@ func ClerkAuthMiddleware() gin.HandlerFunc {
 			Token: token,
 		})
 		if err != nil {
+			slog.Warn("auth failed: invalid token", "path", c.Request.URL.Path, "error", err.Error())
 			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: invalid token")
 			c.Abort()
 			return

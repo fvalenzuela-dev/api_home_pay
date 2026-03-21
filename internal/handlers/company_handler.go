@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -49,6 +50,7 @@ func (h *CompanyHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(userID, &company); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -83,6 +85,7 @@ func (h *CompanyHandler) GetByID(c *gin.Context) {
 
 	company, err := h.service.GetByID(userID, id)
 	if err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -109,6 +112,7 @@ func (h *CompanyHandler) GetAll(c *gin.Context) {
 
 	companies, err := h.service.GetAll(userID)
 	if err != nil {
+		slog.Error("failed to retrieve companies", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve companies")
 		return
 	}
@@ -155,6 +159,7 @@ func (h *CompanyHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(userID, &company); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -187,6 +192,7 @@ func (h *CompanyHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}

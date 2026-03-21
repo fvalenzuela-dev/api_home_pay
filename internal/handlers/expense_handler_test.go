@@ -154,10 +154,7 @@ func TestExpenseHandler_Create_ValidationError(t *testing.T) {
 		handler.Create(c)
 	})
 
-	expense := models.Expense{Description: "Test", CurrentAmount: 100.00, TotalInstallments: 1}
-	body, _ := json.Marshal(expense)
-
-	mockService.On("Create", "user123", mock.AnythingOfType("*models.Expense")).Return(errors.New("category not found"))
+	body, _ := json.Marshal(map[string]interface{}{"description": "Test"})
 
 	req := httptest.NewRequest(http.MethodPost, "/expenses", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -166,7 +163,7 @@ func TestExpenseHandler_Create_ValidationError(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	mockService.AssertExpectations(t)
+	mockService.AssertNotCalled(t, "Create")
 }
 
 func TestExpenseHandler_GetByID_Success(t *testing.T) {
@@ -349,12 +346,12 @@ func TestExpenseHandler_Update_Success(t *testing.T) {
 		handler.Update(c)
 	})
 
-	expense := models.Expense{
-		Description:       "Updated Expense",
-		CurrentAmount:     150.00,
-		TotalInstallments: 1,
-	}
-	body, _ := json.Marshal(expense)
+	body, _ := json.Marshal(map[string]interface{}{
+		"category_id":    1,
+		"period_id":      1,
+		"description":    "Updated Expense",
+		"current_amount": 150.00,
+	})
 
 	mockService.On("Update", "user123", mock.AnythingOfType("*models.Expense")).Return(nil)
 
@@ -436,10 +433,7 @@ func TestExpenseHandler_Update_ValidationError(t *testing.T) {
 		handler.Update(c)
 	})
 
-	expense := models.Expense{Description: "Updated", CurrentAmount: 150.00, TotalInstallments: 1}
-	body, _ := json.Marshal(expense)
-
-	mockService.On("Update", "user123", mock.AnythingOfType("*models.Expense")).Return(errors.New("expense not found"))
+	body, _ := json.Marshal(map[string]interface{}{"description": "Updated"})
 
 	req := httptest.NewRequest(http.MethodPut, "/expenses/1", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -448,7 +442,7 @@ func TestExpenseHandler_Update_ValidationError(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	mockService.AssertExpectations(t)
+	mockService.AssertNotCalled(t, "Update")
 }
 
 func TestExpenseHandler_Delete_Success(t *testing.T) {

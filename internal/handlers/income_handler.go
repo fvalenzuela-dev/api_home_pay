@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -52,6 +53,7 @@ func (h *IncomeHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(userID, &income); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -86,6 +88,7 @@ func (h *IncomeHandler) GetByID(c *gin.Context) {
 
 	income, err := h.service.GetByID(userID, id)
 	if err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -121,6 +124,7 @@ func (h *IncomeHandler) GetAll(c *gin.Context) {
 
 	incomes, err := h.service.GetAll(userID, periodID)
 	if err != nil {
+		slog.Error("failed to retrieve incomes", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve incomes")
 		return
 	}
@@ -170,6 +174,7 @@ func (h *IncomeHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(userID, &income); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -202,6 +207,7 @@ func (h *IncomeHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}

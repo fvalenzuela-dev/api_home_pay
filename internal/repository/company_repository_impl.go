@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/fernandovalenzuela/api-home-pay/internal/models"
 )
@@ -36,6 +37,7 @@ func (r *companyRepository) Create(userID string, company *models.Company) error
 		&company.CreatedAt,
 	)
 	if err != nil {
+		slog.Error("db error: failed to create company", "error", err)
 		return fmt.Errorf("failed to create company: %w", err)
 	}
 
@@ -64,6 +66,7 @@ func (r *companyRepository) GetByID(userID string, id int) (*models.Company, err
 		return nil, nil
 	}
 	if err != nil {
+		slog.Error("db error: failed to get company by ID", "error", err)
 		return nil, fmt.Errorf("failed to get company by ID: %w", err)
 	}
 
@@ -84,6 +87,7 @@ func (r *companyRepository) GetAll(userID string) ([]models.Company, error) {
 
 	rows, err := r.db.QueryContext(r.ctx, query, userID)
 	if err != nil {
+		slog.Error("db error: failed to get companies", "error", err)
 		return nil, fmt.Errorf("failed to get companies: %w", err)
 	}
 	defer rows.Close()
@@ -98,12 +102,14 @@ func (r *companyRepository) GetAll(userID string) ([]models.Company, error) {
 			&company.CreatedAt,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan company", "error", err)
 			return nil, fmt.Errorf("failed to scan company: %w", err)
 		}
 		companies = append(companies, company)
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating companies", "error", err)
 		return nil, fmt.Errorf("error iterating companies: %w", err)
 	}
 
@@ -128,6 +134,7 @@ func (r *companyRepository) Update(userID string, company *models.Company) error
 		return fmt.Errorf("company not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to update company", "error", err)
 		return fmt.Errorf("failed to update company: %w", err)
 	}
 
@@ -147,11 +154,13 @@ func (r *companyRepository) Delete(userID string, id int) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, id, userID)
 	if err != nil {
+		slog.Error("db error: failed to delete company", "error", err)
 		return fmt.Errorf("failed to delete company: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -177,6 +186,7 @@ func (r *companyRepository) ExistsByName(userID string, name string) (bool, erro
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, name, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check company existence", "error", err)
 		return false, fmt.Errorf("failed to check company existence: %w", err)
 	}
 
@@ -194,6 +204,7 @@ func (r *companyRepository) HasServiceAccounts(id int) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, id).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check company service accounts", "error", err)
 		return false, fmt.Errorf("failed to check company service accounts: %w", err)
 	}
 

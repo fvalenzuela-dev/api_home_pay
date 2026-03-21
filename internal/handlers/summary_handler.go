@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -69,10 +70,12 @@ func (h *SummaryHandler) GetByPeriod(c *gin.Context) {
 	// Verify period belongs to user
 	period, err := h.periodRepo.GetByID(userID, periodID)
 	if err != nil {
+		slog.Error("failed to verify period", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to verify period")
 		return
 	}
 	if period == nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", "period not found", "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, "Period not found")
 		return
 	}
@@ -80,6 +83,7 @@ func (h *SummaryHandler) GetByPeriod(c *gin.Context) {
 	// Get expense summary
 	expenseSummary, err := h.expenseRepo.GetSummaryByPeriod(userID, periodID)
 	if err != nil {
+		slog.Error("failed to get expense summary", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to get expense summary")
 		return
 	}
@@ -87,6 +91,7 @@ func (h *SummaryHandler) GetByPeriod(c *gin.Context) {
 	// Get income summary
 	totalIncomes, incomeCount, err := h.incomeRepo.GetTotalByPeriod(userID, periodID)
 	if err != nil {
+		slog.Error("failed to get income summary", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to get income summary")
 		return
 	}

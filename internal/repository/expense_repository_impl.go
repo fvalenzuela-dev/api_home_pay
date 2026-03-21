@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/fernandovalenzuela/api-home-pay/internal/models"
 )
@@ -73,6 +74,7 @@ func (r *expenseRepository) Create(userID string, expense *models.Expense) error
 	).Scan(&expense.ID, &expense.CreatedAt, &expense.UpdatedAt)
 
 	if err != nil {
+		slog.Error("db error: failed to create expense", "error", err)
 		return fmt.Errorf("failed to create expense: %w", err)
 	}
 
@@ -81,7 +83,7 @@ func (r *expenseRepository) Create(userID string, expense *models.Expense) error
 
 func (r *expenseRepository) GetByID(userID string, id int) (*models.Expense, error) {
 	query := `
-		SELECT 
+		SELECT
 			e.id, e.category_id, e.period_id, e.account_id, e.description,
 			e.due_date, e.current_amount, e.amount_paid, e.current_installment,
 			e.total_installments, e.installment_group_id, e.is_recurring, e.notes,
@@ -139,6 +141,7 @@ func (r *expenseRepository) GetByID(userID string, id int) (*models.Expense, err
 		return nil, nil
 	}
 	if err != nil {
+		slog.Error("db error: failed to get expense by ID", "error", err)
 		return nil, fmt.Errorf("failed to get expense by ID: %w", err)
 	}
 
@@ -183,7 +186,7 @@ func (r *expenseRepository) GetAll(userID string, filters ExpenseFilters) ([]mod
 	}
 
 	query := `
-		SELECT 
+		SELECT
 			e.id, e.category_id, e.period_id, e.account_id, e.description,
 			e.due_date, e.current_amount, e.amount_paid, e.current_installment,
 			e.total_installments, e.installment_group_id, e.is_recurring, e.notes,
@@ -234,6 +237,7 @@ func (r *expenseRepository) GetAll(userID string, filters ExpenseFilters) ([]mod
 
 	rows, err := r.db.QueryContext(r.ctx, query, args...)
 	if err != nil {
+		slog.Error("db error: failed to get expenses", "error", err)
 		return nil, fmt.Errorf("failed to get expenses: %w", err)
 	}
 	defer rows.Close()
@@ -275,6 +279,7 @@ func (r *expenseRepository) GetAll(userID string, filters ExpenseFilters) ([]mod
 			&alias,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan expense", "error", err)
 			return nil, fmt.Errorf("failed to scan expense: %w", err)
 		}
 
@@ -314,6 +319,7 @@ func (r *expenseRepository) GetAll(userID string, filters ExpenseFilters) ([]mod
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating expenses", "error", err)
 		return nil, fmt.Errorf("error iterating expenses: %w", err)
 	}
 
@@ -379,6 +385,7 @@ func (r *expenseRepository) Update(userID string, expense *models.Expense) error
 		return fmt.Errorf("expense not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to update expense", "error", err)
 		return fmt.Errorf("failed to update expense: %w", err)
 	}
 
@@ -398,11 +405,13 @@ func (r *expenseRepository) Delete(userID string, id int) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, id, userID)
 	if err != nil {
+		slog.Error("db error: failed to delete expense", "error", err)
 		return fmt.Errorf("failed to delete expense: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -431,6 +440,7 @@ func (r *expenseRepository) MarkAsPaid(userID string, id int) error {
 		return fmt.Errorf("expense not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to mark expense as paid", "error", err)
 		return fmt.Errorf("failed to mark expense as paid: %w", err)
 	}
 
@@ -455,6 +465,7 @@ func (r *expenseRepository) UpdateAmountPaid(userID string, id int, amount float
 		return fmt.Errorf("expense not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to update amount paid", "error", err)
 		return fmt.Errorf("failed to update amount paid: %w", err)
 	}
 
@@ -476,6 +487,7 @@ func (r *expenseRepository) CategoryExistsAndBelongsToUser(userID string, catego
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, categoryID, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check category existence", "error", err)
 		return false, fmt.Errorf("failed to check category existence: %w", err)
 	}
 
@@ -497,6 +509,7 @@ func (r *expenseRepository) PeriodExistsAndBelongsToUser(userID string, periodID
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, periodID, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check period existence", "error", err)
 		return false, fmt.Errorf("failed to check period existence: %w", err)
 	}
 
@@ -518,6 +531,7 @@ func (r *expenseRepository) ServiceAccountExistsAndBelongsToUser(userID string, 
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, accountID, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check service account existence", "error", err)
 		return false, fmt.Errorf("failed to check service account existence: %w", err)
 	}
 
@@ -530,7 +544,7 @@ func (r *expenseRepository) GetPendingExpenses(userID string, daysAhead int, ove
 	}
 
 	query := `
-		SELECT 
+		SELECT
 			e.id, e.category_id, e.period_id, e.account_id, e.description,
 			e.due_date, e.current_amount, e.amount_paid, e.current_installment,
 			e.total_installments, e.installment_group_id, e.is_recurring, e.notes,
@@ -562,6 +576,7 @@ func (r *expenseRepository) GetPendingExpenses(userID string, daysAhead int, ove
 
 	rows, err := r.db.QueryContext(r.ctx, query, args...)
 	if err != nil {
+		slog.Error("db error: failed to get pending expenses", "error", err)
 		return nil, fmt.Errorf("failed to get pending expenses: %w", err)
 	}
 	defer rows.Close()
@@ -603,6 +618,7 @@ func (r *expenseRepository) GetPendingExpenses(userID string, daysAhead int, ove
 			&alias,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan expense", "error", err)
 			return nil, fmt.Errorf("failed to scan expense: %w", err)
 		}
 
@@ -642,6 +658,7 @@ func (r *expenseRepository) GetPendingExpenses(userID string, daysAhead int, ove
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating pending expenses", "error", err)
 		return nil, fmt.Errorf("error iterating pending expenses: %w", err)
 	}
 
@@ -650,7 +667,7 @@ func (r *expenseRepository) GetPendingExpenses(userID string, daysAhead int, ove
 
 func (r *expenseRepository) GetSummaryByPeriod(userID string, periodID int) (*ExpenseSummary, error) {
 	query := `
-		SELECT 
+		SELECT
 			COALESCE(SUM(current_amount), 0) as total_amount,
 			COALESCE(SUM(amount_paid), 0) as paid_amount,
 			COALESCE(SUM(CASE WHEN amount_paid < current_amount THEN current_amount - amount_paid ELSE 0 END), 0) as pending_amount,
@@ -671,6 +688,7 @@ func (r *expenseRepository) GetSummaryByPeriod(userID string, periodID int) (*Ex
 		&summary.ExpenseCount,
 	)
 	if err != nil {
+		slog.Error("db error: failed to get expense summary", "error", err)
 		return nil, fmt.Errorf("failed to get expense summary: %w", err)
 	}
 

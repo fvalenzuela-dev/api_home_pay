@@ -130,10 +130,7 @@ func TestCategoryHandler_Create_ValidationError(t *testing.T) {
 		handler.Create(c)
 	})
 
-	category := models.Category{Name: ""}
-	body, _ := json.Marshal(category)
-
-	mockService.On("Create", "user123", mock.AnythingOfType("*models.Category")).Return(errors.New("name cannot be empty"))
+	body, _ := json.Marshal(map[string]string{"name": ""})
 
 	req := httptest.NewRequest(http.MethodPost, "/categories", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -142,7 +139,7 @@ func TestCategoryHandler_Create_ValidationError(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	mockService.AssertExpectations(t)
+	mockService.AssertNotCalled(t, "Create")
 }
 
 func TestCategoryHandler_GetByID_Success(t *testing.T) {
@@ -374,10 +371,7 @@ func TestCategoryHandler_Update_ValidationError(t *testing.T) {
 		handler.Update(c)
 	})
 
-	category := models.Category{Name: ""}
-	body, _ := json.Marshal(category)
-
-	mockService.On("Update", "user123", mock.AnythingOfType("*models.Category")).Return(errors.New("name cannot be empty"))
+	body, _ := json.Marshal(map[string]string{"name": ""})
 
 	req := httptest.NewRequest(http.MethodPut, "/categories/1", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -386,7 +380,7 @@ func TestCategoryHandler_Update_ValidationError(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	mockService.AssertExpectations(t)
+	mockService.AssertNotCalled(t, "Update")
 }
 
 func TestCategoryHandler_Delete_Success(t *testing.T) {

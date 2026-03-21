@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/fernandovalenzuela/api-home-pay/internal/models"
 )
@@ -29,6 +30,7 @@ func (r *categoryRepository) Create(userID string, category *models.Category) er
 
 	err := r.db.QueryRowContext(r.ctx, query, category.Name).Scan(&category.ID, &category.CreatedAt)
 	if err != nil {
+		slog.Error("db error: failed to create category", "error", err)
 		return fmt.Errorf("failed to create category: %w", err)
 	}
 
@@ -52,6 +54,7 @@ func (r *categoryRepository) GetByID(userID string, id int) (*models.Category, e
 		return nil, nil
 	}
 	if err != nil {
+		slog.Error("db error: failed to get category by ID", "error", err)
 		return nil, fmt.Errorf("failed to get category by ID: %w", err)
 	}
 
@@ -67,6 +70,7 @@ func (r *categoryRepository) GetAll(userID string) ([]models.Category, error) {
 
 	rows, err := r.db.QueryContext(r.ctx, query)
 	if err != nil {
+		slog.Error("db error: failed to get categories", "error", err)
 		return nil, fmt.Errorf("failed to get categories: %w", err)
 	}
 	defer rows.Close()
@@ -80,12 +84,14 @@ func (r *categoryRepository) GetAll(userID string) ([]models.Category, error) {
 			&category.CreatedAt,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan category", "error", err)
 			return nil, fmt.Errorf("failed to scan category: %w", err)
 		}
 		categories = append(categories, category)
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating categories", "error", err)
 		return nil, fmt.Errorf("error iterating categories: %w", err)
 	}
 
@@ -106,6 +112,7 @@ func (r *categoryRepository) Update(userID string, category *models.Category) er
 		return fmt.Errorf("category not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to update category", "error", err)
 		return fmt.Errorf("failed to update category: %w", err)
 	}
 
@@ -121,11 +128,13 @@ func (r *categoryRepository) Delete(userID string, id int) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, id)
 	if err != nil {
+		slog.Error("db error: failed to delete category", "error", err)
 		return fmt.Errorf("failed to delete category: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -147,6 +156,7 @@ func (r *categoryRepository) ExistsByName(userID string, name string) (bool, err
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, name).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check category existence", "error", err)
 		return false, fmt.Errorf("failed to check category existence: %w", err)
 	}
 
@@ -164,6 +174,7 @@ func (r *categoryRepository) HasExpenses(id int) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, id).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check category expenses", "error", err)
 		return false, fmt.Errorf("failed to check category expenses: %w", err)
 	}
 

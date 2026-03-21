@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -50,6 +51,7 @@ func (h *ServiceAccountHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(userID, &account); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -84,6 +86,7 @@ func (h *ServiceAccountHandler) GetByID(c *gin.Context) {
 
 	account, err := h.service.GetByID(userID, id)
 	if err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -119,6 +122,7 @@ func (h *ServiceAccountHandler) GetAll(c *gin.Context) {
 
 	accounts, err := h.service.GetAll(userID, companyID)
 	if err != nil {
+		slog.Error("failed to retrieve service accounts", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve service accounts")
 		return
 	}
@@ -166,6 +170,7 @@ func (h *ServiceAccountHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(userID, &account); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -198,6 +203,7 @@ func (h *ServiceAccountHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/fernandovalenzuela/api-home-pay/internal/models"
 )
@@ -29,6 +30,7 @@ func (r *periodRepository) Create(userID string, period *models.Period) error {
 
 	err := r.db.QueryRowContext(r.ctx, query, period.MonthNumber, period.YearNumber).Scan(&period.ID)
 	if err != nil {
+		slog.Error("db error: failed to create period", "error", err)
 		return fmt.Errorf("failed to create period: %w", err)
 	}
 
@@ -52,6 +54,7 @@ func (r *periodRepository) GetByID(userID string, id int) (*models.Period, error
 		return nil, nil
 	}
 	if err != nil {
+		slog.Error("db error: failed to get period by ID", "error", err)
 		return nil, fmt.Errorf("failed to get period by ID: %w", err)
 	}
 
@@ -67,6 +70,7 @@ func (r *periodRepository) GetAll(userID string) ([]models.Period, error) {
 
 	rows, err := r.db.QueryContext(r.ctx, query)
 	if err != nil {
+		slog.Error("db error: failed to get periods", "error", err)
 		return nil, fmt.Errorf("failed to get periods: %w", err)
 	}
 	defer rows.Close()
@@ -80,12 +84,14 @@ func (r *periodRepository) GetAll(userID string) ([]models.Period, error) {
 			&period.YearNumber,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan period", "error", err)
 			return nil, fmt.Errorf("failed to scan period: %w", err)
 		}
 		periods = append(periods, period)
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating periods", "error", err)
 		return nil, fmt.Errorf("error iterating periods: %w", err)
 	}
 
@@ -101,11 +107,13 @@ func (r *periodRepository) Update(userID string, period *models.Period) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, period.MonthNumber, period.YearNumber, period.ID)
 	if err != nil {
+		slog.Error("db error: failed to update period", "error", err)
 		return fmt.Errorf("failed to update period: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -124,11 +132,13 @@ func (r *periodRepository) Delete(userID string, id int) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, id)
 	if err != nil {
+		slog.Error("db error: failed to delete period", "error", err)
 		return fmt.Errorf("failed to delete period: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -150,6 +160,7 @@ func (r *periodRepository) ExistsByMonthYear(userID string, monthNumber, yearNum
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, monthNumber, yearNumber).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check period existence", "error", err)
 		return false, fmt.Errorf("failed to check period existence: %w", err)
 	}
 
@@ -168,6 +179,7 @@ func (r *periodRepository) HasExpensesOrIncomes(id int) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, id).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check period dependencies", "error", err)
 		return false, fmt.Errorf("failed to check period dependencies: %w", err)
 	}
 

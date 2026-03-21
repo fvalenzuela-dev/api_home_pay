@@ -12,11 +12,11 @@ jobs:
       id-token: write
     uses: fvalenzuela-dev/.github/.github/workflows/build-and-push-docker-gcp.yml@main
     with:
-      image_name: "mi-app-next-prod"
+      image_name: "api-home-pay-prod"
       dockerfile_path: "./Dockerfile"
       artifact_registry_region: "us-central1"
-      artifact_registry_repository: "app-frontend-react-repo"
-      cloudrun_service: "prod-deploy"
+      artifact_registry_repository: "api-home-pay-repo"
+      cloudrun_service: "api-home-pay-prod"
       cloudrun_region: "us-central1"
     secrets:
       gcp_project_id: ${{ secrets.GCP_PROJECT_ID_PROD }}

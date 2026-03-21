@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/fernandovalenzuela/api-home-pay/internal/models"
 )
@@ -40,6 +41,7 @@ func (r *serviceAccountRepository) Create(userID string, account *models.Service
 
 	err := r.db.QueryRowContext(r.ctx, query, companyID, account.AccountIdentifier, account.Alias, userID).Scan(&account.ID)
 	if err != nil {
+		slog.Error("db error: failed to create service account", "error", err)
 		return fmt.Errorf("failed to create service account: %w", err)
 	}
 
@@ -77,6 +79,7 @@ func (r *serviceAccountRepository) GetByID(userID string, id int) (*models.Servi
 		return nil, nil
 	}
 	if err != nil {
+		slog.Error("db error: failed to get service account by ID", "error", err)
 		return nil, fmt.Errorf("failed to get service account by ID: %w", err)
 	}
 
@@ -126,6 +129,7 @@ func (r *serviceAccountRepository) GetAll(userID string, companyID *int) ([]mode
 	}
 
 	if err != nil {
+		slog.Error("db error: failed to get service accounts", "error", err)
 		return nil, fmt.Errorf("failed to get service accounts: %w", err)
 	}
 	defer rows.Close()
@@ -147,6 +151,7 @@ func (r *serviceAccountRepository) GetAll(userID string, companyID *int) ([]mode
 			&companyWebsite,
 		)
 		if err != nil {
+			slog.Error("db error: failed to scan service account", "error", err)
 			return nil, fmt.Errorf("failed to scan service account: %w", err)
 		}
 
@@ -165,6 +170,7 @@ func (r *serviceAccountRepository) GetAll(userID string, companyID *int) ([]mode
 	}
 
 	if err = rows.Err(); err != nil {
+		slog.Error("db error: error iterating service accounts", "error", err)
 		return nil, fmt.Errorf("error iterating service accounts: %w", err)
 	}
 
@@ -196,6 +202,7 @@ func (r *serviceAccountRepository) Update(userID string, account *models.Service
 		return fmt.Errorf("service account not found or access denied")
 	}
 	if err != nil {
+		slog.Error("db error: failed to update service account", "error", err)
 		return fmt.Errorf("failed to update service account: %w", err)
 	}
 
@@ -214,11 +221,13 @@ func (r *serviceAccountRepository) Delete(userID string, id int) error {
 
 	result, err := r.db.ExecContext(r.ctx, query, id, userID)
 	if err != nil {
+		slog.Error("db error: failed to delete service account", "error", err)
 		return fmt.Errorf("failed to delete service account: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("db error: failed to get rows affected", "error", err)
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
@@ -244,6 +253,7 @@ func (r *serviceAccountRepository) ExistsByIdentifier(userID string, companyID i
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, identifier, companyID, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check service account existence", "error", err)
 		return false, fmt.Errorf("failed to check service account existence: %w", err)
 	}
 
@@ -261,6 +271,7 @@ func (r *serviceAccountRepository) HasExpenses(id int) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, id).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check service account expenses", "error", err)
 		return false, fmt.Errorf("failed to check service account expenses: %w", err)
 	}
 
@@ -282,6 +293,7 @@ func (r *serviceAccountRepository) CompanyExistsAndBelongsToUser(userID string, 
 	var exists bool
 	err := r.db.QueryRowContext(r.ctx, query, companyID, userID).Scan(&exists)
 	if err != nil {
+		slog.Error("db error: failed to check company existence", "error", err)
 		return false, fmt.Errorf("failed to check company existence: %w", err)
 	}
 

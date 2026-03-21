@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -48,6 +49,7 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(userID, &category); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -82,6 +84,7 @@ func (h *CategoryHandler) GetByID(c *gin.Context) {
 
 	category, err := h.service.GetByID(userID, id)
 	if err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -108,6 +111,7 @@ func (h *CategoryHandler) GetAll(c *gin.Context) {
 
 	categories, err := h.service.GetAll(userID)
 	if err != nil {
+		slog.Error("failed to retrieve categories", "error", err, "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusInternalServerError, "Failed to retrieve categories")
 		return
 	}
@@ -153,6 +157,7 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(userID, &category); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -185,6 +190,7 @@ func (h *CategoryHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(userID, id); err != nil {
+		slog.Warn("business error", "path", c.Request.URL.Path, "error", err.Error(), "user_id", userID)
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
 		return
 	}
