@@ -21,6 +21,10 @@ func NewDB(databaseURL string) (*DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
+	if _, err := db.Exec("SET search_path TO finances"); err != nil {
+		return nil, fmt.Errorf("failed to set search_path: %w", err)
+	}
+
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(10)
 

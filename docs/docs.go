@@ -47,20 +47,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                                "$ref": "#/definitions/models.Category"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -89,7 +89,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                            "$ref": "#/definitions/models.Category"
                         }
                     }
                 ],
@@ -97,19 +97,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                            "$ref": "#/definitions/models.Category"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -146,25 +146,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                            "$ref": "#/definitions/models.Category"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -200,7 +200,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                            "$ref": "#/definitions/models.Category"
                         }
                     }
                 ],
@@ -208,25 +208,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                            "$ref": "#/definitions/models.Category"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -261,19 +261,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -303,20 +303,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                                "$ref": "#/definitions/models.Company"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -345,7 +345,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                            "$ref": "#/definitions/models.Company"
                         }
                     }
                 ],
@@ -353,19 +353,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                            "$ref": "#/definitions/models.Company"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -402,25 +402,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                            "$ref": "#/definitions/models.Company"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -456,7 +456,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                            "$ref": "#/definitions/models.Company"
                         }
                     }
                 ],
@@ -464,25 +464,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                            "$ref": "#/definitions/models.Company"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -517,19 +517,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -585,20 +585,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                                "$ref": "#/definitions/models.Expense"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -627,7 +627,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                            "$ref": "#/definitions/models.Expense"
                         }
                     }
                 ],
@@ -635,19 +635,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                            "$ref": "#/definitions/models.Expense"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -691,20 +691,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                                "$ref": "#/definitions/models.Expense"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -741,25 +741,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                            "$ref": "#/definitions/models.Expense"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -795,7 +795,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                            "$ref": "#/definitions/models.Expense"
                         }
                     }
                 ],
@@ -803,25 +803,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense"
+                            "$ref": "#/definitions/models.Expense"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -856,19 +856,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -905,19 +905,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -955,20 +955,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income"
+                                "$ref": "#/definitions/models.Income"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -997,7 +997,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income"
+                            "$ref": "#/definitions/models.Income"
                         }
                     }
                 ],
@@ -1005,19 +1005,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income"
+                            "$ref": "#/definitions/models.Income"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1054,25 +1054,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income"
+                            "$ref": "#/definitions/models.Income"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1108,7 +1108,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income"
+                            "$ref": "#/definitions/models.Income"
                         }
                     }
                 ],
@@ -1116,25 +1116,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income"
+                            "$ref": "#/definitions/models.Income"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1169,19 +1169,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1211,20 +1211,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                                "$ref": "#/definitions/models.Period"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1253,7 +1253,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                            "$ref": "#/definitions/models.Period"
                         }
                     }
                 ],
@@ -1261,19 +1261,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                            "$ref": "#/definitions/models.Period"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1310,25 +1310,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                            "$ref": "#/definitions/models.Period"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1364,7 +1364,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                            "$ref": "#/definitions/models.Period"
                         }
                     }
                 ],
@@ -1372,25 +1372,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                            "$ref": "#/definitions/models.Period"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1425,19 +1425,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1475,20 +1475,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                                "$ref": "#/definitions/models.ServiceAccount"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1517,7 +1517,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     }
                 ],
@@ -1525,19 +1525,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1574,25 +1574,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1628,7 +1628,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     }
                 ],
@@ -1636,25 +1636,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                            "$ref": "#/definitions/models.ServiceAccount"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1689,19 +1689,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1738,25 +1738,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers.FinancialSummaryResponse"
+                            "$ref": "#/definitions/handlers.FinancialSummaryResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -1764,7 +1764,50 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_fernandovalenzuela_api-home-pay_internal_models.Category": {
+        "handlers.FinancialSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "expense_count": {
+                    "type": "integer"
+                },
+                "income_count": {
+                    "type": "integer"
+                },
+                "paid_expenses": {
+                    "type": "number"
+                },
+                "pending_expenses": {
+                    "type": "number"
+                },
+                "period": {
+                    "$ref": "#/definitions/handlers.PeriodInfo"
+                },
+                "total_expenses": {
+                    "type": "number"
+                },
+                "total_incomes": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.PeriodInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "month": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Category": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1778,7 +1821,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_fernandovalenzuela_api-home-pay_internal_models.Company": {
+        "models.Company": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1795,7 +1838,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_fernandovalenzuela_api-home-pay_internal_models.Expense": {
+        "models.Expense": {
             "type": "object",
             "properties": {
                 "account_id": {
@@ -1805,7 +1848,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "category": {
-                    "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category"
+                    "$ref": "#/definitions/models.Category"
                 },
                 "category_id": {
                     "type": "integer"
@@ -1838,13 +1881,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "period": {
-                    "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                    "$ref": "#/definitions/models.Period"
                 },
                 "period_id": {
                     "type": "integer"
                 },
                 "service_account": {
-                    "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount"
+                    "$ref": "#/definitions/models.ServiceAccount"
                 },
                 "total_installments": {
                     "type": "integer"
@@ -1854,7 +1897,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_fernandovalenzuela_api-home-pay_internal_models.Income": {
+        "models.Income": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -1873,7 +1916,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "period": {
-                    "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period"
+                    "$ref": "#/definitions/models.Period"
                 },
                 "period_id": {
                     "type": "integer"
@@ -1883,7 +1926,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_fernandovalenzuela_api-home-pay_internal_models.Period": {
+        "models.Period": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1897,7 +1940,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount": {
+        "models.ServiceAccount": {
             "type": "object",
             "properties": {
                 "account_identifier": {
@@ -1907,7 +1950,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "company": {
-                    "$ref": "#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company"
+                    "$ref": "#/definitions/models.Company"
                 },
                 "company_id": {
                     "type": "integer"
@@ -1917,7 +1960,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse": {
+        "utils.ErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -1930,53 +1973,10 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "internal_handlers.FinancialSummaryResponse": {
-            "type": "object",
-            "properties": {
-                "balance": {
-                    "type": "number"
-                },
-                "expense_count": {
-                    "type": "integer"
-                },
-                "income_count": {
-                    "type": "integer"
-                },
-                "paid_expenses": {
-                    "type": "number"
-                },
-                "pending_expenses": {
-                    "type": "number"
-                },
-                "period": {
-                    "$ref": "#/definitions/internal_handlers.PeriodInfo"
-                },
-                "total_expenses": {
-                    "type": "number"
-                },
-                "total_incomes": {
-                    "type": "number"
-                }
-            }
-        },
-        "internal_handlers.PeriodInfo": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "month": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "integer"
-                }
-            }
         }
     },
     "securityDefinitions": {
-        "Bearer": {
+        "BearerAuth": {
             "description": "Type \"Bearer\" followed by a space and the JWT token.",
             "type": "apiKey",
             "name": "Authorization",

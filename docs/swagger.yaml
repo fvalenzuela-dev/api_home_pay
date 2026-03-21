@@ -1,6 +1,34 @@
 basePath: /
 definitions:
-  github_com_fernandovalenzuela_api-home-pay_internal_models.Category:
+  handlers.FinancialSummaryResponse:
+    properties:
+      balance:
+        type: number
+      expense_count:
+        type: integer
+      income_count:
+        type: integer
+      paid_expenses:
+        type: number
+      pending_expenses:
+        type: number
+      period:
+        $ref: '#/definitions/handlers.PeriodInfo'
+      total_expenses:
+        type: number
+      total_incomes:
+        type: number
+    type: object
+  handlers.PeriodInfo:
+    properties:
+      id:
+        type: integer
+      month:
+        type: integer
+      year:
+        type: integer
+    type: object
+  models.Category:
     properties:
       created_at:
         type: string
@@ -9,7 +37,7 @@ definitions:
       name:
         type: string
     type: object
-  github_com_fernandovalenzuela_api-home-pay_internal_models.Company:
+  models.Company:
     properties:
       created_at:
         type: string
@@ -20,14 +48,14 @@ definitions:
       website_url:
         type: string
     type: object
-  github_com_fernandovalenzuela_api-home-pay_internal_models.Expense:
+  models.Expense:
     properties:
       account_id:
         type: integer
       amount_paid:
         type: number
       category:
-        $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+        $ref: '#/definitions/models.Category'
       category_id:
         type: integer
       created_at:
@@ -49,17 +77,17 @@ definitions:
       notes:
         type: string
       period:
-        $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+        $ref: '#/definitions/models.Period'
       period_id:
         type: integer
       service_account:
-        $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+        $ref: '#/definitions/models.ServiceAccount'
       total_installments:
         type: integer
       updated_at:
         type: string
     type: object
-  github_com_fernandovalenzuela_api-home-pay_internal_models.Income:
+  models.Income:
     properties:
       amount:
         type: number
@@ -72,13 +100,13 @@ definitions:
       is_recurring:
         type: boolean
       period:
-        $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+        $ref: '#/definitions/models.Period'
       period_id:
         type: integer
       received_at:
         type: string
     type: object
-  github_com_fernandovalenzuela_api-home-pay_internal_models.Period:
+  models.Period:
     properties:
       id:
         type: integer
@@ -87,20 +115,20 @@ definitions:
       year_number:
         type: integer
     type: object
-  github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount:
+  models.ServiceAccount:
     properties:
       account_identifier:
         type: string
       alias:
         type: string
       company:
-        $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+        $ref: '#/definitions/models.Company'
       company_id:
         type: integer
       id:
         type: integer
     type: object
-  github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse:
+  utils.ErrorResponse:
     properties:
       code:
         type: integer
@@ -108,34 +136,6 @@ definitions:
         type: string
       status:
         type: string
-    type: object
-  internal_handlers.FinancialSummaryResponse:
-    properties:
-      balance:
-        type: number
-      expense_count:
-        type: integer
-      income_count:
-        type: integer
-      paid_expenses:
-        type: number
-      pending_expenses:
-        type: number
-      period:
-        $ref: '#/definitions/internal_handlers.PeriodInfo'
-      total_expenses:
-        type: number
-      total_incomes:
-        type: number
-    type: object
-  internal_handlers.PeriodInfo:
-    properties:
-      id:
-        type: integer
-      month:
-        type: integer
-      year:
-        type: integer
     type: object
 host: localhost:8080
 info:
@@ -162,16 +162,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+              $ref: '#/definitions/models.Category'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all categories
@@ -187,22 +187,22 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+          $ref: '#/definitions/models.Category'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+            $ref: '#/definitions/models.Category'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create category
@@ -225,15 +225,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete category
@@ -255,19 +255,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+            $ref: '#/definitions/models.Category'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get category by ID
@@ -288,26 +288,26 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+          $ref: '#/definitions/models.Category'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Category'
+            $ref: '#/definitions/models.Category'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update category
@@ -325,16 +325,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+              $ref: '#/definitions/models.Company'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all companies
@@ -350,22 +350,22 @@ paths:
         name: company
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+          $ref: '#/definitions/models.Company'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+            $ref: '#/definitions/models.Company'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create company
@@ -388,15 +388,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete company
@@ -418,19 +418,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+            $ref: '#/definitions/models.Company'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get company by ID
@@ -451,26 +451,26 @@ paths:
         name: company
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+          $ref: '#/definitions/models.Company'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Company'
+            $ref: '#/definitions/models.Company'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update company
@@ -505,16 +505,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+              $ref: '#/definitions/models.Expense'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all expenses
@@ -530,22 +530,22 @@ paths:
         name: expense
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+          $ref: '#/definitions/models.Expense'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+            $ref: '#/definitions/models.Expense'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create expense
@@ -568,15 +568,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete expense
@@ -598,19 +598,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+            $ref: '#/definitions/models.Expense'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get expense by ID
@@ -631,26 +631,26 @@ paths:
         name: expense
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+          $ref: '#/definitions/models.Expense'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+            $ref: '#/definitions/models.Expense'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update expense
@@ -673,15 +673,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Mark expense as paid
@@ -708,16 +708,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Expense'
+              $ref: '#/definitions/models.Expense'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get pending expenses
@@ -741,16 +741,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income'
+              $ref: '#/definitions/models.Income'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all incomes
@@ -766,22 +766,22 @@ paths:
         name: income
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income'
+          $ref: '#/definitions/models.Income'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income'
+            $ref: '#/definitions/models.Income'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create income
@@ -804,15 +804,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete income
@@ -834,19 +834,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income'
+            $ref: '#/definitions/models.Income'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get income by ID
@@ -867,26 +867,26 @@ paths:
         name: income
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income'
+          $ref: '#/definitions/models.Income'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Income'
+            $ref: '#/definitions/models.Income'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update income
@@ -904,16 +904,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+              $ref: '#/definitions/models.Period'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all periods
@@ -929,22 +929,22 @@ paths:
         name: period
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+          $ref: '#/definitions/models.Period'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+            $ref: '#/definitions/models.Period'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create period
@@ -967,15 +967,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete period
@@ -997,19 +997,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+            $ref: '#/definitions/models.Period'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get period by ID
@@ -1030,26 +1030,26 @@ paths:
         name: period
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+          $ref: '#/definitions/models.Period'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.Period'
+            $ref: '#/definitions/models.Period'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update period
@@ -1073,16 +1073,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+              $ref: '#/definitions/models.ServiceAccount'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all service accounts
@@ -1098,22 +1098,22 @@ paths:
         name: service_account
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+          $ref: '#/definitions/models.ServiceAccount'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+            $ref: '#/definitions/models.ServiceAccount'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create service account
@@ -1136,15 +1136,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete service account
@@ -1166,19 +1166,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+            $ref: '#/definitions/models.ServiceAccount'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get service account by ID
@@ -1199,26 +1199,26 @@ paths:
         name: service_account
         required: true
         schema:
-          $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+          $ref: '#/definitions/models.ServiceAccount'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_models.ServiceAccount'
+            $ref: '#/definitions/models.ServiceAccount'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update service account
@@ -1242,26 +1242,26 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handlers.FinancialSummaryResponse'
+            $ref: '#/definitions/handlers.FinancialSummaryResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_fernandovalenzuela_api-home-pay_internal_utils.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get financial summary
       tags:
       - summary
 securityDefinitions:
-  Bearer:
+  BearerAuth:
     description: Type "Bearer" followed by a space and the JWT token.
     in: header
     name: Authorization

@@ -22,16 +22,12 @@ func NewCategoryRepository(db *sql.DB) CategoryRepository {
 
 func (r *categoryRepository) Create(userID string, category *models.Category) error {
 	query := `
-		INSERT INTO categories (user_id, name, created_at)
-		VALUES ($1, $2, NOW())
+		INSERT INTO categories (name, created_at)
+		VALUES ($1, NOW())
 		RETURNING id, created_at
 	`
 
-	if userID == "" {
-		return fmt.Errorf("user_id is required")
-	}
-
-	err := r.db.QueryRowContext(r.ctx, query, userID, category.Name).Scan(&category.ID, &category.CreatedAt)
+	err := r.db.QueryRowContext(r.ctx, query, category.Name).Scan(&category.ID, &category.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create category: %w", err)
 	}
@@ -43,15 +39,11 @@ func (r *categoryRepository) GetByID(userID string, id int) (*models.Category, e
 	query := `
 		SELECT id, name, created_at
 		FROM categories
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1
 	`
 
-	if userID == "" {
-		return nil, fmt.Errorf("user_id is required")
-	}
-
 	category := &models.Category{}
-	err := r.db.QueryRowContext(r.ctx, query, id, userID).Scan(
+	err := r.db.QueryRowContext(r.ctx, query, id).Scan(
 		&category.ID,
 		&category.Name,
 		&category.CreatedAt,
@@ -70,15 +62,10 @@ func (r *categoryRepository) GetAll(userID string) ([]models.Category, error) {
 	query := `
 		SELECT id, name, created_at
 		FROM categories
-		WHERE user_id = $1
 		ORDER BY name ASC
 	`
 
-	if userID == "" {
-		return nil, fmt.Errorf("user_id is required")
-	}
-
-	rows, err := r.db.QueryContext(r.ctx, query, userID)
+	rows, err := r.db.QueryContext(r.ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get categories: %w", err)
 	}
@@ -109,16 +96,12 @@ func (r *categoryRepository) Update(userID string, category *models.Category) er
 	query := `
 		UPDATE categories
 		SET name = $1
-		WHERE id = $2 AND user_id = $3
+		WHERE id = $2
 		RETURNING created_at
 	`
 
-	if userID == "" {
-		return fmt.Errorf("user_id is required")
-	}
-
 	var createdAt string
-	err := r.db.QueryRowContext(r.ctx, query, category.Name, category.ID, userID).Scan(&createdAt)
+	err := r.db.QueryRowContext(r.ctx, query, category.Name, category.ID).Scan(&createdAt)
 	if err == sql.ErrNoRows {
 		return fmt.Errorf("category not found or access denied")
 	}
@@ -133,14 +116,10 @@ func (r *categoryRepository) Update(userID string, category *models.Category) er
 func (r *categoryRepository) Delete(userID string, id int) error {
 	query := `
 		DELETE FROM categories
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1
 	`
 
-	if userID == "" {
-		return fmt.Errorf("user_id is required")
-	}
-
-	result, err := r.db.ExecContext(r.ctx, query, id, userID)
+	result, err := r.db.ExecContext(r.ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete category: %w", err)
 	}
@@ -161,16 +140,12 @@ func (r *categoryRepository) ExistsByName(userID string, name string) (bool, err
 	query := `
 		SELECT EXISTS(
 			SELECT 1 FROM categories
-			WHERE name = $1 AND user_id = $2
+			WHERE name = $1
 		)
 	`
 
-	if userID == "" {
-		return false, fmt.Errorf("user_id is required")
-	}
-
 	var exists bool
-	err := r.db.QueryRowContext(r.ctx, query, name, userID).Scan(&exists)
+	err := r.db.QueryRowContext(r.ctx, query, name).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check category existence: %w", err)
 	}

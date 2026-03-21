@@ -2,17 +2,37 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/clerk/clerk-sdk-go/v2"
+	"github.com/clerk/clerk-sdk-go/v2/jwt"
 	"github.com/fernandovalenzuela/api-home-pay/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
 func ClerkAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		claims, ok := clerk.SessionClaimsFromContext(c.Request.Context())
-		if !ok {
-			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: invalid or missing token")
+		// Extract Bearer token from Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: missing token")
+			c.Abort()
+			return
+		}
+
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == authHeader {
+			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: invalid authorization format")
+			c.Abort()
+			return
+		}
+
+		// Verify the JWT using Clerk SDK
+		claims, err := jwt.Verify(c.Request.Context(), &jwt.VerifyParams{
+			Token: token,
+		})
+		if err != nil {
+			utils.ErrorResponseClient(c, http.StatusUnauthorized, "Unauthorized: invalid token")
 			c.Abort()
 			return
 		}
