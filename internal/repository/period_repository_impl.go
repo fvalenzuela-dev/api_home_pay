@@ -22,16 +22,12 @@ func NewPeriodRepository(db *sql.DB) PeriodRepository {
 
 func (r *periodRepository) Create(userID string, period *models.Period) error {
 	query := `
-		INSERT INTO periods (user_id, month_number, year_number)
-		VALUES ($1, $2, $3)
+		INSERT INTO periods (month_number, year_number)
+		VALUES ($1, $2)
 		RETURNING id
 	`
 
-	if userID == "" {
-		return fmt.Errorf("user_id is required")
-	}
-
-	err := r.db.QueryRowContext(r.ctx, query, userID, period.MonthNumber, period.YearNumber).Scan(&period.ID)
+	err := r.db.QueryRowContext(r.ctx, query, period.MonthNumber, period.YearNumber).Scan(&period.ID)
 	if err != nil {
 		return fmt.Errorf("failed to create period: %w", err)
 	}
@@ -43,15 +39,11 @@ func (r *periodRepository) GetByID(userID string, id int) (*models.Period, error
 	query := `
 		SELECT id, month_number, year_number
 		FROM periods
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1
 	`
 
-	if userID == "" {
-		return nil, fmt.Errorf("user_id is required")
-	}
-
 	period := &models.Period{}
-	err := r.db.QueryRowContext(r.ctx, query, id, userID).Scan(
+	err := r.db.QueryRowContext(r.ctx, query, id).Scan(
 		&period.ID,
 		&period.MonthNumber,
 		&period.YearNumber,
@@ -70,15 +62,10 @@ func (r *periodRepository) GetAll(userID string) ([]models.Period, error) {
 	query := `
 		SELECT id, month_number, year_number
 		FROM periods
-		WHERE user_id = $1
 		ORDER BY year_number DESC, month_number DESC
 	`
 
-	if userID == "" {
-		return nil, fmt.Errorf("user_id is required")
-	}
-
-	rows, err := r.db.QueryContext(r.ctx, query, userID)
+	rows, err := r.db.QueryContext(r.ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get periods: %w", err)
 	}
@@ -109,14 +96,10 @@ func (r *periodRepository) Update(userID string, period *models.Period) error {
 	query := `
 		UPDATE periods
 		SET month_number = $1, year_number = $2
-		WHERE id = $3 AND user_id = $4
+		WHERE id = $3
 	`
 
-	if userID == "" {
-		return fmt.Errorf("user_id is required")
-	}
-
-	result, err := r.db.ExecContext(r.ctx, query, period.MonthNumber, period.YearNumber, period.ID, userID)
+	result, err := r.db.ExecContext(r.ctx, query, period.MonthNumber, period.YearNumber, period.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update period: %w", err)
 	}
@@ -136,14 +119,10 @@ func (r *periodRepository) Update(userID string, period *models.Period) error {
 func (r *periodRepository) Delete(userID string, id int) error {
 	query := `
 		DELETE FROM periods
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1
 	`
 
-	if userID == "" {
-		return fmt.Errorf("user_id is required")
-	}
-
-	result, err := r.db.ExecContext(r.ctx, query, id, userID)
+	result, err := r.db.ExecContext(r.ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete period: %w", err)
 	}
@@ -164,16 +143,12 @@ func (r *periodRepository) ExistsByMonthYear(userID string, monthNumber, yearNum
 	query := `
 		SELECT EXISTS(
 			SELECT 1 FROM periods
-			WHERE month_number = $1 AND year_number = $2 AND user_id = $3
+			WHERE month_number = $1 AND year_number = $2
 		)
 	`
 
-	if userID == "" {
-		return false, fmt.Errorf("user_id is required")
-	}
-
 	var exists bool
-	err := r.db.QueryRowContext(r.ctx, query, monthNumber, yearNumber, userID).Scan(&exists)
+	err := r.db.QueryRowContext(r.ctx, query, monthNumber, yearNumber).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check period existence: %w", err)
 	}

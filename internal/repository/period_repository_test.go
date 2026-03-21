@@ -38,7 +38,7 @@ func TestPeriodRepository_Create_Success(t *testing.T) {
 	}
 
 	mock.ExpectQuery(`INSERT INTO periods`).
-		WithArgs("user123", 6, 2024).
+		WithArgs(6, 2024).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
 	err := repo.Create("user123", period)
@@ -48,25 +48,12 @@ func TestPeriodRepository_Create_Success(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPeriodRepository_Create_EmptyUserID(t *testing.T) {
-	repo, mock, cleanup := setupPeriodMockDB(t)
-	defer cleanup()
-
-	period := &models.Period{MonthNumber: 6, YearNumber: 2024}
-
-	err := repo.Create("", period)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "user_id is required")
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestPeriodRepository_GetByID_Success(t *testing.T) {
 	repo, mock, cleanup := setupPeriodMockDB(t)
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, month_number, year_number FROM periods`).
-		WithArgs(1, "user123").
+		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "month_number", "year_number"}).
 			AddRow(1, 6, 2024))
 
@@ -85,7 +72,7 @@ func TestPeriodRepository_GetByID_NotFound(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, month_number, year_number FROM periods`).
-		WithArgs(999, "user123").
+		WithArgs(999).
 		WillReturnError(sql.ErrNoRows)
 
 	period, err := repo.GetByID("user123", 999)
@@ -100,7 +87,6 @@ func TestPeriodRepository_GetAll_Success(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, month_number, year_number FROM periods`).
-		WithArgs("user123").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "month_number", "year_number"}).
 			AddRow(1, 1, 2024).
 			AddRow(2, 2, 2024).
@@ -124,7 +110,7 @@ func TestPeriodRepository_Update_Success(t *testing.T) {
 	}
 
 	mock.ExpectExec(`UPDATE periods`).
-		WithArgs(7, 2024, 1, "user123").
+		WithArgs(7, 2024, 1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err := repo.Update("user123", period)
@@ -144,7 +130,7 @@ func TestPeriodRepository_Update_NotFound(t *testing.T) {
 	}
 
 	mock.ExpectExec(`UPDATE periods`).
-		WithArgs(7, 2024, 999, "user123").
+		WithArgs(7, 2024, 999).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err := repo.Update("user123", period)
@@ -159,7 +145,7 @@ func TestPeriodRepository_Delete_Success(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectExec(`DELETE FROM periods`).
-		WithArgs(1, "user123").
+		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err := repo.Delete("user123", 1)
@@ -173,7 +159,7 @@ func TestPeriodRepository_Delete_NotFound(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectExec(`DELETE FROM periods`).
-		WithArgs(999, "user123").
+		WithArgs(999).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err := repo.Delete("user123", 999)
@@ -188,7 +174,7 @@ func TestPeriodRepository_ExistsByMonthYear_True(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT EXISTS`).
-		WithArgs(6, 2024, "user123").
+		WithArgs(6, 2024).
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
 
 	exists, err := repo.ExistsByMonthYear("user123", 6, 2024)
@@ -203,7 +189,7 @@ func TestPeriodRepository_ExistsByMonthYear_False(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT EXISTS`).
-		WithArgs(13, 2024, "user123").
+		WithArgs(13, 2024).
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
 
 	exists, err := repo.ExistsByMonthYear("user123", 13, 2024)
