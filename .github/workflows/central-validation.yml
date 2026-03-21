@@ -1,4 +1,4 @@
-name: Pipeline Backend Ejemplo
+name: Pipeline Backend Go
 
 on:
   push:
@@ -8,27 +8,30 @@ on:
       - develop
 
 jobs:
-  verificar_version:
-    name: Control de Versiones
-    uses: fvalenzuela-dev/.github/.github/workflows/version-check-new.yml@main
-    with:
-      version_file: "package.json"
-      base_branch: "main"
-    secrets:
-      GITHUB_TOKEN_CUSTOM: ${{ secrets.GITHUB_TOKEN }}
-
-  # ----------------------------------------------------
-  # PASO 2: Run Tests + Upload Coverages to Codacys prueba
-  # ----------------------------------------------------
   build_and_test:
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
       - name: Install dependencies
-        run: npm install
-      - name: Run Tests (Jest)
-        run: npm run test -- --coverage
+        run: go mod download
+
+      - name: Run tests with coverage
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Convert coverage to lcov
+        run: |
+          go install github.com/jandelgado/gcov2lcov@latest
+          mkdir -p coverage
+          gcov2lcov -infile=coverage.out -outfile=coverage/lcov.info
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
