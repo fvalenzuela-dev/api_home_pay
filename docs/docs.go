@@ -89,7 +89,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Category"
+                            "$ref": "#/definitions/models.CreateCategoryRequest"
                         }
                     }
                 ],
@@ -200,7 +200,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Category"
+                            "$ref": "#/definitions/models.UpdateCategoryRequest"
                         }
                     }
                 ],
@@ -345,7 +345,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Company"
+                            "$ref": "#/definitions/models.CreateCompanyRequest"
                         }
                     }
                 ],
@@ -456,7 +456,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Company"
+                            "$ref": "#/definitions/models.UpdateCompanyRequest"
                         }
                     }
                 ],
@@ -627,7 +627,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Expense"
+                            "$ref": "#/definitions/models.CreateExpenseRequest"
                         }
                     }
                 ],
@@ -795,7 +795,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Expense"
+                            "$ref": "#/definitions/models.UpdateExpenseRequest"
                         }
                     }
                 ],
@@ -997,7 +997,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Income"
+                            "$ref": "#/definitions/models.CreateIncomeRequest"
                         }
                     }
                 ],
@@ -1108,7 +1108,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Income"
+                            "$ref": "#/definitions/models.UpdateIncomeRequest"
                         }
                     }
                 ],
@@ -1253,7 +1253,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Period"
+                            "$ref": "#/definitions/models.CreatePeriodRequest"
                         }
                     }
                 ],
@@ -1364,7 +1364,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Period"
+                            "$ref": "#/definitions/models.UpdatePeriodRequest"
                         }
                     }
                 ],
@@ -1517,7 +1517,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/models.CreateServiceAccountRequest"
                         }
                     }
                 ],
@@ -1628,7 +1628,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceAccount"
+                            "$ref": "#/definitions/models.UpdateServiceAccountRequest"
                         }
                     }
                 ],
@@ -1838,6 +1838,135 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CreateCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateCompanyRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateExpenseRequest": {
+            "type": "object",
+            "required": [
+                "category_id",
+                "current_amount",
+                "description",
+                "period_id"
+            ],
+            "properties": {
+                "account_id": {
+                    "type": "integer"
+                },
+                "amount_paid": {
+                    "type": "number"
+                },
+                "category_id": {
+                    "type": "integer"
+                },
+                "current_amount": {
+                    "type": "number"
+                },
+                "current_installment": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "installment_group_id": {
+                    "type": "string"
+                },
+                "is_recurring": {
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "period_id": {
+                    "type": "integer"
+                },
+                "total_installments": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.CreateIncomeRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "description",
+                "period_id"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_recurring": {
+                    "type": "boolean"
+                },
+                "period_id": {
+                    "type": "integer"
+                },
+                "received_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreatePeriodRequest": {
+            "type": "object",
+            "required": [
+                "year_number"
+            ],
+            "properties": {
+                "month_number": {
+                    "type": "integer"
+                },
+                "year_number": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.CreateServiceAccountRequest": {
+            "type": "object",
+            "required": [
+                "account_identifier",
+                "company_id"
+            ],
+            "properties": {
+                "account_identifier": {
+                    "type": "string"
+                },
+                "alias": {
+                    "type": "string"
+                },
+                "company_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.Expense": {
             "type": "object",
             "properties": {
@@ -1956,6 +2085,135 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.UpdateCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdateCompanyRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdateExpenseRequest": {
+            "type": "object",
+            "required": [
+                "category_id",
+                "current_amount",
+                "description",
+                "period_id"
+            ],
+            "properties": {
+                "account_id": {
+                    "type": "integer"
+                },
+                "amount_paid": {
+                    "type": "number"
+                },
+                "category_id": {
+                    "type": "integer"
+                },
+                "current_amount": {
+                    "type": "number"
+                },
+                "current_installment": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "installment_group_id": {
+                    "type": "string"
+                },
+                "is_recurring": {
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "period_id": {
+                    "type": "integer"
+                },
+                "total_installments": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.UpdateIncomeRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "description",
+                "period_id"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_recurring": {
+                    "type": "boolean"
+                },
+                "period_id": {
+                    "type": "integer"
+                },
+                "received_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdatePeriodRequest": {
+            "type": "object",
+            "required": [
+                "year_number"
+            ],
+            "properties": {
+                "month_number": {
+                    "type": "integer"
+                },
+                "year_number": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.UpdateServiceAccountRequest": {
+            "type": "object",
+            "required": [
+                "account_identifier",
+                "company_id"
+            ],
+            "properties": {
+                "account_identifier": {
+                    "type": "string"
+                },
+                "alias": {
+                    "type": "string"
+                },
+                "company_id": {
                     "type": "integer"
                 }
             }

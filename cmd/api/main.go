@@ -33,7 +33,7 @@ import (
 // @host localhost:8080
 // @BasePath /
 
-// @securityDefinitions.apikey Bearer
+// @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and the JWT token.

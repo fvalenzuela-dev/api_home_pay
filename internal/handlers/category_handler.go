@@ -24,7 +24,7 @@ func NewCategoryHandler(service services.CategoryService) *CategoryHandler {
 // @Tags categories
 // @Accept json
 // @Produce json
-// @Param category body models.Category true "Category data"
+// @Param category body models.CreateCategoryRequest true "Category data"
 // @Success 201 {object} models.Category
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -37,10 +37,14 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var category models.Category
-	if err := c.ShouldBindJSON(&category); err != nil {
+	var req models.CreateCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
+	}
+
+	category := models.Category{
+		Name: req.Name,
 	}
 
 	if err := h.service.Create(userID, &category); err != nil {
@@ -117,7 +121,7 @@ func (h *CategoryHandler) GetAll(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Category ID"
-// @Param category body models.Category true "Category data"
+// @Param category body models.UpdateCategoryRequest true "Category data"
 // @Success 200 {object} models.Category
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -137,13 +141,16 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var category models.Category
-	if err := c.ShouldBindJSON(&category); err != nil {
+	var req models.UpdateCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	category.ID = id
+	category := models.Category{
+		ID:   id,
+		Name: req.Name,
+	}
 
 	if err := h.service.Update(userID, &category); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())

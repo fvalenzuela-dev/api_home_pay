@@ -24,7 +24,7 @@ func NewPeriodHandler(service services.PeriodService) *PeriodHandler {
 // @Tags periods
 // @Accept json
 // @Produce json
-// @Param period body models.Period true "Period data"
+// @Param period body models.CreatePeriodRequest true "Period data"
 // @Success 201 {object} models.Period
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -37,10 +37,15 @@ func (h *PeriodHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var period models.Period
-	if err := c.ShouldBindJSON(&period); err != nil {
+	var req models.CreatePeriodRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
+	}
+
+	period := models.Period{
+		MonthNumber: req.MonthNumber,
+		YearNumber:  req.YearNumber,
 	}
 
 	if err := h.service.Create(userID, &period); err != nil {
@@ -117,7 +122,7 @@ func (h *PeriodHandler) GetAll(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Period ID"
-// @Param period body models.Period true "Period data"
+// @Param period body models.UpdatePeriodRequest true "Period data"
 // @Success 200 {object} models.Period
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -137,13 +142,17 @@ func (h *PeriodHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var period models.Period
-	if err := c.ShouldBindJSON(&period); err != nil {
+	var req models.UpdatePeriodRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	period.ID = id
+	period := models.Period{
+		ID:          id,
+		MonthNumber: req.MonthNumber,
+		YearNumber:  req.YearNumber,
+	}
 
 	if err := h.service.Update(userID, &period); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())

@@ -25,7 +25,7 @@ func NewExpenseHandler(service services.ExpenseService) *ExpenseHandler {
 // @Tags expenses
 // @Accept json
 // @Produce json
-// @Param expense body models.Expense true "Expense data"
+// @Param expense body models.CreateExpenseRequest true "Expense data"
 // @Success 201 {object} models.Expense
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -38,10 +38,25 @@ func (h *ExpenseHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var expense models.Expense
-	if err := c.ShouldBindJSON(&expense); err != nil {
+	var req models.CreateExpenseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
+	}
+
+	expense := models.Expense{
+		CategoryID:         req.CategoryID,
+		PeriodID:           req.PeriodID,
+		AccountID:          req.AccountID,
+		Description:        req.Description,
+		DueDate:            req.DueDate,
+		CurrentAmount:      req.CurrentAmount,
+		AmountPaid:         req.AmountPaid,
+		CurrentInstallment: req.CurrentInstallment,
+		TotalInstallments:  req.TotalInstallments,
+		InstallmentGroupID: req.InstallmentGroupID,
+		IsRecurring:        req.IsRecurring,
+		Notes:              req.Notes,
 	}
 
 	if err := h.service.Create(userID, &expense); err != nil {
@@ -149,7 +164,7 @@ func (h *ExpenseHandler) GetAll(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Expense ID"
-// @Param expense body models.Expense true "Expense data"
+// @Param expense body models.UpdateExpenseRequest true "Expense data"
 // @Success 200 {object} models.Expense
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -169,13 +184,27 @@ func (h *ExpenseHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var expense models.Expense
-	if err := c.ShouldBindJSON(&expense); err != nil {
+	var req models.UpdateExpenseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	expense.ID = id
+	expense := models.Expense{
+		ID:                 id,
+		CategoryID:         req.CategoryID,
+		PeriodID:           req.PeriodID,
+		AccountID:          req.AccountID,
+		Description:        req.Description,
+		DueDate:            req.DueDate,
+		CurrentAmount:      req.CurrentAmount,
+		AmountPaid:         req.AmountPaid,
+		CurrentInstallment: req.CurrentInstallment,
+		TotalInstallments:  req.TotalInstallments,
+		InstallmentGroupID: req.InstallmentGroupID,
+		IsRecurring:        req.IsRecurring,
+		Notes:              req.Notes,
+	}
 
 	if err := h.service.Update(userID, &expense); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())

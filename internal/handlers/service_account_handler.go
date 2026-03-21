@@ -24,7 +24,7 @@ func NewServiceAccountHandler(service services.ServiceAccountService) *ServiceAc
 // @Tags service-accounts
 // @Accept json
 // @Produce json
-// @Param service_account body models.ServiceAccount true "Service account data"
+// @Param service_account body models.CreateServiceAccountRequest true "Service account data"
 // @Success 201 {object} models.ServiceAccount
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -37,10 +37,16 @@ func (h *ServiceAccountHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var account models.ServiceAccount
-	if err := c.ShouldBindJSON(&account); err != nil {
+	var req models.CreateServiceAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
+	}
+
+	account := models.ServiceAccount{
+		CompanyID:         req.CompanyID,
+		AccountIdentifier: req.AccountIdentifier,
+		Alias:             req.Alias,
 	}
 
 	if err := h.service.Create(userID, &account); err != nil {
@@ -126,7 +132,7 @@ func (h *ServiceAccountHandler) GetAll(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Service Account ID"
-// @Param service_account body models.ServiceAccount true "Service account data"
+// @Param service_account body models.UpdateServiceAccountRequest true "Service account data"
 // @Success 200 {object} models.ServiceAccount
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -146,13 +152,18 @@ func (h *ServiceAccountHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var account models.ServiceAccount
-	if err := c.ShouldBindJSON(&account); err != nil {
+	var req models.UpdateServiceAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	account.ID = id
+	account := models.ServiceAccount{
+		ID:                id,
+		CompanyID:         req.CompanyID,
+		AccountIdentifier: req.AccountIdentifier,
+		Alias:             req.Alias,
+	}
 
 	if err := h.service.Update(userID, &account); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())

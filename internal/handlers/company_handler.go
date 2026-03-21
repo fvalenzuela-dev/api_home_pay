@@ -24,7 +24,7 @@ func NewCompanyHandler(service services.CompanyService) *CompanyHandler {
 // @Tags companies
 // @Accept json
 // @Produce json
-// @Param company body models.Company true "Company data"
+// @Param company body models.CreateCompanyRequest true "Company data"
 // @Success 201 {object} models.Company
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -37,10 +37,15 @@ func (h *CompanyHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var company models.Company
-	if err := c.ShouldBindJSON(&company); err != nil {
+	var req models.CreateCompanyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
+	}
+
+	company := models.Company{
+		Name:       req.Name,
+		WebsiteURL: req.WebsiteURL,
 	}
 
 	if err := h.service.Create(userID, &company); err != nil {
@@ -117,7 +122,7 @@ func (h *CompanyHandler) GetAll(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Company ID"
-// @Param company body models.Company true "Company data"
+// @Param company body models.UpdateCompanyRequest true "Company data"
 // @Success 200 {object} models.Company
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -137,13 +142,17 @@ func (h *CompanyHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var company models.Company
-	if err := c.ShouldBindJSON(&company); err != nil {
+	var req models.UpdateCompanyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	company.ID = id
+	company := models.Company{
+		ID:         id,
+		Name:       req.Name,
+		WebsiteURL: req.WebsiteURL,
+	}
 
 	if err := h.service.Update(userID, &company); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())

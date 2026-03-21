@@ -48,6 +48,92 @@ definitions:
       website_url:
         type: string
     type: object
+  models.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateCompanyRequest:
+    properties:
+      name:
+        type: string
+      website_url:
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateExpenseRequest:
+    properties:
+      account_id:
+        type: integer
+      amount_paid:
+        type: number
+      category_id:
+        type: integer
+      current_amount:
+        type: number
+      current_installment:
+        type: integer
+      description:
+        type: string
+      due_date:
+        type: string
+      installment_group_id:
+        type: string
+      is_recurring:
+        type: boolean
+      notes:
+        type: string
+      period_id:
+        type: integer
+      total_installments:
+        type: integer
+    required:
+    - category_id
+    - current_amount
+    - description
+    - period_id
+    type: object
+  models.CreateIncomeRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      is_recurring:
+        type: boolean
+      period_id:
+        type: integer
+      received_at:
+        type: string
+    required:
+    - amount
+    - description
+    - period_id
+    type: object
+  models.CreatePeriodRequest:
+    properties:
+      month_number:
+        type: integer
+      year_number:
+        type: integer
+    required:
+    - year_number
+    type: object
+  models.CreateServiceAccountRequest:
+    properties:
+      account_identifier:
+        type: string
+      alias:
+        type: string
+      company_id:
+        type: integer
+    required:
+    - account_identifier
+    - company_id
+    type: object
   models.Expense:
     properties:
       account_id:
@@ -128,6 +214,92 @@ definitions:
       id:
         type: integer
     type: object
+  models.UpdateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.UpdateCompanyRequest:
+    properties:
+      name:
+        type: string
+      website_url:
+        type: string
+    required:
+    - name
+    type: object
+  models.UpdateExpenseRequest:
+    properties:
+      account_id:
+        type: integer
+      amount_paid:
+        type: number
+      category_id:
+        type: integer
+      current_amount:
+        type: number
+      current_installment:
+        type: integer
+      description:
+        type: string
+      due_date:
+        type: string
+      installment_group_id:
+        type: string
+      is_recurring:
+        type: boolean
+      notes:
+        type: string
+      period_id:
+        type: integer
+      total_installments:
+        type: integer
+    required:
+    - category_id
+    - current_amount
+    - description
+    - period_id
+    type: object
+  models.UpdateIncomeRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      is_recurring:
+        type: boolean
+      period_id:
+        type: integer
+      received_at:
+        type: string
+    required:
+    - amount
+    - description
+    - period_id
+    type: object
+  models.UpdatePeriodRequest:
+    properties:
+      month_number:
+        type: integer
+      year_number:
+        type: integer
+    required:
+    - year_number
+    type: object
+  models.UpdateServiceAccountRequest:
+    properties:
+      account_identifier:
+        type: string
+      alias:
+        type: string
+      company_id:
+        type: integer
+    required:
+    - account_identifier
+    - company_id
+    type: object
   utils.ErrorResponse:
     properties:
       code:
@@ -187,7 +359,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/models.Category'
+          $ref: '#/definitions/models.CreateCategoryRequest'
       produces:
       - application/json
       responses:
@@ -288,7 +460,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/models.Category'
+          $ref: '#/definitions/models.UpdateCategoryRequest'
       produces:
       - application/json
       responses:
@@ -350,7 +522,7 @@ paths:
         name: company
         required: true
         schema:
-          $ref: '#/definitions/models.Company'
+          $ref: '#/definitions/models.CreateCompanyRequest'
       produces:
       - application/json
       responses:
@@ -451,7 +623,7 @@ paths:
         name: company
         required: true
         schema:
-          $ref: '#/definitions/models.Company'
+          $ref: '#/definitions/models.UpdateCompanyRequest'
       produces:
       - application/json
       responses:
@@ -530,7 +702,7 @@ paths:
         name: expense
         required: true
         schema:
-          $ref: '#/definitions/models.Expense'
+          $ref: '#/definitions/models.CreateExpenseRequest'
       produces:
       - application/json
       responses:
@@ -631,7 +803,7 @@ paths:
         name: expense
         required: true
         schema:
-          $ref: '#/definitions/models.Expense'
+          $ref: '#/definitions/models.UpdateExpenseRequest'
       produces:
       - application/json
       responses:
@@ -766,7 +938,7 @@ paths:
         name: income
         required: true
         schema:
-          $ref: '#/definitions/models.Income'
+          $ref: '#/definitions/models.CreateIncomeRequest'
       produces:
       - application/json
       responses:
@@ -867,7 +1039,7 @@ paths:
         name: income
         required: true
         schema:
-          $ref: '#/definitions/models.Income'
+          $ref: '#/definitions/models.UpdateIncomeRequest'
       produces:
       - application/json
       responses:
@@ -929,7 +1101,7 @@ paths:
         name: period
         required: true
         schema:
-          $ref: '#/definitions/models.Period'
+          $ref: '#/definitions/models.CreatePeriodRequest'
       produces:
       - application/json
       responses:
@@ -1030,7 +1202,7 @@ paths:
         name: period
         required: true
         schema:
-          $ref: '#/definitions/models.Period'
+          $ref: '#/definitions/models.UpdatePeriodRequest'
       produces:
       - application/json
       responses:
@@ -1098,7 +1270,7 @@ paths:
         name: service_account
         required: true
         schema:
-          $ref: '#/definitions/models.ServiceAccount'
+          $ref: '#/definitions/models.CreateServiceAccountRequest'
       produces:
       - application/json
       responses:
@@ -1199,7 +1371,7 @@ paths:
         name: service_account
         required: true
         schema:
-          $ref: '#/definitions/models.ServiceAccount'
+          $ref: '#/definitions/models.UpdateServiceAccountRequest'
       produces:
       - application/json
       responses:

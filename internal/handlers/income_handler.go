@@ -24,7 +24,7 @@ func NewIncomeHandler(service services.IncomeService) *IncomeHandler {
 // @Tags incomes
 // @Accept json
 // @Produce json
-// @Param income body models.Income true "Income data"
+// @Param income body models.CreateIncomeRequest true "Income data"
 // @Success 201 {object} models.Income
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -37,10 +37,18 @@ func (h *IncomeHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var income models.Income
-	if err := c.ShouldBindJSON(&income); err != nil {
+	var req models.CreateIncomeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
+	}
+
+	income := models.Income{
+		PeriodID:    req.PeriodID,
+		Description: req.Description,
+		Amount:      req.Amount,
+		IsRecurring: req.IsRecurring,
+		ReceivedAt:  req.ReceivedAt,
 	}
 
 	if err := h.service.Create(userID, &income); err != nil {
@@ -126,7 +134,7 @@ func (h *IncomeHandler) GetAll(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Income ID"
-// @Param income body models.Income true "Income data"
+// @Param income body models.UpdateIncomeRequest true "Income data"
 // @Success 200 {object} models.Income
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 401 {object} utils.ErrorResponse
@@ -146,13 +154,20 @@ func (h *IncomeHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var income models.Income
-	if err := c.ShouldBindJSON(&income); err != nil {
+	var req models.UpdateIncomeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	income.ID = id
+	income := models.Income{
+		ID:          id,
+		PeriodID:    req.PeriodID,
+		Description: req.Description,
+		Amount:      req.Amount,
+		IsRecurring: req.IsRecurring,
+		ReceivedAt:  req.ReceivedAt,
+	}
 
 	if err := h.service.Update(userID, &income); err != nil {
 		utils.ErrorResponseClient(c, http.StatusBadRequest, err.Error())
