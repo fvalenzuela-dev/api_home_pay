@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"database/sql"
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -38,7 +38,7 @@ func TestCategoryRepository_Create_Success(t *testing.T) {
 	}
 
 	mock.ExpectQuery(`INSERT INTO categories`).
-		WithArgs("user123", "Test Category").
+		WithArgs("Test Category").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).
 			AddRow(1, "2024-01-01T00:00:00Z"))
 
@@ -50,19 +50,6 @@ func TestCategoryRepository_Create_Success(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestCategoryRepository_Create_EmptyUserID(t *testing.T) {
-	repo, mock, cleanup := setupCategoryMockDB(t)
-	defer cleanup()
-
-	category := &models.Category{Name: "Test"}
-
-	err := repo.Create("", category)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "user_id is required")
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestCategoryRepository_Create_DatabaseError(t *testing.T) {
 	repo, mock, cleanup := setupCategoryMockDB(t)
 	defer cleanup()
@@ -70,7 +57,7 @@ func TestCategoryRepository_Create_DatabaseError(t *testing.T) {
 	category := &models.Category{Name: "Test"}
 
 	mock.ExpectQuery(`INSERT INTO categories`).
-		WithArgs("user123", "Test").
+		WithArgs("Test").
 		WillReturnError(errors.New("connection failed"))
 
 	err := repo.Create("user123", category)
@@ -85,7 +72,7 @@ func TestCategoryRepository_GetByID_Success(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, name, created_at FROM categories`).
-		WithArgs(1, "user123").
+		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
 			AddRow(1, "Groceries", "2024-01-01T00:00:00Z"))
 
@@ -103,7 +90,7 @@ func TestCategoryRepository_GetByID_NotFound(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, name, created_at FROM categories`).
-		WithArgs(999, "user123").
+		WithArgs(999).
 		WillReturnError(sql.ErrNoRows)
 
 	category, err := repo.GetByID("user123", 999)
@@ -113,24 +100,11 @@ func TestCategoryRepository_GetByID_NotFound(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestCategoryRepository_GetByID_EmptyUserID(t *testing.T) {
-	repo, mock, cleanup := setupCategoryMockDB(t)
-	defer cleanup()
-
-	category, err := repo.GetByID("", 1)
-
-	assert.Error(t, err)
-	assert.Nil(t, category)
-	assert.Contains(t, err.Error(), "user_id is required")
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestCategoryRepository_GetAll_Success(t *testing.T) {
 	repo, mock, cleanup := setupCategoryMockDB(t)
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, name, created_at FROM categories`).
-		WithArgs("user123").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}).
 			AddRow(1, "Groceries", "2024-01-01T00:00:00Z").
 			AddRow(2, "Utilities", "2024-01-02T00:00:00Z"))
@@ -149,7 +123,6 @@ func TestCategoryRepository_GetAll_EmptyResult(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT id, name, created_at FROM categories`).
-		WithArgs("user123").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "created_at"}))
 
 	categories, err := repo.GetAll("user123")
@@ -169,7 +142,7 @@ func TestCategoryRepository_Update_Success(t *testing.T) {
 	}
 
 	mock.ExpectQuery(`UPDATE categories`).
-		WithArgs("Updated Category", 1, "user123").
+		WithArgs("Updated Category", 1).
 		WillReturnRows(sqlmock.NewRows([]string{"created_at"}).
 			AddRow("2024-01-01T00:00:00Z"))
 
@@ -190,7 +163,7 @@ func TestCategoryRepository_Update_NotFound(t *testing.T) {
 	}
 
 	mock.ExpectQuery(`UPDATE categories`).
-		WithArgs("Updated", 999, "user123").
+		WithArgs("Updated", 999).
 		WillReturnError(sql.ErrNoRows)
 
 	err := repo.Update("user123", category)
@@ -205,7 +178,7 @@ func TestCategoryRepository_Delete_Success(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectExec(`DELETE FROM categories`).
-		WithArgs(1, "user123").
+		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err := repo.Delete("user123", 1)
@@ -219,7 +192,7 @@ func TestCategoryRepository_Delete_NotFound(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectExec(`DELETE FROM categories`).
-		WithArgs(999, "user123").
+		WithArgs(999).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err := repo.Delete("user123", 999)
@@ -234,7 +207,7 @@ func TestCategoryRepository_ExistsByName_True(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT EXISTS`).
-		WithArgs("Groceries", "user123").
+		WithArgs("Groceries").
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
 
 	exists, err := repo.ExistsByName("user123", "Groceries")
@@ -249,7 +222,7 @@ func TestCategoryRepository_ExistsByName_False(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectQuery(`SELECT EXISTS`).
-		WithArgs("NonExistent", "user123").
+		WithArgs("NonExistent").
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
 
 	exists, err := repo.ExistsByName("user123", "NonExistent")
