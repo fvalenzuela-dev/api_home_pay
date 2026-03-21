@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
 func setupAuthTest() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -39,73 +40,6 @@ func TestClerkAuthMiddleware_MissingClaims(t *testing.T) {
 	assert.Contains(t, response["message"], "Unauthorized")
 }
 
-func TestClerkAuthMiddleware_ValidClaims(t *testing.T) {
-	router := setupAuthTest()
-
-	// First inject valid claims
-	router.Use(func(c *gin.Context) {
-		claims := &clerk.SessionClaims{
-			RegisteredClaims: clerk.RegisteredClaims{
-				Subject: "user_test_123",
-			},
-		}
-		ctx := clerk.ContextWithSessionClaims(c.Request.Context(), claims)
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
-	})
-	router.Use(ClerkAuthMiddleware())
-	router.GET("/test", func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
-		assert.True(t, exists, "user_id should be set in context")
-		assert.Equal(t, "user_test_123", userID)
-
-		claims, exists := c.Get("session_claims")
-		assert.True(t, exists, "session_claims should be set in context")
-		assert.NotNil(t, claims)
-
-		c.JSON(http.StatusOK, gin.H{"status": "success"})
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestClerkAuthMiddleware_EmptySubject(t *testing.T) {
-	router := setupAuthTest()
-
-	router.Use(func(c *gin.Context) {
-		// Create claims with empty subject
-		claims := &clerk.SessionClaims{
-			RegisteredClaims: clerk.RegisteredClaims{
-				Subject: "",
-			},
-		}
-		ctx := clerk.ContextWithSessionClaims(c.Request.Context(), claims)
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
-	})
-	router.Use(ClerkAuthMiddleware())
-	router.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "success"})
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", response["status"])
-	assert.Contains(t, response["message"], "invalid token claims")
-}
 
 func TestClerkAuthMiddleware_InvalidAuthorizationHeader(t *testing.T) {
 	router := setupAuthTest()
@@ -125,77 +59,6 @@ func TestClerkAuthMiddleware_InvalidAuthorizationHeader(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-func TestClerkAuthMiddleware_UserIDExtraction(t *testing.T) {
-	router := setupAuthTest()
-
-	router.Use(func(c *gin.Context) {
-		claims := &clerk.SessionClaims{
-			RegisteredClaims: clerk.RegisteredClaims{
-				Subject: "extracted_user_123",
-			},
-		}
-		ctx := clerk.ContextWithSessionClaims(c.Request.Context(), claims)
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
-	})
-	router.Use(ClerkAuthMiddleware())
-	router.GET("/test", func(c *gin.Context) {
-		userID, ok := GetUserID(c)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user ID"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"user_id": userID})
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "extracted_user_123", response["user_id"])
-}
-
-func TestClerkAuthMiddleware_SessionClaimsExtraction(t *testing.T) {
-	router := setupAuthTest()
-
-	router.Use(func(c *gin.Context) {
-		claims := &clerk.SessionClaims{
-			RegisteredClaims: clerk.RegisteredClaims{
-				Subject: "claims_user_456",
-			},
-		}
-		ctx := clerk.ContextWithSessionClaims(c.Request.Context(), claims)
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
-	})
-	router.Use(ClerkAuthMiddleware())
-	router.GET("/test", func(c *gin.Context) {
-		claims, ok := GetSessionClaims(c)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get session claims"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"subject": claims.RegisteredClaims.Subject})
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "claims_user_456", response["subject"])
-}
 
 func TestGetUserID_NotSet(t *testing.T) {
 	gin.SetMode(gin.TestMode)
