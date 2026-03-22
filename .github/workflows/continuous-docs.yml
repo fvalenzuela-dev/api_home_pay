@@ -21,7 +21,28 @@ on:
       - "**/*.json"
 
 jobs:
+  check-diff-size:
+    name: 🔍 Check PR diff size
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Check number of changed files
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json files --jq '.files | length')
+          echo "Files changed: $count"
+          if [ "$count" -gt 50 ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
   docs:
+    needs: check-diff-size
+    if: needs.check-diff-size.outputs.skip == 'false'
     permissions:
       contents: write
       pull-requests: write
