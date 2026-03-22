@@ -2,6 +2,8 @@ name: 📚 Continuous Documentation
 
 on:
   pull_request:
+    branches-ignore:
+      - main
     types: [opened, synchronize]
     paths:
       - "**/*.js"
