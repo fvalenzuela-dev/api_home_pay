@@ -1,4 +1,4 @@
-name: Pipeline Backend Go
+name: Central Validation
 
 on:
   push:
@@ -39,7 +39,8 @@ jobs:
           path: coverage/lcov.info
           retention-days: 1
 
-  cobertura:
+  codacy_coverage:
+    name: Codacy Coverage
     needs: [build_and_test]
     uses: fvalenzuela-dev/.github/.github/workflows/codacy-coverage.yml@main
     with:

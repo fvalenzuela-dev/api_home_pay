@@ -1,4 +1,4 @@
-name: Check Source Branch
+name: Version Gate
 on:
   pull_request:
     branches:
