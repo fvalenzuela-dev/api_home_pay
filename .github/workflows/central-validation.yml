@@ -1,4 +1,4 @@
-name: Pipeline Backend Go
+name: Central Validation
 
 on:
   push:
@@ -8,6 +8,14 @@ on:
       - develop
 
 jobs:
+  verificar_version:
+    name: Control de Versiones
+    uses: fvalenzuela-dev/.github/.github/workflows/version-check-new.yml@main
+    with:
+      version_file: "VERSION"
+      base_branch: "main"
+    secrets:
+      GITHUB_TOKEN_CUSTOM: ${{ secrets.GITHUB_TOKEN }}
   build_and_test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -39,7 +47,8 @@ jobs:
           path: coverage/lcov.info
           retention-days: 1
 
-  cobertura:
+  codacy_coverage:
+    name: Codacy Coverage
     needs: [build_and_test]
     uses: fvalenzuela-dev/.github/.github/workflows/codacy-coverage.yml@main
     with:
