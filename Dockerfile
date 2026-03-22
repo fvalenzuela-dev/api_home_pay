@@ -1,37 +1,32 @@
-FROM node:20-alpine AS base
+# Stage 1: Build
+FROM golang:1.25.8-alpine AS builder
 
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache git
+
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY go.mod go.sum ./
+RUN go mod download
 
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o api-home-pay ./cmd/api/main.go
 
-ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# Stage 2: Run
+FROM alpine:3.21 AS runner
 
-FROM base AS runner
+RUN apk add --no-cache ca-certificates tzdata
+
 WORKDIR /app
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+COPY --from=builder /app/api-home-pay .
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+USER appuser
 
-USER nextjs
+EXPOSE 8080
 
-EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV PORT=8080
+ENV GIN_MODE=release
 
-CMD ["node", "server.js"]
+CMD ["./api-home-pay"]
