@@ -5,6 +5,10 @@ on:
     branches-ignore:
       - main
       - develop
+  pull_request:
+    branches:
+      - develop
+      - main
 
 jobs:
   verificar_version:
