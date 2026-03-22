@@ -1,10 +1,11 @@
 name: Central Validation
 
 on:
-  push:
-    branches-ignore:
-      - main
+  pull_request:
+    branches:
       - develop
+      - main
+
 jobs:
   verificar_version:
     name: Control de Versiones
