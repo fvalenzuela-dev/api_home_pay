@@ -7,7 +7,7 @@ on:
 
 jobs:
   verificar_version:
-    name: Control de Versiones
+    name: Version Check
     uses: fvalenzuela-dev/.github/.github/workflows/version-check-new.yml@main
     with:
       version_file: "VERSION"
