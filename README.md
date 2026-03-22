@@ -21,7 +21,7 @@ bun dev
 This project uses GitHub Actions to automate validation, documentation, and deployment processes.
 
 ### Validation & Quality
-- **Central Validation**: Triggered on pull requests targeting the `develop` branch. It validates the `VERSION` file, ensures the application builds, and passes all automated tests.
+- **Central Validation**: Triggered on pull requests targeting the `develop` branch. It validates that the `VERSION` file has been correctly updated.
 - **Continuous Documentation**: Monitors pull requests (except those targeting `main`) to ensure that documentation stays in sync with code changes by analyzing changes in `.js`, `.md`, and `.yml` files.
 
 ### Deployment
