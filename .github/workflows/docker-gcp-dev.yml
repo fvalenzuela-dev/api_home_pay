@@ -1,7 +1,9 @@
 name: GCP Deploy (DEV)
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - develop
 
 jobs:
   build_and_deploy:
@@ -21,4 +23,3 @@ jobs:
       gcp_project_id: ${{ secrets.GCP_PROJECT_ID_DEV }}
       gcp_workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_DEV }}
       gcp_service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
-  
