@@ -2,22 +2,21 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:a
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## CI/CD Pipeline
+## Deployment
 
-This project uses GitHub Actions to automate validation and deployment processes. The workflows have been organized for clarity:
-
-- **PR Guard**: Monitors pull requests to ensure they follow the established branching strategy.
-- **Central Validation**: Triggered on pushes to `main` and `develop`. It performs:
-  - **Version Control**: Validates that the `VERSION` file has been correctly updated.
-  - **Build & Test**: Ensures the application builds and passes all automated tests.
-  - **Codacy Coverage**: Generates and uploads code coverage reports to Codacy.
-- **GCP Deploy (DEV/PROD)**: Manual workflows (workflow_dispatch) to build and deploy Docker images to Google Cloud Platform.
+This project uses GitHub Actions to automate validation and deployment processes. Deployments to the development environment are automatically triggered on pushes to the `develop` branch, while pushes to the `main` branch trigger deployments to the production environment.
 
 ## Versioning
 
