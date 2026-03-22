@@ -4,223 +4,175 @@
 
 **api-home-pay** es una API REST en Go para gestión de gastos e ingresos del hogar.
 
-- **Stack:** Go 1.23+, Gin Gonic, PostgreSQL (Supabase), Clerk SDK v2
+- **Stack:** Go 1.25.8, Gin v1.10.1, PostgreSQL 17 (Supabase), Clerk SDK v2
 - **Dominio:** Finanzas personales - gastos, ingresos, períodos, categorías, cuentas de servicio
-- **Autenticación:** JWT via Clerk - cada usuario solo ve sus datos
-- **Documentación:** Swagger/OpenAPI
+- **Autenticación:** JWT via Clerk — extracción manual con `jwt.Verify` + Bearer token
+- **Logging:** `log/slog` con JSON handler a stdout (capturado por GCP Cloud Logging en producción)
+- **Documentación:** Swagger/OpenAPI (swaggo), endpoint `GET /swagger/index.html`
+- **Despliegue:** GCP Cloud Run via GitHub Actions
 
 ## Entidades del Dominio
 
-| Entidad | Descripción | Relaciones |
-|---------|-------------|------------|
-| `periods` | Mes/año de referencia | Tiene expenses e incomes |
-| `categories` | Categorías de gastos | Agrupa expenses |
-| `companies` | Compañías proveedoras | Tiene service_accounts |
-| `service_accounts` | Cuentas de servicio (ej: "Luz - Casa") | Pertenece a company, usada por expenses |
-| `expenses` | Gastos/cuentas por pagar | Tiene category, period, service_account |
-| `incomes` | Ingresos | Tiene period |
+| Entidad | Descripción | user_id | Relaciones |
+|---------|-------------|---------|------------|
+| `periods` | Mes/año de referencia | ❌ compartido | Tiene expenses e incomes |
+| `categories` | Categorías de gastos | ❌ compartido | Agrupa expenses |
+| `companies` | Compañías proveedoras | ❌ compartido | Tiene service_accounts |
+| `service_accounts` | Cuentas de servicio (ej: "Luz - Casa") | ✅ por usuario | Pertenece a company, usada por expenses |
+| `expenses` | Gastos/cuentas por pagar | ✅ por usuario | Tiene category, period, service_account |
+| `incomes` | Ingresos | ✅ por usuario | Tiene period |
 
-## Comandos Disponibles
+> **Importante:** `categories`, `periods` y `companies` son catálogos compartidos — NO filtrar por `user_id` en sus queries.
 
-### Desarrollo
+## Base de Datos
 
-```bash
-# Iniciar servidor en modo desarrollo
-/dev
-# o
-/run
+- **Schema:** `finances` (no `public`) — requiere `SET search_path TO finances` al conectar
+- **Driver:** `github.com/lib/pq`
+- **Queries:** parametrizadas SIEMPRE (`$1`, `$2`, ...)
+- **Conexión:** ver `internal/repository/db.go` — aplica search_path después del ping
 
-# Ejecutar tests
-/test
+## Autenticación (Clerk)
 
-# Verificar estilo de código (fmt + vet)
-/lint
+```go
+// Middleware extrae Bearer token y valida con jwt.Verify
+// user_id queda en el contexto Gin:
+userID, ok := c.Get("user_id")
 
-# Compilar para producción
-/build
+// NUNCA usar:
+// clerk.SessionClaimsFromContext() — obsoleto en este proyecto
+// clerk.UserIDFromContext()        — obsoleto en este proyecto
 ```
 
-### Estructura del Proyecto
+- Tokens Clerk expiran en 60 segundos por diseño — el frontend maneja el refresh automático
+- La seguridad Swagger se llama `BearerAuth` (sin espacios) — debe coincidir en definición y endpoints
 
-```bash
-# Crear estructura base del proyecto
-/init-structure
+## Estructura del Proyecto
 
-# Agregar nuevo endpoint CRUD completo
-/add-crud <entidad>
-# Ejemplo: /add-crud expense
-```
-
-## Convenciones de Go (OBLIGATORIAS)
-
-### Estructura de Paquetes
 ```
 .
-├── cmd/api/           # Entry point
+├── cmd/api/           # Entry point (main.go)
 ├── internal/
 │   ├── config/        # Configuración (env vars)
-│   ├── handlers/      # HTTP handlers (Gin)
-│   ├── middleware/    # Clerk JWT, logging, etc.
-│   ├── models/        # Structs de entidades
-│   ├── repository/    # Acceso a DB (Supabase/PostgreSQL)
-│   ├── services/      # Lógica de negocio
-│   └── utils/         # Helpers
-├── docs/              # Swagger/OpenAPI
-└── tests/             # Tests de integración
+│   ├── handlers/      # HTTP handlers (Gin) + DTOs de request
+│   ├── logger/        # Inicialización de slog JSON
+│   ├── middleware/    # ClerkAuth, Logging, Response
+│   ├── models/        # Structs de entidades + DTOs (dto.go)
+│   ├── repository/    # Acceso a DB (interfaces + implementaciones)
+│   ├── services/      # Lógica de negocio (interfaces + implementaciones)
+│   └── utils/         # Helpers (response helpers)
+├── docs/              # Swagger/OpenAPI (generado con swag init)
+└── .github/workflows/ # CI/CD (central-validation, docker-gcp-dev/prod, continuous-docs)
 ```
 
-### Reglas de Código
+## Convenciones de Código
 
-1. **Nombres:**
-   - Tipos exportados: `PascalCase` (ej: `ExpenseHandler`)
-   - Funciones privadas: `camelCase` (ej: `validateExpense`)
-   - Archivos: `snake_case.go` (ej: `expense_handler.go`)
-   - Paquetes: lowercase, cortos (ej: `handlers`, no `http_handlers`)
+### Nombres
+- Tipos exportados: `PascalCase` (ej: `ExpenseHandler`)
+- Funciones privadas: `camelCase` (ej: `validateExpense`)
+- Archivos: `snake_case.go` (ej: `expense_handler.go`)
+- Paquetes: lowercase, cortos (ej: `handlers`)
 
-2. **Interfaces:**
-   - Repositorios DEBEN tener interfaces (para testing)
-   - Ejemplo: `type ExpenseRepository interface { ... }`
+### DTOs de Request
+Los handlers usan DTOs separados para input, definidos en `internal/models/dto.go`:
 
-3. **Errores:**
-   - Usar `fmt.Errorf("contexto: %w", err)` para wrap errors
-   - NUNCA retornar errores crudos al cliente
-   - Respuesta estándar:
-     ```go
-     {
-       "status": "error",
-       "message": "descripción",
-       "code": 400
-     }
-     ```
+```go
+// Usar DTOs con binding:"required" — Gin rechaza automáticamente si faltan campos
+type CreateExpenseRequest struct {
+    CategoryID       int     `json:"category_id" binding:"required"`
+    PeriodID         int     `json:"period_id" binding:"required"`
+    Description      string  `json:"description" binding:"required"`
+    CurrentAmount    float64 `json:"current_amount" binding:"required"`
+}
+```
 
-4. **Handlers Gin:**
-   - Un archivo por entidad (ej: `expense_handler.go`)
-   - Funciones: `func(c *gin.Context)`
-   - Extraer user_id: `userID, _ := c.Get("user_id")`
+### Errores y Logging
 
-5. **Middleware Clerk:**
-   - Usar `clerk.WithHeaderAuthorization()` en rutas protegidas
-   - Extraer user_id: `clerk.UserIDFromContext(c.Request.Context())`
+```go
+// En repositorios — loguear antes de retornar error:
+slog.Error("db error: failed to create expense", "error", err)
+return fmt.Errorf("failed to create expense: %w", err)
 
-6. **Base de Datos:**
-   - Usar `database/sql` con PostgreSQL driver
-   - Queries parametrizadas SIEMPRE (prepared statements)
+// En handlers — loguear según severidad:
+slog.Error("[ExpenseHandler.Create] error", "error", err)  // 500
+slog.Warn("[ExpenseHandler.Create] not found", "id", id)   // 404
+```
 
 ### Ejemplo de Handler
 
 ```go
-package handlers
-
-import (
-    "net/http"
-    "github.com/gin-gonic/gin"
-)
-
-type ExpenseHandler struct {
-    service ExpenseService
-}
-
-func NewExpenseHandler(s ExpenseService) *ExpenseHandler {
-    return &ExpenseHandler{service: s}
-}
-
-func (h *ExpenseHandler) List(c *gin.Context) {
-    userID, _ := c.Get("user_id")
-    
-    expenses, err := h.service.ListByUser(userID.(string))
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "status": "error",
-            "message": "Error al obtener gastos",
-            "code": 500,
-        })
+func (h *ExpenseHandler) Create(c *gin.Context) {
+    userID, ok := c.Get("user_id")
+    if !ok {
+        utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized")
         return
     }
-    
-    c.JSON(http.StatusOK, gin.H{
-        "status": "success",
-        "data": expenses,
-    })
+
+    var req models.CreateExpenseRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+        return
+    }
+
+    expense := &models.Expense{...} // mapear desde req
+    if err := h.service.Create(userID.(string), expense); err != nil {
+        slog.Error("[ExpenseHandler.Create] error", "error", err)
+        utils.ErrorResponse(c, http.StatusInternalServerError, "internal server error")
+        return
+    }
+
+    utils.SuccessResponse(c, expense)
 }
 ```
 
-## Workflows Comunes
+## CI/CD
 
-### 1. Agregar un Nuevo Endpoint
+### Workflows Activos
 
-```
-1. Definir route en internal/routes/
-2. Crear handler en internal/handlers/
-3. Implementar service en internal/services/
-4. Agregar método en repository
-5. Agregar tests
-6. Actualizar docs/swagger
-```
+| Workflow | Trigger | Descripción |
+|----------|---------|-------------|
+| `central-validation.yml` | PR / push | Tests Go + cobertura (lcov via gcov2lcov) |
+| `docker-gcp-dev.yml` | Push a develop | Build y deploy a Cloud Run DEV |
+| `docker-gcp-prod.yml` | Push a main | Build y deploy a Cloud Run PROD |
+| `continuous-docs.yml` | PR con código | Análisis de documentación via Gemini (salta si PR > 50 archivos) |
 
-### 2. Agregar una Nueva Entidad
+### Regenerar Swagger
 
-```
-1. Crear model en internal/models/
-2. Crear repository + interface
-3. Crear service + interface
-4. Crear handler
-5. Crear routes
-6. Agregar tests
+```bash
+swag init -g cmd/api/main.go
 ```
 
-### 3. Flujo de Autenticación
-
-```
-1. Cliente envía Bearer token de Clerk
-2. Middleware valida JWT con Clerk SDK
-3. Extrae user_id del contexto
-4. Todos los queries filtran por user_id
-5. Nunca confiar en user_id del body
-```
-
-## Variables de Entorno Requeridas
-
-```env
-PORT=8080
-CLERK_SECRET_KEY=sk_test_...
-DATABASE_URL=postgresql://...
-GIN_MODE=release  # o debug en dev
-```
+Siempre correr después de cambiar comentarios `// @...` en handlers o main.go.
 
 ## Testing
 
 - Tests unitarios: `*_test.go` junto al código
-- Tests de integración: carpeta `/tests/`
-- Usar testify/assert para assertions
-- Mockear repositorios con interfaces
+- Handlers: usar `testify/mock` con interfaces de servicio
+- Repositorios: usar `go-sqlmock` para simular DB
+- **No mockear** validaciones de binding — `c.ShouldBindJSON` rechaza antes de llamar al servicio
 
-## Documentación API
+## Variables de Entorno
 
-- Swagger docs en `/docs/swagger.yaml`
-- Endpoint: `GET /swagger/index.html`
-- Usar swag CLI para generar docs desde comentarios
+```env
+PORT=8080
+CLERK_SECRET_KEY=sk_test_...
+DATABASE_URL=postgresql://...?search_path=finances
+GIN_MODE=release  # o debug en dev
+```
 
-## Reglas de Seguridad Críticas
+## Reglas de Seguridad
 
 1. **NUNCA** hardcodear secretos
 2. **SIEMPRE** validar JWT en endpoints protegidos
-3. **SIEMPRE** filtrar queries por user_id
+3. Filtrar por `user_id` solo en entidades que lo tienen (expenses, incomes, service_accounts)
 4. **NUNCA** exponer detalles de errores de DB al cliente
-5. Usar prepared statements (SQL injection prevention)
-6. Validar todos los inputs (usar go-playground/validator)
+5. Usar prepared statements (prevención SQL injection)
+6. Validar inputs con `binding:"required"` en DTOs
 
-## Recursos Útiles
+## Recursos
 
-- [Go by Example](https://gobyexample.com/)
 - [Gin Documentation](https://gin-gonic.com/docs/)
-- [Clerk Go SDK](https://github.com/clerk/clerk-sdk-go)
-- [PostgreSQL Driver](https://github.com/lib/pq)
-- [Testify](https://github.com/stretchr/testify)
-
-## Notas de Desarrollo
-
-- Go no tiene clases, usa structs + métodos
-- Composición sobre herencia
-- Errores explícitos, no excepciones
-- Goroutines para concurrencia (cuando sea necesario)
-- Defer para cleanup de recursos
+- [Clerk Go SDK v2](https://github.com/clerk/clerk-sdk-go)
+- [swaggo/swag](https://github.com/swaggo/swag)
+- [lib/pq](https://github.com/lib/pq)
+- [testify](https://github.com/stretchr/testify)
+- [go-sqlmock](https://github.com/DATA-DOG/go-sqlmock)
