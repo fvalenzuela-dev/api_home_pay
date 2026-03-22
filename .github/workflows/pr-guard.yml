@@ -1,4 +1,4 @@
-name: Check Source Branch
+name: PR Guard
 on:
   pull_request:
     branches:
