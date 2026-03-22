@@ -4,7 +4,7 @@ This is a Next.js project.
 
 ## Getting Started
 
-First, run the development server:
+First, run the development server:a
 
 ```bash
 npm run dev
