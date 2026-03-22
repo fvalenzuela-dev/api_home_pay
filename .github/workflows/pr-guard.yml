@@ -1,4 +1,4 @@
-name: Version Gate
+name: PR Guard
 on:
   pull_request:
     branches:

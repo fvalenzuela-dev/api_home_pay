@@ -8,6 +8,14 @@ on:
       - develop
 
 jobs:
+  verificar_version:
+    name: Control de Versiones
+    uses: fvalenzuela-dev/.github/.github/workflows/version-check-new.yml@main
+    with:
+      version_file: "VERSION"
+      base_branch: "main"
+    secrets:
+      GITHUB_TOKEN_CUSTOM: ${{ secrets.GITHUB_TOKEN }}
   build_and_test:
     name: Build & Test
     runs-on: ubuntu-latest
