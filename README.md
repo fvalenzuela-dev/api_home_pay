@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Project README
+
+This is a Next.js project.
 
 ## Getting Started
 
@@ -14,9 +16,17 @@ pnpm dev
 bun dev
 ```
 
-## Deployment
+## CI/CD Pipeline
 
-This project uses GitHub Actions to automate validation and deployment processes. Deployments to the development environment are automatically triggered on pushes to the `develop` branch, while pushes to the `main` branch trigger deployments to the production environment.
+This project uses GitHub Actions to automate validation, documentation, and deployment processes.
+
+### Validation & Quality
+- **Central Validation**: Triggered on pushes to feature branches (including `qa`) and pull requests targeting `main` or `develop`. It validates the `VERSION` file, ensures the application builds, and passes all automated tests.
+- **Continuous Documentation**: Monitors pull requests (except those targeting `main`) to ensure that documentation stays in sync with code changes by analyzing changes in `.js`, `.md`, and `.yml` files.
+
+### Deployment
+- **GCP Deploy (DEV)**: Automatically triggered on pushes to the `develop` branch. Deploys the Docker image to the development environment on Google Cloud Platform.
+- **GCP Deploy (PROD)**: Automatically triggered on pushes to the `main` branch. Deploys the Docker image to the production environment on Google Cloud Platform.
 
 ## Versioning
 
