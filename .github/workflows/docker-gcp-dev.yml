@@ -1,9 +1,7 @@
 name: GCP Deploy (DEV)
 
 on:
-  push:
-    branches:
-      - develop
+  workflow_dispatch:
 
 jobs:
   build_and_deploy:
