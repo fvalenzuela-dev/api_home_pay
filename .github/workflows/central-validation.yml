@@ -1,15 +1,13 @@
 name: Central Validation
 
 on:
-  push:
-    branches-ignore:
-      - main
-      - qa
+  pull_request:
+    branches:
       - develop
 
 jobs:
   verificar_version:
-    name: Control de Versiones
+    name: Version Check
     uses: fvalenzuela-dev/.github/.github/workflows/version-check-new.yml@main
     with:
       version_file: "VERSION"

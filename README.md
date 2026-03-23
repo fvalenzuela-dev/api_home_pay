@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Project README
+
+This is a Next.js project.
 
 ## Getting Started
 
@@ -6,19 +8,26 @@ First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
 ## CI/CD Pipeline
 
-This project uses GitHub Actions to automate validation and deployment processes. The workflows have been organized for clarity:
+This project uses GitHub Actions to automate validation, documentation, and deployment processes.
 
-- **PR Guard**: Monitors pull requests to ensure they follow the established branching strategy.
-- **Central Validation**: Triggered on pushes to `main` and `develop`. It performs:
-  - **Version Control**: Validates that the `VERSION` file has been correctly updated.
-  - **Build & Test**: Ensures the application builds and passes all automated tests.
-  - **Codacy Coverage**: Generates and uploads code coverage reports to Codacy.
-- **GCP Deploy (DEV/PROD)**: Manual workflows (workflow_dispatch) to build and deploy Docker images to Google Cloud Platform.
+### Validation & Quality
+- **Central Validation**: Triggered on pull requests targeting the `develop` branch. It validates that the `VERSION` file has been correctly updated.
+- **Continuous Documentation**: Monitors pull requests (except those targeting `main`) to ensure that documentation stays in sync with code changes by analyzing changes in `.js`, `.md`, and `.yml` files.
+
+### Deployment
+- **GCP Deploy (DEV)**: Automatically triggered on pushes to the `develop` branch. Deploys the Docker image to the development environment on Google Cloud Platform.
+- **GCP Deploy (PROD)**: Automatically triggered on pushes to the `main` branch. Deploys the Docker image to the production environment on Google Cloud Platform.
 
 ## Versioning
 
-The project version is managed in the `VERSION` file at the root. The CI pipeline enforces a check to ensure that the version is updated during development and pull requests.
+The project version is managed in the `VERSION` file at the root. The CI pipeline enforces a check to ensure that the version is updated during development.

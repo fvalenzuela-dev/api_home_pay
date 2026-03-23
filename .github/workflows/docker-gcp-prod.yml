@@ -1,7 +1,9 @@
 name: GCP Deploy (PROD)
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build_and_deploy:
