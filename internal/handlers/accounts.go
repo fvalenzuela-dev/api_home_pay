@@ -17,6 +17,17 @@ func NewAccountHandler(svc service.AccountService) *AccountHandler {
 	return &AccountHandler{svc: svc}
 }
 
+// List godoc
+// @Summary     Listar cuentas
+// @Description Retorna todas las cuentas activas de una empresa
+// @Tags        accounts
+// @Security    BearerAuth
+// @Produce     json
+// @Param       companyID  path      string  true  "Company ID"
+// @Success     200        {object}  map[string][]models.Account
+// @Failure     401        {object}  map[string]string
+// @Failure     500        {object}  map[string]string
+// @Router      /companies/{companyID}/accounts [get]
 func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	companyID := chi.URLParam(r, "companyID")
@@ -31,6 +42,19 @@ func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, accounts)
 }
 
+// Create godoc
+// @Summary     Crear cuenta
+// @Description Crea una nueva cuenta dentro de una empresa
+// @Tags        accounts
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       companyID  path      string                      true  "Company ID"
+// @Param       body       body      models.CreateAccountRequest  true  "Datos de la cuenta"
+// @Success     201        {object}  map[string]models.Account
+// @Failure     400        {object}  map[string]string
+// @Failure     401        {object}  map[string]string
+// @Router      /companies/{companyID}/accounts [post]
 func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	companyID := chi.URLParam(r, "companyID")
@@ -47,6 +71,21 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, account)
 }
 
+// Update godoc
+// @Summary     Editar cuenta
+// @Description Actualiza nombre, billing_day o auto_accumulate de una cuenta
+// @Tags        accounts
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       companyID  path      string                      true  "Company ID"
+// @Param       id         path      string                      true  "Account ID"
+// @Param       body       body      models.UpdateAccountRequest  true  "Campos a actualizar"
+// @Success     200        {object}  map[string]models.Account
+// @Failure     400        {object}  map[string]string
+// @Failure     401        {object}  map[string]string
+// @Failure     404        {object}  map[string]string
+// @Router      /companies/{companyID}/accounts/{id} [put]
 func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")
@@ -67,6 +106,19 @@ func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, account)
 }
 
+// Delete godoc
+// @Summary     Eliminar cuenta
+// @Description Soft delete de la cuenta. Propaga a sus facturas activas.
+// @Tags        accounts
+// @Security    BearerAuth
+// @Produce     json
+// @Param       companyID  path  string  true  "Company ID"
+// @Param       id         path  string  true  "Account ID"
+// @Success     204
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /companies/{companyID}/accounts/{id} [delete]
 func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")

@@ -18,6 +18,19 @@ func NewExpenseHandler(svc service.ExpenseService) *ExpenseHandler {
 	return &ExpenseHandler{svc: svc}
 }
 
+// List godoc
+// @Summary     Listar gastos
+// @Description Retorna gastos del usuario. Soporta filtros opcionales por mes/año y categoría.
+// @Tags        expenses
+// @Security    BearerAuth
+// @Produce     json
+// @Param       month     query     int     false  "Mes (1-12)"
+// @Param       year      query     int     false  "Año (ej: 2026)"
+// @Param       category  query     string  false  "Categoría"
+// @Success     200       {object}  map[string][]models.Expense
+// @Failure     401       {object}  map[string]string
+// @Failure     500       {object}  map[string]string
+// @Router      /expenses [get]
 func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 
@@ -47,6 +60,18 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, expenses)
 }
 
+// Create godoc
+// @Summary     Registrar gasto
+// @Description Registra un nuevo gasto variable para el usuario autenticado
+// @Tags        expenses
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       body  body      models.CreateExpenseRequest  true  "Datos del gasto"
+// @Success     201   {object}  map[string]models.Expense
+// @Failure     400   {object}  map[string]string
+// @Failure     401   {object}  map[string]string
+// @Router      /expenses [post]
 func (h *ExpenseHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	var req models.CreateExpenseRequest
@@ -62,6 +87,20 @@ func (h *ExpenseHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, expense)
 }
 
+// Update godoc
+// @Summary     Editar gasto
+// @Description Actualiza descripción, monto, categoría o fecha de un gasto
+// @Tags        expenses
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       id    path      string                      true  "Expense ID"
+// @Param       body  body      models.UpdateExpenseRequest  true  "Campos a actualizar"
+// @Success     200   {object}  map[string]models.Expense
+// @Failure     400   {object}  map[string]string
+// @Failure     401   {object}  map[string]string
+// @Failure     404   {object}  map[string]string
+// @Router      /expenses/{id} [put]
 func (h *ExpenseHandler) Update(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")
@@ -82,6 +121,18 @@ func (h *ExpenseHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, expense)
 }
 
+// Delete godoc
+// @Summary     Eliminar gasto
+// @Description Soft delete de un gasto
+// @Tags        expenses
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id   path  string  true  "Expense ID"
+// @Success     204
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /expenses/{id} [delete]
 func (h *ExpenseHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")

@@ -97,3 +97,15 @@ internal/
   handlers/              — handlers HTTP
   router/                — rutas chi
 ```
+
+## Documentación (Swagger)
+
+La UI interactiva está disponible en `http://localhost:8080/docs/index.html` cuando el servidor está corriendo.
+
+Para regenerar los docs después de modificar handlers o modelos:
+
+```bash
+~/go/bin/swag init -g cmd/api/main.go -o docs/
+```
+
+> Los archivos `docs/docs.go`, `docs/swagger.json` y `docs/swagger.yaml` son generados automáticamente — no editar a mano.

@@ -17,6 +17,16 @@ func NewCompanyHandler(svc service.CompanyService) *CompanyHandler {
 	return &CompanyHandler{svc: svc}
 }
 
+// List godoc
+// @Summary     Listar empresas
+// @Description Retorna todas las empresas activas del usuario autenticado
+// @Tags        companies
+// @Security    BearerAuth
+// @Produce     json
+// @Success     200  {object}  map[string][]models.Company
+// @Failure     401  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /companies [get]
 func (h *CompanyHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	companies, err := h.svc.GetAll(r.Context(), authUserID)
@@ -30,6 +40,18 @@ func (h *CompanyHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, companies)
 }
 
+// Create godoc
+// @Summary     Crear empresa
+// @Description Crea una nueva empresa para el usuario autenticado
+// @Tags        companies
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       body  body      models.CreateCompanyRequest  true  "Datos de la empresa"
+// @Success     201   {object}  map[string]models.Company
+// @Failure     400   {object}  map[string]string
+// @Failure     401   {object}  map[string]string
+// @Router      /companies [post]
 func (h *CompanyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	var req models.CreateCompanyRequest
@@ -45,6 +67,20 @@ func (h *CompanyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, company)
 }
 
+// Update godoc
+// @Summary     Editar empresa
+// @Description Actualiza nombre o categoría de una empresa
+// @Tags        companies
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       id    path      string                       true  "Company ID"
+// @Param       body  body      models.UpdateCompanyRequest  true  "Campos a actualizar"
+// @Success     200   {object}  map[string]models.Company
+// @Failure     400   {object}  map[string]string
+// @Failure     401   {object}  map[string]string
+// @Failure     404   {object}  map[string]string
+// @Router      /companies/{id} [put]
 func (h *CompanyHandler) Update(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")
@@ -65,6 +101,18 @@ func (h *CompanyHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, company)
 }
 
+// Delete godoc
+// @Summary     Eliminar empresa
+// @Description Soft delete de la empresa. Propaga a sus cuentas y facturas activas.
+// @Tags        companies
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id   path  string  true  "Company ID"
+// @Success     204
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /companies/{id} [delete]
 func (h *CompanyHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")

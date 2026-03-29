@@ -1,3 +1,12 @@
+// @title           HomePay API
+// @version         1.0
+// @description     Backend REST para gestión de finanzas personales HomePay. Todos los endpoints protegidos requieren un JWT de Clerk en el header Authorization.
+// @host            localhost:8080
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     JWT de Clerk. Formato: "Bearer <token>"
 package main
 
 import (
@@ -13,6 +22,7 @@ import (
 	"github.com/homepay/api/internal/repository"
 	"github.com/homepay/api/internal/router"
 	"github.com/homepay/api/internal/service"
+	_ "github.com/homepay/api/docs"
 )
 
 func main() {

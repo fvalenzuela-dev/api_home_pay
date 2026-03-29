@@ -17,6 +17,16 @@ func NewInstallmentHandler(svc service.InstallmentService) *InstallmentHandler {
 	return &InstallmentHandler{svc: svc}
 }
 
+// List godoc
+// @Summary     Listar planes de cuotas
+// @Description Retorna todos los planes activos del usuario con sus pagos individuales
+// @Tags        installments
+// @Security    BearerAuth
+// @Produce     json
+// @Success     200  {object}  map[string][]models.InstallmentPlanWithPayments
+// @Failure     401  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /installments [get]
 func (h *InstallmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	plans, err := h.svc.GetAll(r.Context(), authUserID)
@@ -30,6 +40,18 @@ func (h *InstallmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, plans)
 }
 
+// Create godoc
+// @Summary     Crear plan de cuotas
+// @Description Crea un plan y genera automáticamente todos los installment_payments con sus due_dates
+// @Tags        installments
+// @Security    BearerAuth
+// @Accept      json
+// @Produce     json
+// @Param       body  body      models.CreateInstallmentRequest  true  "Datos del plan"
+// @Success     201   {object}  map[string]models.InstallmentPlanWithPayments
+// @Failure     400   {object}  map[string]string
+// @Failure     401   {object}  map[string]string
+// @Router      /installments [post]
 func (h *InstallmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	var req models.CreateInstallmentRequest
@@ -45,6 +67,19 @@ func (h *InstallmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, plan)
 }
 
+// PayInstallment godoc
+// @Summary     Pagar cuota
+// @Description Marca una cuota como pagada. Incrementa installments_paid en el plan. Si se completan todas, is_completed=true.
+// @Tags        installments
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id         path      string  true  "Plan ID"
+// @Param       paymentID  path      string  true  "Payment ID"
+// @Success     200        {object}  map[string]models.InstallmentPayment
+// @Failure     401        {object}  map[string]string
+// @Failure     404        {object}  map[string]string
+// @Failure     500        {object}  map[string]string
+// @Router      /installments/{id}/payments/{paymentID} [put]
 func (h *InstallmentHandler) PayInstallment(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	planID := chi.URLParam(r, "id")
@@ -61,6 +96,18 @@ func (h *InstallmentHandler) PayInstallment(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, payment)
 }
 
+// Delete godoc
+// @Summary     Eliminar plan de cuotas
+// @Description Soft delete del plan y sus pagos
+// @Tags        installments
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id   path  string  true  "Plan ID"
+// @Success     204
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /installments/{id} [delete]
 func (h *InstallmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")

@@ -7,6 +7,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/homepay/api/internal/handlers"
 	"github.com/homepay/api/internal/middleware"
+	httpswagger "github.com/swaggo/http-swagger"
 )
 
 func New(
@@ -21,6 +22,11 @@ func New(
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
+
+	// Swagger UI — público
+	r.Get("/docs/*", httpswagger.Handler(
+		httpswagger.URL("/docs/doc.json"),
+	))
 
 	// Rutas públicas
 	r.Post("/webhooks/clerk", webhook.Handle)

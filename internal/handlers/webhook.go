@@ -11,8 +11,8 @@ import (
 )
 
 type WebhookHandler struct {
-	users             repository.UserRepository
-	webhookSecret     string
+	users         repository.UserRepository
+	webhookSecret string
 }
 
 func NewWebhookHandler(users repository.UserRepository, webhookSecret string) *WebhookHandler {
@@ -33,6 +33,17 @@ type clerkUserData struct {
 	} `json:"email_addresses"`
 }
 
+// Handle godoc
+// @Summary     Webhook de Clerk
+// @Description Recibe eventos de Clerk (user.created, user.updated, user.deleted). Verifica la firma con svix.
+// @Tags        webhook
+// @Accept      json
+// @Produce     json
+// @Success     200
+// @Failure     400  {object}  map[string]string
+// @Failure     401  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /webhooks/clerk [post]
 func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {

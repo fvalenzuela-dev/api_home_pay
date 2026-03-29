@@ -17,6 +17,18 @@ func NewDashboardHandler(svc service.DashboardService) *DashboardHandler {
 	return &DashboardHandler{svc: svc}
 }
 
+// Get godoc
+// @Summary     Resumen financiero mensual
+// @Description Retorna totales de facturas, gastos agrupados por categoría y cuotas del mes. Si no se pasan parámetros, usa el mes actual.
+// @Tags        dashboard
+// @Security    BearerAuth
+// @Produce     json
+// @Param       month  query     int  false  "Mes (1-12)"
+// @Param       year   query     int  false  "Año (ej: 2026)"
+// @Success     200    {object}  map[string]service.DashboardSummary
+// @Failure     401    {object}  map[string]string
+// @Failure     500    {object}  map[string]string
+// @Router      /dashboard [get]
 func (h *DashboardHandler) Get(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 
