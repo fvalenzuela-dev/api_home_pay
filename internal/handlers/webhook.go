@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/homepay/api/internal/models"
 	"github.com/homepay/api/internal/repository"
@@ -51,7 +52,7 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wh, err := svix.NewWebhook(h.webhookSecret)
+	wh, err := svix.NewWebhook(strings.TrimPrefix(h.webhookSecret, "whsec_"))
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
