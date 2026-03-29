@@ -31,7 +31,7 @@ func (h *CompanyHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	companies, err := h.svc.GetAll(r.Context(), authUserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	if companies == nil {
@@ -91,7 +91,7 @@ func (h *CompanyHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	company, err := h.svc.Update(r.Context(), id, authUserID, &req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	if company == nil {
@@ -121,7 +121,7 @@ func (h *CompanyHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

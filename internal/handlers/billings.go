@@ -33,7 +33,7 @@ func (h *BillingHandler) List(w http.ResponseWriter, r *http.Request) {
 	accountID := chi.URLParam(r, "accountID")
 	billings, err := h.svc.GetAllByAccount(r.Context(), accountID, authUserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	if billings == nil {
@@ -105,7 +105,7 @@ func (h *BillingHandler) Update(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, billing)

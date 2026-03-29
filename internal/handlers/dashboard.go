@@ -49,7 +49,7 @@ func (h *DashboardHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	summary, err := h.svc.GetSummary(r.Context(), authUserID, int(month), year)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)

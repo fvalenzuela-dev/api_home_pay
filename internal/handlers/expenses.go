@@ -51,7 +51,7 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	expenses, err := h.svc.GetAll(r.Context(), authUserID, filters)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	if expenses == nil {
@@ -115,7 +115,7 @@ func (h *ExpenseHandler) Update(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, expense)
@@ -141,7 +141,7 @@ func (h *ExpenseHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

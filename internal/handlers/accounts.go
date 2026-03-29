@@ -33,7 +33,7 @@ func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	companyID := chi.URLParam(r, "companyID")
 	accounts, err := h.svc.GetAllByCompany(r.Context(), companyID, authUserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	if accounts == nil {
@@ -127,7 +127,7 @@ func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -53,7 +53,7 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	wh, err := svix.NewWebhook(h.webhookSecret)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			FullName:   data.FirstName + " " + data.LastName,
 		}
 		if err := h.users.Upsert(r.Context(), user); err != nil {
-			writeError(w, http.StatusInternalServerError, "error interno")
+			writeInternalError(w, r, err)
 			return
 		}
 
@@ -98,7 +98,7 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := h.users.SoftDelete(r.Context(), data.ID); err != nil {
-			writeError(w, http.StatusInternalServerError, "error interno")
+			writeInternalError(w, r, err)
 			return
 		}
 	}

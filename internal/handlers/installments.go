@@ -31,7 +31,7 @@ func (h *InstallmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	plans, err := h.svc.GetAll(r.Context(), authUserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	if plans == nil {
@@ -90,7 +90,7 @@ func (h *InstallmentHandler) PayInstallment(w http.ResponseWriter, r *http.Reque
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, payment)
@@ -116,7 +116,7 @@ func (h *InstallmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "no encontrado")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "error interno")
+		writeInternalError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
