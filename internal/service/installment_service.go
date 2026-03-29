@@ -58,10 +58,10 @@ func (s *installmentService) Create(ctx context.Context, authUserID string, req 
 	payments := make([]models.InstallmentPayment, req.TotalInstallments)
 	for i := range payments {
 		payments[i] = models.InstallmentPayment{
-			PlanID:  plan.ID,
-			Number:  i + 1,
-			Amount:  installmentAmount,
-			DueDate: startDate.AddDate(0, i, 0),
+			PlanID:            plan.ID,
+			InstallmentNumber: i + 1,
+			Amount:            installmentAmount,
+			DueDate:           startDate.AddDate(0, i, 0),
 		}
 	}
 

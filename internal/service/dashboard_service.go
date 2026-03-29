@@ -12,15 +12,15 @@ type DashboardService interface {
 }
 
 type DashboardSummary struct {
-	Month               int                        `json:"month"`
-	Year                int                        `json:"year"`
-	TotalBilled         float64                    `json:"total_billed"`
-	TotalPaid           float64                    `json:"total_paid"`
-	TotalPending        float64                    `json:"total_pending"`
-	ExpensesByCategory  map[string]float64         `json:"expenses_by_category"`
-	TotalExpenses       float64                    `json:"total_expenses"`
-	TotalInstallments   float64                    `json:"total_installments"`
-	PendingCommitments  []PendingCommitment        `json:"pending_commitments"`
+	Month              int                `json:"month"`
+	Year               int                `json:"year"`
+	TotalBilled        float64            `json:"total_billed"`
+	TotalPaid          float64            `json:"total_paid"`
+	TotalPending       float64            `json:"total_pending"`
+	ExpensesByCategory map[string]float64 `json:"expenses_by_category"`
+	TotalExpenses      float64            `json:"total_expenses"`
+	TotalInstallments  float64            `json:"total_installments"`
+	PendingCommitments []PendingCommitment `json:"pending_commitments"`
 }
 
 type PendingCommitment struct {
@@ -54,7 +54,9 @@ func (s *dashboardService) GetSummary(ctx context.Context, authUserID string, mo
 		ExpensesByCategory: make(map[string]float64),
 	}
 
-	billings, err := s.billings.GetAllByMonth(ctx, authUserID, month, year)
+	period := year*100 + month
+
+	billings, err := s.billings.GetAllByPeriod(ctx, authUserID, period)
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +64,12 @@ func (s *dashboardService) GetSummary(ctx context.Context, authUserID string, mo
 		summary.TotalBilled += b.AmountBilled
 		summary.TotalPaid += b.AmountPaid
 		if !b.IsPaid {
-			summary.TotalPending += b.AmountBilled - b.AmountPaid
+			pending := b.AmountBilled - b.AmountPaid
+			summary.TotalPending += pending
 			summary.PendingCommitments = append(summary.PendingCommitments, PendingCommitment{
 				Type:        "billing",
 				Description: b.AccountID,
-				Amount:      b.AmountBilled - b.AmountPaid,
+				Amount:      pending,
 			})
 		}
 	}

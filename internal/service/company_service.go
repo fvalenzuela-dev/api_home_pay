@@ -18,27 +18,9 @@ type CompanyService interface {
 }
 
 type companyService struct {
-	companies CompanyRepository
-	accounts  AccountRepository
-	billings  BillingRepository
-}
-
-// Narrow interfaces — services depend only on what they need.
-type CompanyRepository interface {
-	Create(ctx context.Context, authUserID string, req *models.CreateCompanyRequest) (*models.Company, error)
-	GetByID(ctx context.Context, id, authUserID string) (*models.Company, error)
-	GetAll(ctx context.Context, authUserID string) ([]models.Company, error)
-	Update(ctx context.Context, id, authUserID string, req *models.UpdateCompanyRequest) (*models.Company, error)
-	SoftDelete(ctx context.Context, id, authUserID string) error
-}
-
-type AccountRepository interface {
-	GetActiveIDsByCompany(ctx context.Context, companyID string) ([]string, error)
-	SoftDeleteByCompany(ctx context.Context, companyID string) error
-}
-
-type BillingRepository interface {
-	SoftDeleteByAccount(ctx context.Context, accountID string) error
+	companies repository.CompanyRepository
+	accounts  repository.AccountRepository
+	billings  repository.BillingRepository
 }
 
 func NewCompanyService(companies repository.CompanyRepository, accounts repository.AccountRepository, billings repository.BillingRepository) CompanyService {
@@ -73,17 +55,14 @@ func (s *companyService) Delete(ctx context.Context, id, authUserID string) erro
 	if err != nil {
 		return err
 	}
-
 	for _, accountID := range accountIDs {
 		if err := s.billings.SoftDeleteByAccount(ctx, accountID); err != nil {
 			return err
 		}
 	}
-
 	if err := s.accounts.SoftDeleteByCompany(ctx, id); err != nil {
 		return err
 	}
-
 	if err := s.companies.SoftDelete(ctx, id, authUserID); err != nil {
 		if err == pgx.ErrNoRows {
 			return fmt.Errorf("not found")

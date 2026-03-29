@@ -25,8 +25,8 @@ func (r *userRepo) Upsert(ctx context.Context, user *models.User) error {
 		INSERT INTO homepay.users (auth_user_id, email, full_name)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (auth_user_id) DO UPDATE
-		SET email = EXCLUDED.email,
-		    full_name = EXCLUDED.full_name,
+		SET email      = EXCLUDED.email,
+		    full_name  = EXCLUDED.full_name,
 		    updated_at = NOW()
 		WHERE homepay.users.deleted_at IS NULL
 	`, user.AuthUserID, user.Email, user.FullName)

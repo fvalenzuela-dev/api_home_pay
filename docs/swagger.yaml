@@ -14,9 +14,9 @@ definitions:
         type: string
       id:
         type: string
+      is_active:
+        type: boolean
       name:
-        type: string
-      updated_at:
         type: string
     type: object
   models.AccountBilling:
@@ -37,17 +37,15 @@ definitions:
         type: string
       is_paid:
         type: boolean
-      month:
-        type: integer
       paid_at:
         type: string
-      updated_at:
-        type: string
-      year:
+      period:
         type: integer
     type: object
   models.Company:
     properties:
+      auth_user_id:
+        type: string
       category:
         type: string
       created_at:
@@ -56,11 +54,9 @@ definitions:
         type: string
       id:
         type: string
+      is_active:
+        type: boolean
       name:
-        type: string
-      updated_at:
-        type: string
-      user_id:
         type: string
     type: object
   models.CreateAccountRequest:
@@ -76,9 +72,7 @@ definitions:
     properties:
       amount_billed:
         type: number
-      month:
-        type: integer
-      year:
+      period:
         type: integer
     type: object
   models.CreateCompanyRequest:
@@ -114,6 +108,8 @@ definitions:
     properties:
       amount:
         type: number
+      auth_user_id:
+        type: string
       category:
         type: string
       created_at:
@@ -126,10 +122,6 @@ definitions:
         type: string
       id:
         type: string
-      updated_at:
-        type: string
-      user_id:
-        type: string
     type: object
   models.InstallmentPayment:
     properties:
@@ -137,23 +129,25 @@ definitions:
         type: number
       created_at:
         type: string
+      deleted_at:
+        type: string
       due_date:
         type: string
       id:
         type: string
+      installment_number:
+        type: integer
       is_paid:
         type: boolean
-      number:
-        type: integer
       paid_at:
         type: string
       plan_id:
         type: string
-      updated_at:
-        type: string
     type: object
   models.InstallmentPlanWithPayments:
     properties:
+      auth_user_id:
+        type: string
       created_at:
         type: string
       deleted_at:
@@ -176,10 +170,6 @@ definitions:
         type: number
       total_installments:
         type: integer
-      updated_at:
-        type: string
-      user_id:
-        type: string
     type: object
   models.UpdateAccountRequest:
     properties:
@@ -194,8 +184,6 @@ definitions:
     properties:
       amount_paid:
         type: number
-      is_paid:
-        type: boolean
     type: object
   models.UpdateCompanyRequest:
     properties:

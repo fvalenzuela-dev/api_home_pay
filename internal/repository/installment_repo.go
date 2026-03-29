@@ -28,17 +28,26 @@ func NewInstallmentRepository(db *pgxpool.Pool) InstallmentRepository {
 	return &installmentRepo{db: db}
 }
 
+const planCols = `id, auth_user_id, description, total_amount, total_installments, installments_paid, start_date, is_completed, created_at, deleted_at`
+const paymentCols = `id, plan_id, installment_number, amount, due_date, is_paid, paid_at, created_at, deleted_at`
+
+func scanPlan(row pgx.Row, p *models.InstallmentPlan) error {
+	return row.Scan(&p.ID, &p.AuthUserID, &p.Description, &p.TotalAmount, &p.TotalInstallments,
+		&p.InstallmentsPaid, &p.StartDate, &p.IsCompleted, &p.CreatedAt, &p.DeletedAt)
+}
+
+func scanPayment(row pgx.Row, p *models.InstallmentPayment) error {
+	return row.Scan(&p.ID, &p.PlanID, &p.InstallmentNumber, &p.Amount, &p.DueDate,
+		&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.DeletedAt)
+}
+
 func (r *installmentRepo) CreatePlan(ctx context.Context, authUserID string, plan *models.InstallmentPlan) (*models.InstallmentPlan, error) {
 	var p models.InstallmentPlan
-	err := r.db.QueryRow(ctx, `
-		INSERT INTO homepay.installment_plans (user_id, description, total_amount, total_installments, start_date)
-		SELECT id, $2, $3, $4, $5 FROM homepay.users WHERE auth_user_id = $1 AND deleted_at IS NULL
-		RETURNING id, user_id, description, total_amount, total_installments, installments_paid,
-		          start_date, is_completed, created_at, updated_at, deleted_at
-	`, authUserID, plan.Description, plan.TotalAmount, plan.TotalInstallments, plan.StartDate).Scan(
-		&p.ID, &p.UserID, &p.Description, &p.TotalAmount, &p.TotalInstallments,
-		&p.InstallmentsPaid, &p.StartDate, &p.IsCompleted, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt,
-	)
+	err := scanPlan(r.db.QueryRow(ctx, `
+		INSERT INTO homepay.installment_plans (auth_user_id, description, total_amount, total_installments, start_date)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING `+planCols,
+		authUserID, plan.Description, plan.TotalAmount, plan.TotalInstallments, plan.StartDate), &p)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +57,9 @@ func (r *installmentRepo) CreatePlan(ctx context.Context, authUserID string, pla
 func (r *installmentRepo) CreatePayments(ctx context.Context, payments []models.InstallmentPayment) error {
 	for _, p := range payments {
 		_, err := r.db.Exec(ctx, `
-			INSERT INTO homepay.installment_payments (plan_id, number, amount, due_date)
+			INSERT INTO homepay.installment_payments (plan_id, installment_number, amount, due_date)
 			VALUES ($1, $2, $3, $4)
-		`, p.PlanID, p.Number, p.Amount, p.DueDate)
+		`, p.PlanID, p.InstallmentNumber, p.Amount, p.DueDate)
 		if err != nil {
 			return err
 		}
@@ -60,16 +69,11 @@ func (r *installmentRepo) CreatePayments(ctx context.Context, payments []models.
 
 func (r *installmentRepo) GetPlan(ctx context.Context, id, authUserID string) (*models.InstallmentPlan, error) {
 	var p models.InstallmentPlan
-	err := r.db.QueryRow(ctx, `
-		SELECT ip.id, ip.user_id, ip.description, ip.total_amount, ip.total_installments,
-		       ip.installments_paid, ip.start_date, ip.is_completed, ip.created_at, ip.updated_at, ip.deleted_at
-		FROM homepay.installment_plans ip
-		JOIN homepay.users u ON u.id = ip.user_id
-		WHERE ip.id = $1 AND u.auth_user_id = $2 AND ip.deleted_at IS NULL
-	`, id, authUserID).Scan(
-		&p.ID, &p.UserID, &p.Description, &p.TotalAmount, &p.TotalInstallments,
-		&p.InstallmentsPaid, &p.StartDate, &p.IsCompleted, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt,
-	)
+	err := scanPlan(r.db.QueryRow(ctx, `
+		SELECT `+planCols+`
+		FROM homepay.installment_plans
+		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
+	`, id, authUserID), &p)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
@@ -81,12 +85,10 @@ func (r *installmentRepo) GetPlan(ctx context.Context, id, authUserID string) (*
 
 func (r *installmentRepo) GetAllPlans(ctx context.Context, authUserID string) ([]models.InstallmentPlan, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT ip.id, ip.user_id, ip.description, ip.total_amount, ip.total_installments,
-		       ip.installments_paid, ip.start_date, ip.is_completed, ip.created_at, ip.updated_at, ip.deleted_at
-		FROM homepay.installment_plans ip
-		JOIN homepay.users u ON u.id = ip.user_id
-		WHERE u.auth_user_id = $1 AND ip.deleted_at IS NULL
-		ORDER BY ip.created_at DESC
+		SELECT `+planCols+`
+		FROM homepay.installment_plans
+		WHERE auth_user_id = $1 AND deleted_at IS NULL
+		ORDER BY created_at DESC
 	`, authUserID)
 	if err != nil {
 		return nil, err
@@ -96,10 +98,8 @@ func (r *installmentRepo) GetAllPlans(ctx context.Context, authUserID string) ([
 	var plans []models.InstallmentPlan
 	for rows.Next() {
 		var p models.InstallmentPlan
-		if err := rows.Scan(
-			&p.ID, &p.UserID, &p.Description, &p.TotalAmount, &p.TotalInstallments,
-			&p.InstallmentsPaid, &p.StartDate, &p.IsCompleted, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt,
-		); err != nil {
+		if err := rows.Scan(&p.ID, &p.AuthUserID, &p.Description, &p.TotalAmount, &p.TotalInstallments,
+			&p.InstallmentsPaid, &p.StartDate, &p.IsCompleted, &p.CreatedAt, &p.DeletedAt); err != nil {
 			return nil, err
 		}
 		plans = append(plans, p)
@@ -109,10 +109,10 @@ func (r *installmentRepo) GetAllPlans(ctx context.Context, authUserID string) ([
 
 func (r *installmentRepo) GetPaymentsByPlan(ctx context.Context, planID string) ([]models.InstallmentPayment, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, plan_id, number, amount, due_date, is_paid, paid_at, created_at, updated_at
+		SELECT `+paymentCols+`
 		FROM homepay.installment_payments
-		WHERE plan_id = $1
-		ORDER BY number
+		WHERE plan_id = $1 AND deleted_at IS NULL
+		ORDER BY installment_number
 	`, planID)
 	if err != nil {
 		return nil, err
@@ -122,8 +122,8 @@ func (r *installmentRepo) GetPaymentsByPlan(ctx context.Context, planID string) 
 	var payments []models.InstallmentPayment
 	for rows.Next() {
 		var p models.InstallmentPayment
-		if err := rows.Scan(&p.ID, &p.PlanID, &p.Number, &p.Amount, &p.DueDate,
-			&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.PlanID, &p.InstallmentNumber, &p.Amount, &p.DueDate,
+			&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.DeletedAt); err != nil {
 			return nil, err
 		}
 		payments = append(payments, p)
@@ -133,15 +133,14 @@ func (r *installmentRepo) GetPaymentsByPlan(ctx context.Context, planID string) 
 
 func (r *installmentRepo) GetActivePaymentsByMonth(ctx context.Context, authUserID string, month, year int) ([]models.InstallmentPayment, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT ip.id, ip.plan_id, ip.number, ip.amount, ip.due_date, ip.is_paid, ip.paid_at,
-		       ip.created_at, ip.updated_at
+		SELECT ip.`+paymentCols+`
 		FROM homepay.installment_payments ip
 		JOIN homepay.installment_plans pl ON pl.id = ip.plan_id
-		JOIN homepay.users u ON u.id = pl.user_id
-		WHERE u.auth_user_id = $1
+		WHERE pl.auth_user_id = $1
 		  AND EXTRACT(MONTH FROM ip.due_date) = $2
-		  AND EXTRACT(YEAR FROM ip.due_date) = $3
+		  AND EXTRACT(YEAR  FROM ip.due_date) = $3
 		  AND pl.deleted_at IS NULL
+		  AND ip.deleted_at IS NULL
 		ORDER BY ip.due_date
 	`, authUserID, month, year)
 	if err != nil {
@@ -152,8 +151,8 @@ func (r *installmentRepo) GetActivePaymentsByMonth(ctx context.Context, authUser
 	var payments []models.InstallmentPayment
 	for rows.Next() {
 		var p models.InstallmentPayment
-		if err := rows.Scan(&p.ID, &p.PlanID, &p.Number, &p.Amount, &p.DueDate,
-			&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.PlanID, &p.InstallmentNumber, &p.Amount, &p.DueDate,
+			&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.DeletedAt); err != nil {
 			return nil, err
 		}
 		payments = append(payments, p)
@@ -163,19 +162,14 @@ func (r *installmentRepo) GetActivePaymentsByMonth(ctx context.Context, authUser
 
 func (r *installmentRepo) UpdatePayment(ctx context.Context, planID, paymentID, authUserID string) (*models.InstallmentPayment, error) {
 	var p models.InstallmentPayment
-	err := r.db.QueryRow(ctx, `
+	err := scanPayment(r.db.QueryRow(ctx, `
 		UPDATE homepay.installment_payments ip
-		SET is_paid = TRUE, paid_at = NOW(), updated_at = NOW()
+		SET is_paid = TRUE, paid_at = CURRENT_DATE
 		FROM homepay.installment_plans pl
-		JOIN homepay.users u ON u.id = pl.user_id
-		WHERE ip.id = $1 AND ip.plan_id = $2 AND pl.id = ip.plan_id AND u.auth_user_id = $3
-		  AND ip.is_paid = FALSE AND pl.deleted_at IS NULL
-		RETURNING ip.id, ip.plan_id, ip.number, ip.amount, ip.due_date, ip.is_paid, ip.paid_at,
-		          ip.created_at, ip.updated_at
-	`, paymentID, planID, authUserID).Scan(
-		&p.ID, &p.PlanID, &p.Number, &p.Amount, &p.DueDate,
-		&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.UpdatedAt,
-	)
+		WHERE ip.id = $1 AND ip.plan_id = $2 AND pl.id = ip.plan_id AND pl.auth_user_id = $3
+		  AND ip.is_paid = FALSE AND pl.deleted_at IS NULL AND ip.deleted_at IS NULL
+		RETURNING ip.`+paymentCols,
+		paymentID, planID, authUserID), &p)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
@@ -189,8 +183,7 @@ func (r *installmentRepo) IncrementPaid(ctx context.Context, planID string, tota
 	_, err := r.db.Exec(ctx, `
 		UPDATE homepay.installment_plans
 		SET installments_paid = installments_paid + 1,
-		    is_completed = (installments_paid + 1 >= $2),
-		    updated_at = NOW()
+		    is_completed = (installments_paid + 1 >= $2)
 		WHERE id = $1
 	`, planID, total)
 	return err
@@ -198,10 +191,9 @@ func (r *installmentRepo) IncrementPaid(ctx context.Context, planID string, tota
 
 func (r *installmentRepo) SoftDeletePlan(ctx context.Context, id, authUserID string) error {
 	tag, err := r.db.Exec(ctx, `
-		UPDATE homepay.installment_plans ip
+		UPDATE homepay.installment_plans
 		SET deleted_at = NOW()
-		FROM homepay.users u
-		WHERE ip.id = $1 AND u.id = ip.user_id AND u.auth_user_id = $2 AND ip.deleted_at IS NULL
+		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
 	`, id, authUserID)
 	if err != nil {
 		return err
@@ -209,5 +201,10 @@ func (r *installmentRepo) SoftDeletePlan(ctx context.Context, id, authUserID str
 	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return nil
+	// También elimina los pagos del plan
+	_, err = r.db.Exec(ctx, `
+		UPDATE homepay.installment_payments SET deleted_at = NOW()
+		WHERE plan_id = $1 AND deleted_at IS NULL
+	`, id)
+	return err
 }

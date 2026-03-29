@@ -1363,10 +1363,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
+                "is_active": {
+                    "type": "boolean"
                 },
-                "updated_at": {
+                "name": {
                     "type": "string"
                 }
             }
@@ -1398,16 +1398,10 @@ const docTemplate = `{
                 "is_paid": {
                     "type": "boolean"
                 },
-                "month": {
-                    "type": "integer"
-                },
                 "paid_at": {
                     "type": "string"
                 },
-                "updated_at": {
-                    "type": "string"
-                },
-                "year": {
+                "period": {
                     "type": "integer"
                 }
             }
@@ -1415,6 +1409,9 @@ const docTemplate = `{
         "models.Company": {
             "type": "object",
             "properties": {
+                "auth_user_id": {
+                    "type": "string"
+                },
                 "category": {
                     "type": "string"
                 },
@@ -1427,13 +1424,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_active": {
+                    "type": "boolean"
+                },
                 "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
                     "type": "string"
                 }
             }
@@ -1458,10 +1452,7 @@ const docTemplate = `{
                 "amount_billed": {
                     "type": "number"
                 },
-                "month": {
-                    "type": "integer"
-                },
-                "year": {
+                "period": {
                     "type": "integer"
                 }
             }
@@ -1517,6 +1508,9 @@ const docTemplate = `{
                 "amount": {
                     "type": "number"
                 },
+                "auth_user_id": {
+                    "type": "string"
+                },
                 "category": {
                     "type": "string"
                 },
@@ -1534,12 +1528,6 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
                 }
             }
         },
@@ -1552,25 +1540,25 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "deleted_at": {
+                    "type": "string"
+                },
                 "due_date": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
+                "installment_number": {
+                    "type": "integer"
+                },
                 "is_paid": {
                     "type": "boolean"
-                },
-                "number": {
-                    "type": "integer"
                 },
                 "paid_at": {
                     "type": "string"
                 },
                 "plan_id": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }
@@ -1578,6 +1566,9 @@ const docTemplate = `{
         "models.InstallmentPlanWithPayments": {
             "type": "object",
             "properties": {
+                "auth_user_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1610,12 +1601,6 @@ const docTemplate = `{
                 },
                 "total_installments": {
                     "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
                 }
             }
         },
@@ -1638,9 +1623,6 @@ const docTemplate = `{
             "properties": {
                 "amount_paid": {
                     "type": "number"
-                },
-                "is_paid": {
-                    "type": "boolean"
                 }
             }
         },

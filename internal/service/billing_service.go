@@ -23,18 +23,29 @@ func NewBillingService(billings repository.BillingRepository, accounts repositor
 	return &billingService{billings: billings, accounts: accounts}
 }
 
-func (s *billingService) Create(ctx context.Context, accountID, authUserID string, req *models.CreateBillingRequest) (*models.AccountBilling, error) {
-	if req.Month < 1 || req.Month > 12 {
-		return nil, fmt.Errorf("month must be between 1 and 12")
+// nextPeriod calcula el período YYYYMM siguiente dado un período actual.
+func nextPeriod(period int) int {
+	year := period / 100
+	month := period % 100
+	if month == 12 {
+		return (year+1)*100 + 1
 	}
-	if req.Year < 2000 {
-		return nil, fmt.Errorf("invalid year")
+	return period + 1
+}
+
+func (s *billingService) Create(ctx context.Context, accountID, authUserID string, req *models.CreateBillingRequest) (*models.AccountBilling, error) {
+	year := req.Period / 100
+	month := req.Period % 100
+	if month < 1 || month > 12 {
+		return nil, fmt.Errorf("period inválido: el mes debe estar entre 01 y 12 (formato YYYYMM, ej: 202603)")
+	}
+	if year < 2000 {
+		return nil, fmt.Errorf("period inválido: año mínimo 2000")
 	}
 	if req.AmountBilled <= 0 {
-		return nil, fmt.Errorf("amount_billed must be greater than 0")
+		return nil, fmt.Errorf("amount_billed debe ser mayor a 0")
 	}
 
-	// Verificar si hay billing impaga con auto_accumulate — si la hay, acumularla
 	account, err := s.accounts.GetByID(ctx, accountID, authUserID)
 	if err != nil {
 		return nil, err
@@ -43,19 +54,14 @@ func (s *billingService) Create(ctx context.Context, accountID, authUserID strin
 		return nil, fmt.Errorf("not found")
 	}
 
+	// Si auto_accumulate y hay una factura impaga, crear carry-over al siguiente período
 	if account.AutoAccumulate {
 		unpaid, err := s.billings.GetUnpaidByAccount(ctx, accountID)
 		if err != nil {
 			return nil, err
 		}
 		if unpaid != nil {
-			nextMonth := unpaid.Month + 1
-			nextYear := unpaid.Year
-			if nextMonth > 12 {
-				nextMonth = 1
-				nextYear++
-			}
-			_, err := s.billings.CreateCarryOver(ctx, accountID, nextMonth, nextYear, unpaid.AmountBilled, unpaid.ID)
+			_, err := s.billings.CreateCarryOver(ctx, accountID, nextPeriod(unpaid.Period), unpaid.AmountBilled, unpaid.ID)
 			if err != nil {
 				return nil, fmt.Errorf("carry over billing: %w", err)
 			}
