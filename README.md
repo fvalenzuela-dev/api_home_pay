@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HomePay API
 
-## Getting Started
+Backend REST para HomePay. Gestiona empresas, cuentas, facturas, gastos variables y planes de cuotas por usuario.
 
-First, run the development server:a
+## Stack
+
+- **Go 1.23**
+- **chi v5** — router HTTP
+- **pgx v5** — driver PostgreSQL con pool de conexiones
+- **Clerk SDK v2** — autenticación JWT
+- **svix** — verificación de webhooks
+- **Supabase** — base de datos PostgreSQL cloud (schema `homepay`)
+
+## Requisitos
+
+- Go 1.23+
+- Acceso a una instancia de Supabase con el schema `homepay` creado
+
+## Configuración
+
+Copia el archivo de ejemplo y completa las variables:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Descripción |
+|---|---|
+| `DATABASE_URL` | Connection string de Supabase con `search_path=homepay` |
+| `CLERK_SECRET_KEY` | Clave secreta de Clerk para validar JWT |
+| `CLERK_WEBHOOK_SECRET` | Secreto para verificar firma de webhooks de Clerk |
+| `PORT` | Puerto del servidor (default: `8080`) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Compilar
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+go build ./...
+```
 
-## Learn More
+Genera el binario en la raíz:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+go build -o bin/api ./cmd/api
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Ejecutar
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Modo desarrollo (recarga manual)
+go run ./cmd/api/main.go
 
-## Deploy on Vercel
+# Binario compilado
+./bin/api
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+El servidor arranca en `http://localhost:8080` (o el puerto configurado en `PORT`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details
+## Endpoints
+
+Todas las rutas excepto `/webhooks/clerk` requieren `Authorization: Bearer <token>` de Clerk.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/webhooks/clerk` | Webhook de Clerk (sin JWT) |
+| GET | `/companies` | Lista empresas del usuario |
+| POST | `/companies` | Crea empresa |
+| PUT | `/companies/{id}` | Edita empresa |
+| DELETE | `/companies/{id}` | Soft delete (propaga a cuentas y facturas) |
+| GET | `/companies/{companyID}/accounts` | Lista cuentas de una empresa |
+| POST | `/companies/{companyID}/accounts` | Crea cuenta |
+| PUT | `/companies/{companyID}/accounts/{id}` | Edita cuenta |
+| DELETE | `/companies/{companyID}/accounts/{id}` | Soft delete (propaga a facturas) |
+| GET | `/accounts/{accountID}/billings` | Lista facturas de una cuenta |
+| POST | `/accounts/{accountID}/billings` | Registra factura del mes |
+| PUT | `/accounts/{accountID}/billings/{id}` | Actualiza monto pagado |
+| GET | `/expenses` | Lista gastos (filtros: `?month=&year=&category=`) |
+| POST | `/expenses` | Registra gasto |
+| PUT | `/expenses/{id}` | Edita gasto |
+| DELETE | `/expenses/{id}` | Soft delete |
+| GET | `/installments` | Lista planes de cuotas |
+| POST | `/installments` | Crea plan y genera todos los pagos |
+| PUT | `/installments/{id}/payments/{paymentID}` | Marca cuota como pagada |
+| DELETE | `/installments/{id}` | Soft delete del plan |
+| GET | `/dashboard` | Resumen financiero mensual (`?month=&year=`) |
+
+## Estructura del proyecto
+
+```
+cmd/api/main.go          — entry point
+internal/
+  config/                — carga de variables de entorno
+  database/              — conexión pgxpool
+  middleware/            — auth JWT de Clerk
+  models/                — structs del dominio
+  repository/            — queries SQL (pgx)
+  service/               — lógica de negocio
+  handlers/              — handlers HTTP
+  router/                — rutas chi
+```
