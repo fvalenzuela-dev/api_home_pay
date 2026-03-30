@@ -1,0 +1,7 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8082:8080"
+    env_file:
+      - .env

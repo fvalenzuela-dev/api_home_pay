@@ -1,7 +1,6 @@
 // @title           HomePay API
 // @version         1.0
 // @description     Backend REST para gestión de finanzas personales HomePay. Todos los endpoints protegidos requieren un JWT de Clerk en el header Authorization.
-// @host            localhost:8080
 // @BasePath        /
 // @securityDefinitions.apikey BearerAuth
 // @in              header
@@ -46,6 +45,7 @@ func main() {
 
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
 	companyRepo := repository.NewCompanyRepository(db)
 	accountRepo := repository.NewAccountRepository(db)
 	billingRepo := repository.NewBillingRepository(db)
@@ -62,6 +62,7 @@ func main() {
 
 	// Handlers
 	webhookHandler := handlers.NewWebhookHandler(userRepo, cfg.ClerkWebhookSecret)
+	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	companyHandler := handlers.NewCompanyHandler(companySvc)
 	accountHandler := handlers.NewAccountHandler(accountSvc)
 	billingHandler := handlers.NewBillingHandler(billingSvc)
@@ -71,6 +72,7 @@ func main() {
 
 	r := router.New(
 		webhookHandler,
+		categoryHandler,
 		companyHandler,
 		accountHandler,
 		billingHandler,

@@ -13,6 +13,7 @@ import (
 type InstallmentService interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateInstallmentRequest) (*models.InstallmentPlanWithPayments, error)
 	GetAll(ctx context.Context, authUserID string) ([]models.InstallmentPlanWithPayments, error)
+	GetByID(ctx context.Context, id, authUserID string) (*models.InstallmentPlanWithPayments, error)
 	PayInstallment(ctx context.Context, planID, paymentID, authUserID string) (*models.InstallmentPayment, error)
 	Delete(ctx context.Context, id, authUserID string) error
 }
@@ -73,6 +74,21 @@ func (s *installmentService) Create(ctx context.Context, authUserID string, req 
 		InstallmentPlan: *plan,
 		Payments:        payments,
 	}, nil
+}
+
+func (s *installmentService) GetByID(ctx context.Context, id, authUserID string) (*models.InstallmentPlanWithPayments, error) {
+	plan, err := s.installments.GetPlan(ctx, id, authUserID)
+	if err != nil {
+		return nil, err
+	}
+	if plan == nil {
+		return nil, nil
+	}
+	payments, err := s.installments.GetPaymentsByPlan(ctx, plan.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.InstallmentPlanWithPayments{InstallmentPlan: *plan, Payments: payments}, nil
 }
 
 func (s *installmentService) GetAll(ctx context.Context, authUserID string) ([]models.InstallmentPlanWithPayments, error) {

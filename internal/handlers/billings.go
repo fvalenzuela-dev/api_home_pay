@@ -42,6 +42,34 @@ func (h *BillingHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, billings)
 }
 
+// GetOne godoc
+// @Summary     Obtener factura
+// @Description Retorna una factura por ID
+// @Tags        billings
+// @Security    BearerAuth
+// @Produce     json
+// @Param       accountID  path      string  true  "Account ID"
+// @Param       id         path      string  true  "Billing ID"
+// @Success     200        {object}  models.AccountBilling
+// @Failure     401        {object}  map[string]string
+// @Failure     404        {object}  map[string]string
+// @Failure     500        {object}  map[string]string
+// @Router      /accounts/{accountID}/billings/{id} [get]
+func (h *BillingHandler) GetOne(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	id := chi.URLParam(r, "id")
+	billing, err := h.svc.GetByID(r.Context(), id, authUserID)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if billing == nil {
+		writeError(w, http.StatusNotFound, "no encontrado")
+		return
+	}
+	writeJSON(w, http.StatusOK, billing)
+}
+
 // Create godoc
 // @Summary     Registrar factura
 // @Description Registra la factura del mes para una cuenta. Si auto_accumulate=true y hay una factura impaga, se crea un carry-over automáticamente.

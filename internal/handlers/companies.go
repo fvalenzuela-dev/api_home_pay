@@ -40,6 +40,33 @@ func (h *CompanyHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, companies)
 }
 
+// GetOne godoc
+// @Summary     Obtener empresa
+// @Description Retorna una empresa por ID
+// @Tags        companies
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id   path      string  true  "Company ID"
+// @Success     200  {object}  models.Company
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /companies/{id} [get]
+func (h *CompanyHandler) GetOne(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	id := chi.URLParam(r, "id")
+	company, err := h.svc.GetByID(r.Context(), id, authUserID)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if company == nil {
+		writeError(w, http.StatusNotFound, "no encontrado")
+		return
+	}
+	writeJSON(w, http.StatusOK, company)
+}
+
 // Create godoc
 // @Summary     Crear empresa
 // @Description Crea una nueva empresa para el usuario autenticado

@@ -17,6 +17,33 @@ func NewInstallmentHandler(svc service.InstallmentService) *InstallmentHandler {
 	return &InstallmentHandler{svc: svc}
 }
 
+// GetOne godoc
+// @Summary     Obtener plan de cuotas
+// @Description Retorna un plan de cuotas por ID con sus pagos individuales
+// @Tags        installments
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id   path      string  true  "Plan ID"
+// @Success     200  {object}  models.InstallmentPlanWithPayments
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /installments/{id} [get]
+func (h *InstallmentHandler) GetOne(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	id := chi.URLParam(r, "id")
+	plan, err := h.svc.GetByID(r.Context(), id, authUserID)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if plan == nil {
+		writeError(w, http.StatusNotFound, "no encontrado")
+		return
+	}
+	writeJSON(w, http.StatusOK, plan)
+}
+
 // List godoc
 // @Summary     Listar planes de cuotas
 // @Description Retorna todos los planes activos del usuario con sus pagos individuales

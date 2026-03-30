@@ -24,17 +24,19 @@ func NewCompanyRepository(db *pgxpool.Pool) CompanyRepository {
 	return &companyRepo{db: db}
 }
 
+const companyCols = `id, auth_user_id, category_id, name, website, phone, is_active, created_at, deleted_at`
+
 func scanCompany(row pgx.Row, c *models.Company) error {
-	return row.Scan(&c.ID, &c.AuthUserID, &c.Name, &c.Category, &c.IsActive, &c.CreatedAt, &c.DeletedAt)
+	return row.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt)
 }
 
 func (r *companyRepo) Create(ctx context.Context, authUserID string, req *models.CreateCompanyRequest) (*models.Company, error) {
 	var c models.Company
 	err := scanCompany(r.db.QueryRow(ctx, `
-		INSERT INTO homepay.companies (auth_user_id, name, category)
-		VALUES ($1, $2, $3)
-		RETURNING id, auth_user_id, name, category, is_active, created_at, deleted_at
-	`, authUserID, req.Name, req.Category), &c)
+		INSERT INTO homepay.companies (auth_user_id, category_id, name, website, phone)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING `+companyCols,
+		authUserID, req.CategoryID, req.Name, req.Website, req.Phone), &c)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +46,7 @@ func (r *companyRepo) Create(ctx context.Context, authUserID string, req *models
 func (r *companyRepo) GetByID(ctx context.Context, id, authUserID string) (*models.Company, error) {
 	var c models.Company
 	err := scanCompany(r.db.QueryRow(ctx, `
-		SELECT id, auth_user_id, name, category, is_active, created_at, deleted_at
+		SELECT `+companyCols+`
 		FROM homepay.companies
 		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
 	`, id, authUserID), &c)
@@ -59,7 +61,7 @@ func (r *companyRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 
 func (r *companyRepo) GetAll(ctx context.Context, authUserID string) ([]models.Company, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, auth_user_id, name, category, is_active, created_at, deleted_at
+		SELECT `+companyCols+`
 		FROM homepay.companies
 		WHERE auth_user_id = $1 AND deleted_at IS NULL
 		ORDER BY created_at DESC
@@ -72,7 +74,7 @@ func (r *companyRepo) GetAll(ctx context.Context, authUserID string) ([]models.C
 	var companies []models.Company
 	for rows.Next() {
 		var c models.Company
-		if err := rows.Scan(&c.ID, &c.AuthUserID, &c.Name, &c.Category, &c.IsActive, &c.CreatedAt, &c.DeletedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt); err != nil {
 			return nil, err
 		}
 		companies = append(companies, c)
@@ -84,11 +86,13 @@ func (r *companyRepo) Update(ctx context.Context, id, authUserID string, req *mo
 	var c models.Company
 	err := scanCompany(r.db.QueryRow(ctx, `
 		UPDATE homepay.companies
-		SET name     = COALESCE($3, name),
-		    category = COALESCE($4, category)
+		SET name        = COALESCE($3, name),
+		    category_id = COALESCE($4, category_id),
+		    website     = COALESCE($5, website),
+		    phone       = COALESCE($6, phone)
 		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
-		RETURNING id, auth_user_id, name, category, is_active, created_at, deleted_at
-	`, id, authUserID, req.Name, req.Category), &c)
+		RETURNING `+companyCols,
+		id, authUserID, req.Name, req.CategoryID, req.Website, req.Phone), &c)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}

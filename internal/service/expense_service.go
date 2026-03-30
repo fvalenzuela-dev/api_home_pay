@@ -12,6 +12,7 @@ import (
 type ExpenseService interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateExpenseRequest) (*models.Expense, error)
 	GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters) ([]models.Expense, error)
+	GetByID(ctx context.Context, id, authUserID string) (*models.Expense, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateExpenseRequest) (*models.Expense, error)
 	Delete(ctx context.Context, id, authUserID string) error
 }
@@ -25,9 +26,6 @@ func NewExpenseService(expenses repository.ExpenseRepository) ExpenseService {
 }
 
 func (s *expenseService) Create(ctx context.Context, authUserID string, req *models.CreateExpenseRequest) (*models.Expense, error) {
-	if req.Description == "" {
-		return nil, fmt.Errorf("description is required")
-	}
 	if req.Amount <= 0 {
 		return nil, fmt.Errorf("amount must be greater than 0")
 	}
@@ -39,6 +37,10 @@ func (s *expenseService) Create(ctx context.Context, authUserID string, req *mod
 
 func (s *expenseService) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters) ([]models.Expense, error) {
 	return s.expenses.GetAll(ctx, authUserID, filters)
+}
+
+func (s *expenseService) GetByID(ctx context.Context, id, authUserID string) (*models.Expense, error) {
+	return s.expenses.GetByID(ctx, id, authUserID)
 }
 
 func (s *expenseService) Update(ctx context.Context, id, authUserID string, req *models.UpdateExpenseRequest) (*models.Expense, error) {

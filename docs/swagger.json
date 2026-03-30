@@ -6,7 +6,6 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
     "basePath": "/",
     "paths": {
         "/accounts/{accountID}/billings": {
@@ -142,6 +141,72 @@
             }
         },
         "/accounts/{accountID}/billings/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna una factura por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billings"
+                ],
+                "summary": "Obtener factura",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account ID",
+                        "name": "accountID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Billing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AccountBilling"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -214,6 +279,331 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna las categorías activas del usuario autenticado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Listar categorías",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Category"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Crea una nueva categoría para el usuario autenticado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Crear categoría",
+                "parameters": [
+                    {
+                        "description": "Datos de la categoría",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna una categoría por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Obtener categoría",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualiza el nombre de una categoría",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Editar categoría",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a actualizar",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft delete de la categoría",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Eliminar categoría",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -455,6 +845,72 @@
             }
         },
         "/companies/{companyID}/accounts/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna una cuenta por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "Obtener cuenta",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company ID",
+                        "name": "companyID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Account"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -601,6 +1057,65 @@
             }
         },
         "/companies/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna una empresa por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "companies"
+                ],
+                "summary": "Obtener empresa",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Company"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -822,8 +1337,8 @@
                     },
                     {
                         "type": "string",
-                        "description": "Categoría",
-                        "name": "category",
+                        "description": "Filtrar por empresa",
+                        "name": "company_id",
                         "in": "query"
                     }
                 ],
@@ -920,6 +1435,65 @@
             }
         },
         "/expenses/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna un gasto por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Obtener gasto",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Expense ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Expense"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -1159,6 +1733,65 @@
             }
         },
         "/installments/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna un plan de cuotas por ID con sus pagos individuales",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installments"
+                ],
+                "summary": "Obtener plan de cuotas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.InstallmentPlanWithPayments"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -1400,14 +2033,37 @@
                 }
             }
         },
+        "models.Category": {
+            "type": "object",
+            "properties": {
+                "auth_user_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Company": {
             "type": "object",
             "properties": {
                 "auth_user_id": {
                     "type": "string"
                 },
-                "category": {
-                    "type": "string"
+                "category_id": {
+                    "type": "integer"
                 },
                 "created_at": {
                     "type": "string"
@@ -1422,6 +2078,12 @@
                     "type": "boolean"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "website": {
                     "type": "string"
                 }
             }
@@ -1451,13 +2113,27 @@
                 }
             }
         },
+        "models.CreateCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.CreateCompanyRequest": {
             "type": "object",
             "properties": {
-                "category": {
-                    "type": "string"
+                "category_id": {
+                    "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "website": {
                     "type": "string"
                 }
             }
@@ -1468,7 +2144,7 @@
                 "amount": {
                     "type": "number"
                 },
-                "category": {
+                "company_id": {
                     "type": "string"
                 },
                 "description": {
@@ -1505,7 +2181,7 @@
                 "auth_user_id": {
                     "type": "string"
                 },
-                "category": {
+                "company_id": {
                     "type": "string"
                 },
                 "created_at": {
@@ -1620,13 +2296,27 @@
                 }
             }
         },
+        "models.UpdateCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.UpdateCompanyRequest": {
             "type": "object",
             "properties": {
-                "category": {
-                    "type": "string"
+                "category_id": {
+                    "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "website": {
                     "type": "string"
                 }
             }
@@ -1637,7 +2327,7 @@
                 "amount": {
                     "type": "number"
                 },
-                "category": {
+                "company_id": {
                     "type": "string"
                 },
                 "description": {
@@ -1651,7 +2341,7 @@
         "service.DashboardSummary": {
             "type": "object",
             "properties": {
-                "expenses_by_category": {
+                "expenses_by_company": {
                     "type": "object",
                     "additionalProperties": {
                         "type": "number",

@@ -11,6 +11,7 @@ import (
 type BillingService interface {
 	Create(ctx context.Context, accountID, authUserID string, req *models.CreateBillingRequest) (*models.AccountBilling, error)
 	GetAllByAccount(ctx context.Context, accountID, authUserID string) ([]models.AccountBilling, error)
+	GetByID(ctx context.Context, id, authUserID string) (*models.AccountBilling, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateBillingRequest) (*models.AccountBilling, error)
 }
 
@@ -73,6 +74,10 @@ func (s *billingService) Create(ctx context.Context, accountID, authUserID strin
 
 func (s *billingService) GetAllByAccount(ctx context.Context, accountID, authUserID string) ([]models.AccountBilling, error) {
 	return s.billings.GetAllByAccount(ctx, accountID, authUserID)
+}
+
+func (s *billingService) GetByID(ctx context.Context, id, authUserID string) (*models.AccountBilling, error) {
+	return s.billings.GetByID(ctx, id, authUserID)
 }
 
 func (s *billingService) Update(ctx context.Context, id, authUserID string, req *models.UpdateBillingRequest) (*models.AccountBilling, error) {

@@ -42,12 +42,27 @@ definitions:
       period:
         type: integer
     type: object
+  models.Category:
+    properties:
+      auth_user_id:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
   models.Company:
     properties:
       auth_user_id:
         type: string
-      category:
-        type: string
+      category_id:
+        type: integer
       created_at:
         type: string
       deleted_at:
@@ -57,6 +72,10 @@ definitions:
       is_active:
         type: boolean
       name:
+        type: string
+      phone:
+        type: string
+      website:
         type: string
     type: object
   models.CreateAccountRequest:
@@ -75,18 +94,27 @@ definitions:
       period:
         type: integer
     type: object
+  models.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    type: object
   models.CreateCompanyRequest:
     properties:
-      category:
-        type: string
+      category_id:
+        type: integer
       name:
+        type: string
+      phone:
+        type: string
+      website:
         type: string
     type: object
   models.CreateExpenseRequest:
     properties:
       amount:
         type: number
-      category:
+      company_id:
         type: string
       description:
         type: string
@@ -110,7 +138,7 @@ definitions:
         type: number
       auth_user_id:
         type: string
-      category:
+      company_id:
         type: string
       created_at:
         type: string
@@ -185,18 +213,27 @@ definitions:
       amount_paid:
         type: number
     type: object
+  models.UpdateCategoryRequest:
+    properties:
+      name:
+        type: string
+    type: object
   models.UpdateCompanyRequest:
     properties:
-      category:
-        type: string
+      category_id:
+        type: integer
       name:
+        type: string
+      phone:
+        type: string
+      website:
         type: string
     type: object
   models.UpdateExpenseRequest:
     properties:
       amount:
         type: number
-      category:
+      company_id:
         type: string
       description:
         type: string
@@ -205,7 +242,7 @@ definitions:
     type: object
   service.DashboardSummary:
     properties:
-      expenses_by_category:
+      expenses_by_company:
         additionalProperties:
           format: float64
           type: number
@@ -238,7 +275,6 @@ definitions:
       type:
         type: string
     type: object
-host: localhost:8080
 info:
   contact: {}
   description: Backend REST para gestión de finanzas personales HomePay. Todos los
@@ -334,6 +370,49 @@ paths:
       tags:
       - billings
   /accounts/{accountID}/billings/{id}:
+    get:
+      description: Retorna una factura por ID
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: string
+      - description: Billing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountBilling'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener factura
+      tags:
+      - billings
     put:
       consumes:
       - application/json
@@ -388,6 +467,215 @@ paths:
       summary: Actualizar factura
       tags:
       - billings
+  /categories:
+    get:
+      description: Retorna las categorías activas del usuario autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar categorías
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Crea una nueva categoría para el usuario autenticado
+      parameters:
+      - description: Datos de la categoría
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear categoría
+      tags:
+      - categories
+  /categories/{id}:
+    delete:
+      description: Soft delete de la categoría
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar categoría
+      tags:
+      - categories
+    get:
+      description: Retorna una categoría por ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener categoría
+      tags:
+      - categories
+    put:
+      consumes:
+      - application/json
+      description: Actualiza el nombre de una categoría
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Campos a actualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar categoría
+      tags:
+      - categories
   /companies:
     get:
       description: Retorna todas las empresas activas del usuario autenticado
@@ -577,6 +865,49 @@ paths:
       summary: Eliminar cuenta
       tags:
       - accounts
+    get:
+      description: Retorna una cuenta por ID
+      parameters:
+      - description: Company ID
+        in: path
+        name: companyID
+        required: true
+        type: string
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Account'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener cuenta
+      tags:
+      - accounts
     put:
       consumes:
       - application/json
@@ -665,6 +996,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Eliminar empresa
+      tags:
+      - companies
+    get:
+      description: Retorna una empresa por ID
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Company'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener empresa
       tags:
       - companies
     put:
@@ -767,9 +1136,9 @@ paths:
         in: query
         name: year
         type: integer
-      - description: Categoría
+      - description: Filtrar por empresa
         in: query
-        name: category
+        name: company_id
         type: string
       produces:
       - application/json
@@ -871,6 +1240,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Eliminar gasto
+      tags:
+      - expenses
+    get:
+      description: Retorna un gasto por ID
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Expense'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener gasto
       tags:
       - expenses
     put:
@@ -1025,6 +1432,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Eliminar plan de cuotas
+      tags:
+      - installments
+    get:
+      description: Retorna un plan de cuotas por ID con sus pagos individuales
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.InstallmentPlanWithPayments'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener plan de cuotas
       tags:
       - installments
   /installments/{id}/payments/{paymentID}:

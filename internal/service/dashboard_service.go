@@ -17,7 +17,7 @@ type DashboardSummary struct {
 	TotalBilled        float64            `json:"total_billed"`
 	TotalPaid          float64            `json:"total_paid"`
 	TotalPending       float64            `json:"total_pending"`
-	ExpensesByCategory map[string]float64 `json:"expenses_by_category"`
+	ExpensesByCompany map[string]float64 `json:"expenses_by_company"`
 	TotalExpenses      float64            `json:"total_expenses"`
 	TotalInstallments  float64            `json:"total_installments"`
 	PendingCommitments []PendingCommitment `json:"pending_commitments"`
@@ -49,9 +49,9 @@ func NewDashboardService(
 
 func (s *dashboardService) GetSummary(ctx context.Context, authUserID string, month, year int) (*DashboardSummary, error) {
 	summary := &DashboardSummary{
-		Month:              month,
-		Year:               year,
-		ExpensesByCategory: make(map[string]float64),
+		Month:             month,
+		Year:              year,
+		ExpensesByCompany: make(map[string]float64),
 	}
 
 	period := year*100 + month
@@ -80,7 +80,9 @@ func (s *dashboardService) GetSummary(ctx context.Context, authUserID string, mo
 	}
 	for _, e := range expenses {
 		summary.TotalExpenses += e.Amount
-		summary.ExpensesByCategory[e.Category] += e.Amount
+		if e.CompanyID != nil {
+			summary.ExpensesByCompany[*e.CompanyID] += e.Amount
+		}
 	}
 
 	installmentPayments, err := s.installments.GetActivePaymentsByMonth(ctx, authUserID, month, year)

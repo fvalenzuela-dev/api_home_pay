@@ -42,6 +42,34 @@ func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, accounts)
 }
 
+// GetOne godoc
+// @Summary     Obtener cuenta
+// @Description Retorna una cuenta por ID
+// @Tags        accounts
+// @Security    BearerAuth
+// @Produce     json
+// @Param       companyID  path      string  true  "Company ID"
+// @Param       id         path      string  true  "Account ID"
+// @Success     200        {object}  models.Account
+// @Failure     401        {object}  map[string]string
+// @Failure     404        {object}  map[string]string
+// @Failure     500        {object}  map[string]string
+// @Router      /companies/{companyID}/accounts/{id} [get]
+func (h *AccountHandler) GetOne(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	id := chi.URLParam(r, "id")
+	account, err := h.svc.GetByID(r.Context(), id, authUserID)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if account == nil {
+		writeError(w, http.StatusNotFound, "no encontrado")
+		return
+	}
+	writeJSON(w, http.StatusOK, account)
+}
+
 // Create godoc
 // @Summary     Crear cuenta
 // @Description Crea una nueva cuenta dentro de una empresa

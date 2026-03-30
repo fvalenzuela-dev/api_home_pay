@@ -12,6 +12,7 @@ import (
 
 func New(
 	webhook *handlers.WebhookHandler,
+	categories *handlers.CategoryHandler,
 	companies *handlers.CompanyHandler,
 	accounts *handlers.AccountHandler,
 	billings *handlers.BillingHandler,
@@ -35,15 +36,25 @@ func New(
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Auth)
 
+		r.Route("/categories", func(r chi.Router) {
+			r.Get("/", categories.List)
+			r.Post("/", categories.Create)
+			r.Get("/{id}", categories.GetOne)
+			r.Put("/{id}", categories.Update)
+			r.Delete("/{id}", categories.Delete)
+		})
+
 		r.Route("/companies", func(r chi.Router) {
 			r.Get("/", companies.List)
 			r.Post("/", companies.Create)
+			r.Get("/{id}", companies.GetOne)
 			r.Put("/{id}", companies.Update)
 			r.Delete("/{id}", companies.Delete)
 
 			r.Route("/{companyID}/accounts", func(r chi.Router) {
 				r.Get("/", accounts.List)
 				r.Post("/", accounts.Create)
+				r.Get("/{id}", accounts.GetOne)
 				r.Put("/{id}", accounts.Update)
 				r.Delete("/{id}", accounts.Delete)
 			})
@@ -52,12 +63,14 @@ func New(
 		r.Route("/accounts/{accountID}/billings", func(r chi.Router) {
 			r.Get("/", billings.List)
 			r.Post("/", billings.Create)
+			r.Get("/{id}", billings.GetOne)
 			r.Put("/{id}", billings.Update)
 		})
 
 		r.Route("/expenses", func(r chi.Router) {
 			r.Get("/", expenses.List)
 			r.Post("/", expenses.Create)
+			r.Get("/{id}", expenses.GetOne)
 			r.Put("/{id}", expenses.Update)
 			r.Delete("/{id}", expenses.Delete)
 		})
@@ -65,6 +78,7 @@ func New(
 		r.Route("/installments", func(r chi.Router) {
 			r.Get("/", installments.List)
 			r.Post("/", installments.Create)
+			r.Get("/{id}", installments.GetOne)
 			r.Put("/{id}/payments/{paymentID}", installments.PayInstallment)
 			r.Delete("/{id}", installments.Delete)
 		})

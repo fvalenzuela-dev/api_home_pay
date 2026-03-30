@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -52,7 +54,12 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wh, err := svix.NewWebhook(strings.TrimPrefix(h.webhookSecret, "whsec_"))
+	secretBytes, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(h.webhookSecret, "whsec_"))
+	if err != nil {
+		writeInternalError(w, r, fmt.Errorf("invalid webhook secret: %w", err))
+		return
+	}
+	wh, err := svix.NewWebhookRaw(secretBytes)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return

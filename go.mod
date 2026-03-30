@@ -1,6 +1,6 @@
 module github.com/homepay/api
 
-go 1.25.6
+go 1.26.1
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

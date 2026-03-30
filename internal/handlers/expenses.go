@@ -24,9 +24,9 @@ func NewExpenseHandler(svc service.ExpenseService) *ExpenseHandler {
 // @Tags        expenses
 // @Security    BearerAuth
 // @Produce     json
-// @Param       month     query     int     false  "Mes (1-12)"
-// @Param       year      query     int     false  "Año (ej: 2026)"
-// @Param       category  query     string  false  "Categoría"
+// @Param       month      query     int     false  "Mes (1-12)"
+// @Param       year       query     int     false  "Año (ej: 2026)"
+// @Param       company_id query     string  false  "Filtrar por empresa"
 // @Success     200       {object}  map[string][]models.Expense
 // @Failure     401       {object}  map[string]string
 // @Failure     500       {object}  map[string]string
@@ -45,8 +45,8 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if cat := r.URL.Query().Get("category"); cat != "" {
-		filters.Category = &cat
+	if cid := r.URL.Query().Get("company_id"); cid != "" {
+		filters.CompanyID = &cid
 	}
 
 	expenses, err := h.svc.GetAll(r.Context(), authUserID, filters)
@@ -58,6 +58,33 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 		expenses = []models.Expense{}
 	}
 	writeJSON(w, http.StatusOK, expenses)
+}
+
+// GetOne godoc
+// @Summary     Obtener gasto
+// @Description Retorna un gasto por ID
+// @Tags        expenses
+// @Security    BearerAuth
+// @Produce     json
+// @Param       id   path      string  true  "Expense ID"
+// @Success     200  {object}  models.Expense
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /expenses/{id} [get]
+func (h *ExpenseHandler) GetOne(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	id := chi.URLParam(r, "id")
+	expense, err := h.svc.GetByID(r.Context(), id, authUserID)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if expense == nil {
+		writeError(w, http.StatusNotFound, "no encontrado")
+		return
+	}
+	writeJSON(w, http.StatusOK, expense)
 }
 
 // Create godoc

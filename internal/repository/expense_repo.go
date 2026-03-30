@@ -27,10 +27,10 @@ func NewExpenseRepository(db *pgxpool.Pool) ExpenseRepository {
 	return &expenseRepo{db: db}
 }
 
-const expenseCols = `id, auth_user_id, category, description, amount, expense_date, created_at, deleted_at`
+const expenseCols = `id, auth_user_id, company_id, description, amount, expense_date, created_at, deleted_at`
 
-func scanExpense(rows pgx.Row, e *models.Expense) error {
-	return rows.Scan(&e.ID, &e.AuthUserID, &e.Category, &e.Description, &e.Amount, &e.ExpenseDate, &e.CreatedAt, &e.DeletedAt)
+func scanExpense(row pgx.Row, e *models.Expense) error {
+	return row.Scan(&e.ID, &e.AuthUserID, &e.CompanyID, &e.Description, &e.Amount, &e.ExpenseDate, &e.CreatedAt, &e.DeletedAt)
 }
 
 func (r *expenseRepo) Create(ctx context.Context, authUserID string, req *models.CreateExpenseRequest) (*models.Expense, error) {
@@ -41,10 +41,10 @@ func (r *expenseRepo) Create(ctx context.Context, authUserID string, req *models
 
 	var e models.Expense
 	err = scanExpense(r.db.QueryRow(ctx, `
-		INSERT INTO homepay.variable_expenses (auth_user_id, category, description, amount, expense_date)
+		INSERT INTO homepay.variable_expenses (auth_user_id, company_id, description, amount, expense_date)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING `+expenseCols,
-		authUserID, req.Category, req.Description, req.Amount, expDate), &e)
+		authUserID, req.CompanyID, req.Description, req.Amount, expDate), &e)
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +80,9 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 		args = append(args, *filters.Year)
 		n++
 	}
-	if filters.Category != nil {
-		conds = append(conds, fmt.Sprintf("category = $%d", n))
-		args = append(args, *filters.Category)
+	if filters.CompanyID != nil {
+		conds = append(conds, fmt.Sprintf("company_id = $%d", n))
+		args = append(args, *filters.CompanyID)
 	}
 
 	query := fmt.Sprintf(`
@@ -101,7 +101,7 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	var expenses []models.Expense
 	for rows.Next() {
 		var e models.Expense
-		if err := rows.Scan(&e.ID, &e.AuthUserID, &e.Category, &e.Description, &e.Amount, &e.ExpenseDate, &e.CreatedAt, &e.DeletedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.AuthUserID, &e.CompanyID, &e.Description, &e.Amount, &e.ExpenseDate, &e.CreatedAt, &e.DeletedAt); err != nil {
 			return nil, err
 		}
 		expenses = append(expenses, e)
@@ -122,13 +122,13 @@ func (r *expenseRepo) Update(ctx context.Context, id, authUserID string, req *mo
 	var e models.Expense
 	err := scanExpense(r.db.QueryRow(ctx, `
 		UPDATE homepay.variable_expenses
-		SET category    = COALESCE($3, category),
-		    description = COALESCE($4, description),
-		    amount      = COALESCE($5, amount),
+		SET company_id   = COALESCE($3, company_id),
+		    description  = COALESCE($4, description),
+		    amount       = COALESCE($5, amount),
 		    expense_date = COALESCE($6, expense_date)
 		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
 		RETURNING `+expenseCols,
-		id, authUserID, req.Category, req.Description, req.Amount, expDate), &e)
+		id, authUserID, req.CompanyID, req.Description, req.Amount, expDate), &e)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
