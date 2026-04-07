@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/homepay/api/internal/handlers"
 	"github.com/homepay/api/internal/middleware"
 	httpswagger "github.com/swaggo/http-swagger"
@@ -14,6 +15,7 @@ func New(
 	webhook *handlers.WebhookHandler,
 	categories *handlers.CategoryHandler,
 	companies *handlers.CompanyHandler,
+	accountGroups *handlers.AccountGroupHandler,
 	accounts *handlers.AccountHandler,
 	billings *handlers.BillingHandler,
 	expenses *handlers.ExpenseHandler,
@@ -21,6 +23,13 @@ func New(
 	dashboard *handlers.DashboardHandler,
 ) http.Handler {
 	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 
@@ -42,6 +51,14 @@ func New(
 			r.Get("/{id}", categories.GetOne)
 			r.Put("/{id}", categories.Update)
 			r.Delete("/{id}", categories.Delete)
+		})
+
+		r.Route("/account-groups", func(r chi.Router) {
+			r.Get("/", accountGroups.List)
+			r.Post("/", accountGroups.Create)
+			r.Get("/{id}", accountGroups.GetOne)
+			r.Put("/{id}", accountGroups.Update)
+			r.Delete("/{id}", accountGroups.Delete)
 		})
 
 		r.Route("/companies", func(r chi.Router) {

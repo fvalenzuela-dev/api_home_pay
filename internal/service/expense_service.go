@@ -11,7 +11,7 @@ import (
 
 type ExpenseService interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateExpenseRequest) (*models.Expense, error)
-	GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters) ([]models.Expense, error)
+	GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Expense, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateExpenseRequest) (*models.Expense, error)
 	Delete(ctx context.Context, id, authUserID string) error
@@ -35,8 +35,8 @@ func (s *expenseService) Create(ctx context.Context, authUserID string, req *mod
 	return s.expenses.Create(ctx, authUserID, req)
 }
 
-func (s *expenseService) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters) ([]models.Expense, error) {
-	return s.expenses.GetAll(ctx, authUserID, filters)
+func (s *expenseService) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error) {
+	return s.expenses.GetAll(ctx, authUserID, filters, p)
 }
 
 func (s *expenseService) GetByID(ctx context.Context, id, authUserID string) (*models.Expense, error) {

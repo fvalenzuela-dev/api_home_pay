@@ -20,16 +20,18 @@ func NewExpenseHandler(svc service.ExpenseService) *ExpenseHandler {
 
 // List godoc
 // @Summary     Listar gastos
-// @Description Retorna gastos del usuario. Soporta filtros opcionales por mes/año y categoría.
+// @Description Retorna gastos del usuario (paginado). Soporta filtros opcionales por mes/año y empresa.
 // @Tags        expenses
 // @Security    BearerAuth
 // @Produce     json
 // @Param       month      query     int     false  "Mes (1-12)"
 // @Param       year       query     int     false  "Año (ej: 2026)"
 // @Param       company_id query     string  false  "Filtrar por empresa"
-// @Success     200       {object}  map[string][]models.Expense
-// @Failure     401       {object}  map[string]string
-// @Failure     500       {object}  map[string]string
+// @Param       page       query     int     false  "Página (default: 1)"
+// @Param       limit      query     int     false  "Resultados por página (default: 20, max: 100)"
+// @Success     200  {object}  map[string]interface{}
+// @Failure     401  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
 // @Router      /expenses [get]
 func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
@@ -49,7 +51,8 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 		filters.CompanyID = &cid
 	}
 
-	expenses, err := h.svc.GetAll(r.Context(), authUserID, filters)
+	p := parsePagination(r)
+	expenses, total, err := h.svc.GetAll(r.Context(), authUserID, filters, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -57,7 +60,7 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 	if expenses == nil {
 		expenses = []models.Expense{}
 	}
-	writeJSON(w, http.StatusOK, expenses)
+	writePaginatedJSON(w, expenses, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
 
 // GetOne godoc

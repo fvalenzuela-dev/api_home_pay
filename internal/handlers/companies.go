@@ -19,17 +19,20 @@ func NewCompanyHandler(svc service.CompanyService) *CompanyHandler {
 
 // List godoc
 // @Summary     Listar empresas
-// @Description Retorna todas las empresas activas del usuario autenticado
+// @Description Retorna todas las empresas activas del usuario autenticado (paginado)
 // @Tags        companies
 // @Security    BearerAuth
 // @Produce     json
-// @Success     200  {object}  map[string][]models.Company
+// @Param       page   query     int  false  "Página (default: 1)"
+// @Param       limit  query     int  false  "Resultados por página (default: 20, max: 100)"
+// @Success     200  {object}  map[string]interface{}
 // @Failure     401  {object}  map[string]string
 // @Failure     500  {object}  map[string]string
 // @Router      /companies [get]
 func (h *CompanyHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
-	companies, err := h.svc.GetAll(r.Context(), authUserID)
+	p := parsePagination(r)
+	companies, total, err := h.svc.GetAll(r.Context(), authUserID, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -37,7 +40,7 @@ func (h *CompanyHandler) List(w http.ResponseWriter, r *http.Request) {
 	if companies == nil {
 		companies = []models.Company{}
 	}
-	writeJSON(w, http.StatusOK, companies)
+	writePaginatedJSON(w, companies, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
 
 // GetOne godoc

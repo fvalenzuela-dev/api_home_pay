@@ -19,19 +19,22 @@ func NewAccountHandler(svc service.AccountService) *AccountHandler {
 
 // List godoc
 // @Summary     Listar cuentas
-// @Description Retorna todas las cuentas activas de una empresa
+// @Description Retorna todas las cuentas activas de una empresa (paginado)
 // @Tags        accounts
 // @Security    BearerAuth
 // @Produce     json
-// @Param       companyID  path      string  true  "Company ID"
-// @Success     200        {object}  map[string][]models.Account
+// @Param       companyID  path      string  true   "Company ID"
+// @Param       page       query     int     false  "Página (default: 1)"
+// @Param       limit      query     int     false  "Resultados por página (default: 20, max: 100)"
+// @Success     200        {object}  map[string]interface{}
 // @Failure     401        {object}  map[string]string
 // @Failure     500        {object}  map[string]string
 // @Router      /companies/{companyID}/accounts [get]
 func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	companyID := chi.URLParam(r, "companyID")
-	accounts, err := h.svc.GetAllByCompany(r.Context(), companyID, authUserID)
+	p := parsePagination(r)
+	accounts, total, err := h.svc.GetAllByCompany(r.Context(), companyID, authUserID, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -39,7 +42,7 @@ func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	if accounts == nil {
 		accounts = []models.Account{}
 	}
-	writeJSON(w, http.StatusOK, accounts)
+	writePaginatedJSON(w, accounts, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
 
 // GetOne godoc

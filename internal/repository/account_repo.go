@@ -11,7 +11,7 @@ import (
 type AccountRepository interface {
 	Create(ctx context.Context, companyID, authUserID string, req *models.CreateAccountRequest) (*models.Account, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Account, error)
-	GetAllByCompany(ctx context.Context, companyID, authUserID string) ([]models.Account, error)
+	GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error)
 	GetActiveIDsByCompany(ctx context.Context, companyID string) ([]string, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateAccountRequest) (*models.Account, error)
 	SoftDelete(ctx context.Context, id, authUserID string) error
@@ -27,18 +27,18 @@ func NewAccountRepository(db *pgxpool.Pool) AccountRepository {
 }
 
 func scanAccount(row pgx.Row, a *models.Account) error {
-	return row.Scan(&a.ID, &a.CompanyID, &a.Name, &a.BillingDay, &a.AutoAccumulate, &a.IsActive, &a.CreatedAt, &a.DeletedAt)
+	return row.Scan(&a.ID, &a.CompanyID, &a.GroupID, &a.AccountNumber, &a.Name, &a.BillingDay, &a.AutoAccumulate, &a.IsActive, &a.CreatedAt, &a.DeletedAt)
 }
 
 func (r *accountRepo) Create(ctx context.Context, companyID, authUserID string, req *models.CreateAccountRequest) (*models.Account, error) {
 	var a models.Account
 	err := scanAccount(r.db.QueryRow(ctx, `
-		INSERT INTO homepay.accounts (company_id, name, billing_day, auto_accumulate)
-		SELECT id, $3, $4, $5
+		INSERT INTO homepay.accounts (company_id, group_id, account_number, name, billing_day, auto_accumulate)
+		SELECT id, $3, $4, $5, $6, $7
 		FROM homepay.companies
 		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
-		RETURNING id, company_id, name, billing_day, auto_accumulate, is_active, created_at, deleted_at
-	`, companyID, authUserID, req.Name, req.BillingDay, req.AutoAccumulate), &a)
+		RETURNING id, company_id, group_id, account_number, name, billing_day, auto_accumulate, is_active, created_at, deleted_at
+	`, companyID, authUserID, req.GroupID, req.AccountNumber, req.Name, req.BillingDay, req.AutoAccumulate), &a)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (r *accountRepo) Create(ctx context.Context, companyID, authUserID string, 
 func (r *accountRepo) GetByID(ctx context.Context, id, authUserID string) (*models.Account, error) {
 	var a models.Account
 	err := scanAccount(r.db.QueryRow(ctx, `
-		SELECT a.id, a.company_id, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
+		SELECT a.id, a.company_id, a.group_id, a.account_number, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
 		FROM homepay.accounts a
 		JOIN homepay.companies c ON c.id = a.company_id
 		WHERE a.id = $1 AND c.auth_user_id = $2 AND a.deleted_at IS NULL
@@ -62,28 +62,39 @@ func (r *accountRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 	return &a, nil
 }
 
-func (r *accountRepo) GetAllByCompany(ctx context.Context, companyID, authUserID string) ([]models.Account, error) {
+func (r *accountRepo) GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error) {
+	var total int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM homepay.accounts a
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE a.company_id = $1 AND c.auth_user_id = $2 AND a.deleted_at IS NULL
+	`, companyID, authUserID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := r.db.Query(ctx, `
-		SELECT a.id, a.company_id, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
+		SELECT a.id, a.company_id, a.group_id, a.account_number, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
 		FROM homepay.accounts a
 		JOIN homepay.companies c ON c.id = a.company_id
 		WHERE a.company_id = $1 AND c.auth_user_id = $2 AND a.deleted_at IS NULL
 		ORDER BY a.created_at DESC
-	`, companyID, authUserID)
+		LIMIT $3 OFFSET $4
+	`, companyID, authUserID, p.Limit, p.Offset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var accounts []models.Account
 	for rows.Next() {
 		var a models.Account
-		if err := rows.Scan(&a.ID, &a.CompanyID, &a.Name, &a.BillingDay, &a.AutoAccumulate, &a.IsActive, &a.CreatedAt, &a.DeletedAt); err != nil {
-			return nil, err
+		if err := rows.Scan(&a.ID, &a.CompanyID, &a.GroupID, &a.AccountNumber, &a.Name, &a.BillingDay, &a.AutoAccumulate, &a.IsActive, &a.CreatedAt, &a.DeletedAt); err != nil {
+			return nil, 0, err
 		}
 		accounts = append(accounts, a)
 	}
-	return accounts, rows.Err()
+	return accounts, total, rows.Err()
 }
 
 func (r *accountRepo) GetActiveIDsByCompany(ctx context.Context, companyID string) ([]string, error) {
@@ -110,13 +121,15 @@ func (r *accountRepo) Update(ctx context.Context, id, authUserID string, req *mo
 	var a models.Account
 	err := scanAccount(r.db.QueryRow(ctx, `
 		UPDATE homepay.accounts a
-		SET name            = COALESCE($3, a.name),
-		    billing_day     = COALESCE($4, a.billing_day),
-		    auto_accumulate = COALESCE($5, a.auto_accumulate)
+		SET group_id        = COALESCE($3, a.group_id),
+		    account_number  = COALESCE($4, a.account_number),
+		    name            = COALESCE($5, a.name),
+		    billing_day     = COALESCE($6, a.billing_day),
+		    auto_accumulate = COALESCE($7, a.auto_accumulate)
 		FROM homepay.companies c
 		WHERE a.id = $1 AND a.company_id = c.id AND c.auth_user_id = $2 AND a.deleted_at IS NULL
-		RETURNING a.id, a.company_id, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
-	`, id, authUserID, req.Name, req.BillingDay, req.AutoAccumulate), &a)
+		RETURNING a.id, a.company_id, a.group_id, a.account_number, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
+	`, id, authUserID, req.GroupID, req.AccountNumber, req.Name, req.BillingDay, req.AutoAccumulate), &a)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}

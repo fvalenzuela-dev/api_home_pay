@@ -47,6 +47,7 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	categoryRepo := repository.NewCategoryRepository(db)
 	companyRepo := repository.NewCompanyRepository(db)
+	accountGroupRepo := repository.NewAccountGroupRepository(db)
 	accountRepo := repository.NewAccountRepository(db)
 	billingRepo := repository.NewBillingRepository(db)
 	expenseRepo := repository.NewExpenseRepository(db)
@@ -54,6 +55,7 @@ func main() {
 
 	// Services
 	companySvc := service.NewCompanyService(companyRepo, accountRepo, billingRepo)
+	accountGroupSvc := service.NewAccountGroupService(accountGroupRepo)
 	accountSvc := service.NewAccountService(accountRepo, billingRepo)
 	billingSvc := service.NewBillingService(billingRepo, accountRepo)
 	expenseSvc := service.NewExpenseService(expenseRepo)
@@ -64,6 +66,7 @@ func main() {
 	webhookHandler := handlers.NewWebhookHandler(userRepo, cfg.ClerkWebhookSecret)
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	companyHandler := handlers.NewCompanyHandler(companySvc)
+	accountGroupHandler := handlers.NewAccountGroupHandler(accountGroupSvc)
 	accountHandler := handlers.NewAccountHandler(accountSvc)
 	billingHandler := handlers.NewBillingHandler(billingSvc)
 	expenseHandler := handlers.NewExpenseHandler(expenseSvc)
@@ -74,6 +77,7 @@ func main() {
 		webhookHandler,
 		categoryHandler,
 		companyHandler,
+		accountGroupHandler,
 		accountHandler,
 		billingHandler,
 		expenseHandler,

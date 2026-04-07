@@ -12,7 +12,9 @@
       "Bash(git add:*)",
       "Bash(~/go/bin/swag init:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__plugin_engram_engram__mem_search",
+      "Bash(go run:*)"
     ]
   }
 }

@@ -12,7 +12,7 @@ import (
 
 type InstallmentService interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateInstallmentRequest) (*models.InstallmentPlanWithPayments, error)
-	GetAll(ctx context.Context, authUserID string) ([]models.InstallmentPlanWithPayments, error)
+	GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.InstallmentPlanWithPayments, int, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.InstallmentPlanWithPayments, error)
 	PayInstallment(ctx context.Context, planID, paymentID, authUserID string) (*models.InstallmentPayment, error)
 	Delete(ctx context.Context, id, authUserID string) error
@@ -76,6 +76,9 @@ func (s *installmentService) Create(ctx context.Context, authUserID string, req 
 	}, nil
 }
 
+// allPayments se usa en llamadas internas que necesitan todos los pagos de un plan.
+var allPayments = models.PaginationParams{Page: 1, Limit: 10000}
+
 func (s *installmentService) GetByID(ctx context.Context, id, authUserID string) (*models.InstallmentPlanWithPayments, error) {
 	plan, err := s.installments.GetPlan(ctx, id, authUserID)
 	if err != nil {
@@ -84,31 +87,31 @@ func (s *installmentService) GetByID(ctx context.Context, id, authUserID string)
 	if plan == nil {
 		return nil, nil
 	}
-	payments, err := s.installments.GetPaymentsByPlan(ctx, plan.ID)
+	payments, _, err := s.installments.GetPaymentsByPlan(ctx, plan.ID, allPayments)
 	if err != nil {
 		return nil, err
 	}
 	return &models.InstallmentPlanWithPayments{InstallmentPlan: *plan, Payments: payments}, nil
 }
 
-func (s *installmentService) GetAll(ctx context.Context, authUserID string) ([]models.InstallmentPlanWithPayments, error) {
-	plans, err := s.installments.GetAllPlans(ctx, authUserID)
+func (s *installmentService) GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.InstallmentPlanWithPayments, int, error) {
+	plans, total, err := s.installments.GetAllPlans(ctx, authUserID, p)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	result := make([]models.InstallmentPlanWithPayments, len(plans))
 	for i, plan := range plans {
-		payments, err := s.installments.GetPaymentsByPlan(ctx, plan.ID)
+		payments, _, err := s.installments.GetPaymentsByPlan(ctx, plan.ID, allPayments)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		result[i] = models.InstallmentPlanWithPayments{
 			InstallmentPlan: plan,
 			Payments:        payments,
 		}
 	}
-	return result, nil
+	return result, total, nil
 }
 
 func (s *installmentService) PayInstallment(ctx context.Context, planID, paymentID, authUserID string) (*models.InstallmentPayment, error) {

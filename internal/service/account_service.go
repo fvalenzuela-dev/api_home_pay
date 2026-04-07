@@ -12,7 +12,7 @@ import (
 type AccountService interface {
 	Create(ctx context.Context, companyID, authUserID string, req *models.CreateAccountRequest) (*models.Account, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Account, error)
-	GetAllByCompany(ctx context.Context, companyID, authUserID string) ([]models.Account, error)
+	GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateAccountRequest) (*models.Account, error)
 	Delete(ctx context.Context, id, authUserID string) error
 }
@@ -40,8 +40,8 @@ func (s *accountService) GetByID(ctx context.Context, id, authUserID string) (*m
 	return s.accounts.GetByID(ctx, id, authUserID)
 }
 
-func (s *accountService) GetAllByCompany(ctx context.Context, companyID, authUserID string) ([]models.Account, error) {
-	return s.accounts.GetAllByCompany(ctx, companyID, authUserID)
+func (s *accountService) GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error) {
+	return s.accounts.GetAllByCompany(ctx, companyID, authUserID, p)
 }
 
 func (s *accountService) Update(ctx context.Context, id, authUserID string, req *models.UpdateAccountRequest) (*models.Account, error) {

@@ -2,6 +2,8 @@ basePath: /
 definitions:
   models.Account:
     properties:
+      account_number:
+        type: string
       auto_accumulate:
         type: boolean
       billing_day:
@@ -11,6 +13,8 @@ definitions:
       created_at:
         type: string
       deleted_at:
+        type: string
+      group_id:
         type: string
       id:
         type: string
@@ -41,6 +45,19 @@ definitions:
         type: string
       period:
         type: integer
+    type: object
+  models.AccountGroup:
+    properties:
+      auth_user_id:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
     type: object
   models.Category:
     properties:
@@ -78,12 +95,21 @@ definitions:
       website:
         type: string
     type: object
+  models.CreateAccountGroupRequest:
+    properties:
+      name:
+        type: string
+    type: object
   models.CreateAccountRequest:
     properties:
+      account_number:
+        type: string
       auto_accumulate:
         type: boolean
       billing_day:
         type: integer
+      group_id:
+        type: string
       name:
         type: string
     type: object
@@ -199,12 +225,21 @@ definitions:
       total_installments:
         type: integer
     type: object
+  models.UpdateAccountGroupRequest:
+    properties:
+      name:
+        type: string
+    type: object
   models.UpdateAccountRequest:
     properties:
+      account_number:
+        type: string
       auto_accumulate:
         type: boolean
       billing_day:
         type: integer
+      group_id:
+        type: string
       name:
         type: string
     type: object
@@ -282,14 +317,133 @@ info:
   title: HomePay API
   version: "1.0"
 paths:
-  /accounts/{accountID}/billings:
+  /account-groups:
     get:
-      description: Retorna todas las facturas de una cuenta, ordenadas por año/mes
-        desc
+      description: Retorna todos los grupos de cuentas del usuario autenticado (paginado)
       parameters:
-      - description: Account ID
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar grupos de cuentas
+      tags:
+      - account-groups
+    post:
+      consumes:
+      - application/json
+      description: Crea un nuevo grupo de cuentas para el usuario autenticado
+      parameters:
+      - description: Datos del grupo
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateAccountGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.AccountGroup'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear grupo de cuentas
+      tags:
+      - account-groups
+  /account-groups/{id}:
+    delete:
+      description: Soft delete de un grupo de cuentas
+      parameters:
+      - description: Account Group ID
         in: path
-        name: accountID
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar grupo de cuentas
+      tags:
+      - account-groups
+    get:
+      description: Retorna un grupo de cuentas por ID
+      parameters:
+      - description: Account Group ID
+        in: path
+        name: id
         required: true
         type: string
       produces:
@@ -298,10 +452,113 @@ paths:
         "200":
           description: OK
           schema:
+            $ref: '#/definitions/models.AccountGroup'
+        "401":
+          description: Unauthorized
+          schema:
             additionalProperties:
-              items:
-                $ref: '#/definitions/models.AccountBilling'
-              type: array
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener grupo de cuentas
+      tags:
+      - account-groups
+    put:
+      consumes:
+      - application/json
+      description: Actualiza el nombre de un grupo de cuentas
+      parameters:
+      - description: Account Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a actualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateAccountGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountGroup'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar grupo de cuentas
+      tags:
+      - account-groups
+  /accounts/{accountID}/billings:
+    get:
+      description: Retorna todas las facturas de una cuenta, ordenadas por año/mes
+        desc (paginado)
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: string
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
@@ -469,16 +726,24 @@ paths:
       - billings
   /categories:
     get:
-      description: Retorna las categorías activas del usuario autenticado
+      description: Retorna las categorías activas del usuario autenticado (paginado)
+      parameters:
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.Category'
-            type: array
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
           schema:
@@ -678,17 +943,23 @@ paths:
       - categories
   /companies:
     get:
-      description: Retorna todas las empresas activas del usuario autenticado
+      description: Retorna todas las empresas activas del usuario autenticado (paginado)
+      parameters:
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              items:
-                $ref: '#/definitions/models.Company'
-              type: array
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
@@ -746,23 +1017,28 @@ paths:
       - companies
   /companies/{companyID}/accounts:
     get:
-      description: Retorna todas las cuentas activas de una empresa
+      description: Retorna todas las cuentas activas de una empresa (paginado)
       parameters:
       - description: Company ID
         in: path
         name: companyID
         required: true
         type: string
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              items:
-                $ref: '#/definitions/models.Account'
-              type: array
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
@@ -1125,8 +1401,8 @@ paths:
       - dashboard
   /expenses:
     get:
-      description: Retorna gastos del usuario. Soporta filtros opcionales por mes/año
-        y categoría.
+      description: Retorna gastos del usuario (paginado). Soporta filtros opcionales
+        por mes/año y empresa.
       parameters:
       - description: Mes (1-12)
         in: query
@@ -1140,16 +1416,21 @@ paths:
         in: query
         name: company_id
         type: string
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              items:
-                $ref: '#/definitions/models.Expense'
-              type: array
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
@@ -1331,16 +1612,23 @@ paths:
   /installments:
     get:
       description: Retorna todos los planes activos del usuario con sus pagos individuales
+        (paginado)
+      parameters:
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              items:
-                $ref: '#/definitions/models.InstallmentPlanWithPayments'
-              type: array
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized

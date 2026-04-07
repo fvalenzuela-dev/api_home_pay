@@ -11,7 +11,7 @@ import (
 type CompanyRepository interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateCompanyRequest) (*models.Company, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Company, error)
-	GetAll(ctx context.Context, authUserID string) ([]models.Company, error)
+	GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.Company, int, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateCompanyRequest) (*models.Company, error)
 	SoftDelete(ctx context.Context, id, authUserID string) error
 }
@@ -59,15 +59,25 @@ func (r *companyRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 	return &c, nil
 }
 
-func (r *companyRepo) GetAll(ctx context.Context, authUserID string) ([]models.Company, error) {
+func (r *companyRepo) GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.Company, int, error) {
+	var total int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM homepay.companies
+		WHERE auth_user_id = $1 AND deleted_at IS NULL
+	`, authUserID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := r.db.Query(ctx, `
 		SELECT `+companyCols+`
 		FROM homepay.companies
 		WHERE auth_user_id = $1 AND deleted_at IS NULL
 		ORDER BY created_at DESC
-	`, authUserID)
+		LIMIT $2 OFFSET $3
+	`, authUserID, p.Limit, p.Offset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -75,11 +85,11 @@ func (r *companyRepo) GetAll(ctx context.Context, authUserID string) ([]models.C
 	for rows.Next() {
 		var c models.Company
 		if err := rows.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		companies = append(companies, c)
 	}
-	return companies, rows.Err()
+	return companies, total, rows.Err()
 }
 
 func (r *companyRepo) Update(ctx context.Context, id, authUserID string, req *models.UpdateCompanyRequest) (*models.Company, error) {

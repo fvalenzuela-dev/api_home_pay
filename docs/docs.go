@@ -15,6 +15,343 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/account-groups": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todos los grupos de cuentas del usuario autenticado (paginado)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account-groups"
+                ],
+                "summary": "Listar grupos de cuentas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Crea un nuevo grupo de cuentas para el usuario autenticado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account-groups"
+                ],
+                "summary": "Crear grupo de cuentas",
+                "parameters": [
+                    {
+                        "description": "Datos del grupo",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateAccountGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.AccountGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/account-groups/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna un grupo de cuentas por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account-groups"
+                ],
+                "summary": "Obtener grupo de cuentas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AccountGroup"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualiza el nombre de un grupo de cuentas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account-groups"
+                ],
+                "summary": "Editar grupo de cuentas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Campos a actualizar",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateAccountGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AccountGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft delete de un grupo de cuentas",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account-groups"
+                ],
+                "summary": "Eliminar grupo de cuentas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/accounts/{accountID}/billings": {
             "get": {
                 "security": [
@@ -22,7 +359,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna todas las facturas de una cuenta, ordenadas por año/mes desc",
+                "description": "Retorna todas las facturas de una cuenta, ordenadas por año/mes desc (paginado)",
                 "produces": [
                     "application/json"
                 ],
@@ -37,6 +374,18 @@ const docTemplate = `{
                         "name": "accountID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -44,12 +393,7 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/models.AccountBilling"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -303,7 +647,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna las categorías activas del usuario autenticado",
+                "description": "Retorna las categorías activas del usuario autenticado (paginado)",
                 "produces": [
                     "application/json"
                 ],
@@ -311,14 +655,26 @@ const docTemplate = `{
                     "categories"
                 ],
                 "summary": "Listar categorías",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Category"
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -628,7 +984,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna todas las empresas activas del usuario autenticado",
+                "description": "Retorna todas las empresas activas del usuario autenticado (paginado)",
                 "produces": [
                     "application/json"
                 ],
@@ -636,17 +992,26 @@ const docTemplate = `{
                     "companies"
                 ],
                 "summary": "Listar empresas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/models.Company"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -735,7 +1100,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna todas las cuentas activas de una empresa",
+                "description": "Retorna todas las cuentas activas de una empresa (paginado)",
                 "produces": [
                     "application/json"
                 ],
@@ -750,6 +1115,18 @@ const docTemplate = `{
                         "name": "companyID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -757,12 +1134,7 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/models.Account"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -1321,7 +1693,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna gastos del usuario. Soporta filtros opcionales por mes/año y categoría.",
+                "description": "Retorna gastos del usuario (paginado). Soporta filtros opcionales por mes/año y empresa.",
                 "produces": [
                     "application/json"
                 ],
@@ -1347,6 +1719,18 @@ const docTemplate = `{
                         "description": "Filtrar por empresa",
                         "name": "company_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1354,12 +1738,7 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/models.Expense"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -1639,7 +2018,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retorna todos los planes activos del usuario con sus pagos individuales",
+                "description": "Retorna todos los planes activos del usuario con sus pagos individuales (paginado)",
                 "produces": [
                     "application/json"
                 ],
@@ -1647,17 +2026,26 @@ const docTemplate = `{
                     "installments"
                 ],
                 "summary": "Listar planes de cuotas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/models.InstallmentPlanWithPayments"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -1979,6 +2367,9 @@ const docTemplate = `{
         "models.Account": {
             "type": "object",
             "properties": {
+                "account_number": {
+                    "type": "string"
+                },
                 "auto_accumulate": {
                     "type": "boolean"
                 },
@@ -1992,6 +2383,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "deleted_at": {
+                    "type": "string"
+                },
+                "group_id": {
                     "type": "string"
                 },
                 "id": {
@@ -2037,6 +2431,26 @@ const docTemplate = `{
                 },
                 "period": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.AccountGroup": {
+            "type": "object",
+            "properties": {
+                "auth_user_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -2095,14 +2509,28 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CreateAccountGroupRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.CreateAccountRequest": {
             "type": "object",
             "properties": {
+                "account_number": {
+                    "type": "string"
+                },
                 "auto_accumulate": {
                     "type": "boolean"
                 },
                 "billing_day": {
                     "type": "integer"
+                },
+                "group_id": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -2281,14 +2709,28 @@ const docTemplate = `{
                 }
             }
         },
+        "models.UpdateAccountGroupRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.UpdateAccountRequest": {
             "type": "object",
             "properties": {
+                "account_number": {
+                    "type": "string"
+                },
                 "auto_accumulate": {
                     "type": "boolean"
                 },
                 "billing_day": {
                     "type": "integer"
+                },
+                "group_id": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

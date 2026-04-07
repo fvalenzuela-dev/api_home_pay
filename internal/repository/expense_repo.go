@@ -14,7 +14,7 @@ import (
 type ExpenseRepository interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateExpenseRequest) (*models.Expense, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Expense, error)
-	GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters) ([]models.Expense, error)
+	GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateExpenseRequest) (*models.Expense, error)
 	SoftDelete(ctx context.Context, id, authUserID string) error
 }
@@ -67,7 +67,7 @@ func (r *expenseRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 	return &e, nil
 }
 
-func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters) ([]models.Expense, error) {
+func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error) {
 	args := []any{authUserID}
 	conds := []string{"auth_user_id = $1", "deleted_at IS NULL"}
 	n := 2
@@ -83,18 +83,31 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	if filters.CompanyID != nil {
 		conds = append(conds, fmt.Sprintf("company_id = $%d", n))
 		args = append(args, *filters.CompanyID)
+		n++
 	}
 
+	where := strings.Join(conds, " AND ")
+
+	var total int
+	err := r.db.QueryRow(ctx, fmt.Sprintf(
+		`SELECT COUNT(*) FROM homepay.variable_expenses WHERE %s`, where,
+	), args...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, p.Limit, p.Offset())
 	query := fmt.Sprintf(`
 		SELECT `+expenseCols+`
 		FROM homepay.variable_expenses
 		WHERE %s
 		ORDER BY expense_date DESC
-	`, strings.Join(conds, " AND "))
+		LIMIT $%d OFFSET $%d
+	`, where, n, n+1)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -102,11 +115,11 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	for rows.Next() {
 		var e models.Expense
 		if err := rows.Scan(&e.ID, &e.AuthUserID, &e.CompanyID, &e.Description, &e.Amount, &e.ExpenseDate, &e.CreatedAt, &e.DeletedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		expenses = append(expenses, e)
 	}
-	return expenses, rows.Err()
+	return expenses, total, rows.Err()
 }
 
 func (r *expenseRepo) Update(ctx context.Context, id, authUserID string, req *models.UpdateExpenseRequest) (*models.Expense, error) {

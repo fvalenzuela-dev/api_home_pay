@@ -46,17 +46,20 @@ func (h *InstallmentHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 
 // List godoc
 // @Summary     Listar planes de cuotas
-// @Description Retorna todos los planes activos del usuario con sus pagos individuales
+// @Description Retorna todos los planes activos del usuario con sus pagos individuales (paginado)
 // @Tags        installments
 // @Security    BearerAuth
 // @Produce     json
-// @Success     200  {object}  map[string][]models.InstallmentPlanWithPayments
+// @Param       page   query     int  false  "Página (default: 1)"
+// @Param       limit  query     int  false  "Resultados por página (default: 20, max: 100)"
+// @Success     200  {object}  map[string]interface{}
 // @Failure     401  {object}  map[string]string
 // @Failure     500  {object}  map[string]string
 // @Router      /installments [get]
 func (h *InstallmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
-	plans, err := h.svc.GetAll(r.Context(), authUserID)
+	p := parsePagination(r)
+	plans, total, err := h.svc.GetAll(r.Context(), authUserID, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -64,7 +67,7 @@ func (h *InstallmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	if plans == nil {
 		plans = []models.InstallmentPlanWithPayments{}
 	}
-	writeJSON(w, http.StatusOK, plans)
+	writePaginatedJSON(w, plans, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
 
 // Create godoc

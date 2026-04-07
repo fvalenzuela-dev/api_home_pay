@@ -12,7 +12,7 @@ import (
 type CompanyService interface {
 	Create(ctx context.Context, authUserID string, req *models.CreateCompanyRequest) (*models.Company, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Company, error)
-	GetAll(ctx context.Context, authUserID string) ([]models.Company, error)
+	GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.Company, int, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateCompanyRequest) (*models.Company, error)
 	Delete(ctx context.Context, id, authUserID string) error
 }
@@ -42,8 +42,8 @@ func (s *companyService) GetByID(ctx context.Context, id, authUserID string) (*m
 	return s.companies.GetByID(ctx, id, authUserID)
 }
 
-func (s *companyService) GetAll(ctx context.Context, authUserID string) ([]models.Company, error) {
-	return s.companies.GetAll(ctx, authUserID)
+func (s *companyService) GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.Company, int, error) {
+	return s.companies.GetAll(ctx, authUserID, p)
 }
 
 func (s *companyService) Update(ctx context.Context, id, authUserID string, req *models.UpdateCompanyRequest) (*models.Company, error) {

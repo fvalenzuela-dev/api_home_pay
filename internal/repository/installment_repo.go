@@ -12,8 +12,8 @@ type InstallmentRepository interface {
 	CreatePlan(ctx context.Context, authUserID string, plan *models.InstallmentPlan) (*models.InstallmentPlan, error)
 	CreatePayments(ctx context.Context, payments []models.InstallmentPayment) error
 	GetPlan(ctx context.Context, id, authUserID string) (*models.InstallmentPlan, error)
-	GetAllPlans(ctx context.Context, authUserID string) ([]models.InstallmentPlan, error)
-	GetPaymentsByPlan(ctx context.Context, planID string) ([]models.InstallmentPayment, error)
+	GetAllPlans(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.InstallmentPlan, int, error)
+	GetPaymentsByPlan(ctx context.Context, planID string, p models.PaginationParams) ([]models.InstallmentPayment, int, error)
 	GetActivePaymentsByMonth(ctx context.Context, authUserID string, month, year int) ([]models.InstallmentPayment, error)
 	UpdatePayment(ctx context.Context, planID, paymentID, authUserID string) (*models.InstallmentPayment, error)
 	IncrementPaid(ctx context.Context, planID string, total int) error
@@ -83,52 +83,72 @@ func (r *installmentRepo) GetPlan(ctx context.Context, id, authUserID string) (*
 	return &p, nil
 }
 
-func (r *installmentRepo) GetAllPlans(ctx context.Context, authUserID string) ([]models.InstallmentPlan, error) {
+func (r *installmentRepo) GetAllPlans(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.InstallmentPlan, int, error) {
+	var total int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM homepay.installment_plans
+		WHERE auth_user_id = $1 AND deleted_at IS NULL
+	`, authUserID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := r.db.Query(ctx, `
 		SELECT `+planCols+`
 		FROM homepay.installment_plans
 		WHERE auth_user_id = $1 AND deleted_at IS NULL
 		ORDER BY created_at DESC
-	`, authUserID)
+		LIMIT $2 OFFSET $3
+	`, authUserID, p.Limit, p.Offset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var plans []models.InstallmentPlan
 	for rows.Next() {
-		var p models.InstallmentPlan
-		if err := rows.Scan(&p.ID, &p.AuthUserID, &p.Description, &p.TotalAmount, &p.TotalInstallments,
-			&p.InstallmentsPaid, &p.StartDate, &p.IsCompleted, &p.CreatedAt, &p.DeletedAt); err != nil {
-			return nil, err
+		var pl models.InstallmentPlan
+		if err := rows.Scan(&pl.ID, &pl.AuthUserID, &pl.Description, &pl.TotalAmount, &pl.TotalInstallments,
+			&pl.InstallmentsPaid, &pl.StartDate, &pl.IsCompleted, &pl.CreatedAt, &pl.DeletedAt); err != nil {
+			return nil, 0, err
 		}
-		plans = append(plans, p)
+		plans = append(plans, pl)
 	}
-	return plans, rows.Err()
+	return plans, total, rows.Err()
 }
 
-func (r *installmentRepo) GetPaymentsByPlan(ctx context.Context, planID string) ([]models.InstallmentPayment, error) {
+func (r *installmentRepo) GetPaymentsByPlan(ctx context.Context, planID string, p models.PaginationParams) ([]models.InstallmentPayment, int, error) {
+	var total int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM homepay.installment_payments
+		WHERE plan_id = $1 AND deleted_at IS NULL
+	`, planID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := r.db.Query(ctx, `
 		SELECT `+paymentCols+`
 		FROM homepay.installment_payments
 		WHERE plan_id = $1 AND deleted_at IS NULL
 		ORDER BY installment_number
-	`, planID)
+		LIMIT $2 OFFSET $3
+	`, planID, p.Limit, p.Offset())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var payments []models.InstallmentPayment
 	for rows.Next() {
-		var p models.InstallmentPayment
-		if err := rows.Scan(&p.ID, &p.PlanID, &p.InstallmentNumber, &p.Amount, &p.DueDate,
-			&p.IsPaid, &p.PaidAt, &p.CreatedAt, &p.DeletedAt); err != nil {
-			return nil, err
+		var pay models.InstallmentPayment
+		if err := rows.Scan(&pay.ID, &pay.PlanID, &pay.InstallmentNumber, &pay.Amount, &pay.DueDate,
+			&pay.IsPaid, &pay.PaidAt, &pay.CreatedAt, &pay.DeletedAt); err != nil {
+			return nil, 0, err
 		}
-		payments = append(payments, p)
+		payments = append(payments, pay)
 	}
-	return payments, rows.Err()
+	return payments, total, rows.Err()
 }
 
 func (r *installmentRepo) GetActivePaymentsByMonth(ctx context.Context, authUserID string, month, year int) ([]models.InstallmentPayment, error) {

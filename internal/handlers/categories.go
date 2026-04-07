@@ -21,17 +21,20 @@ func NewCategoryHandler(repo repository.CategoryRepository) *CategoryHandler {
 
 // List godoc
 // @Summary     Listar categorías
-// @Description Retorna las categorías activas del usuario autenticado
+// @Description Retorna las categorías activas del usuario autenticado (paginado)
 // @Tags        categories
 // @Security    BearerAuth
 // @Produce     json
-// @Success     200  {array}   models.Category
+// @Param       page   query     int  false  "Página (default: 1)"
+// @Param       limit  query     int  false  "Resultados por página (default: 20, max: 100)"
+// @Success     200  {object}  map[string]interface{}
 // @Failure     401  {object}  map[string]string
 // @Failure     500  {object}  map[string]string
 // @Router      /categories [get]
 func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
-	cats, err := h.repo.GetAll(r.Context(), authUserID)
+	p := parsePagination(r)
+	cats, total, err := h.repo.GetAll(r.Context(), authUserID, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -39,7 +42,7 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	if cats == nil {
 		cats = []models.Category{}
 	}
-	writeJSON(w, http.StatusOK, cats)
+	writePaginatedJSON(w, cats, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
 
 // GetOne godoc
@@ -100,6 +103,10 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	cat, err := h.repo.Create(r.Context(), authUserID, &req)
 	if err != nil {
+		if err == repository.ErrDuplicateName {
+			writeError(w, http.StatusConflict, "ya existe una categoría con ese nombre")
+			return
+		}
 		writeInternalError(w, r, err)
 		return
 	}
@@ -135,6 +142,10 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	cat, err := h.repo.Update(r.Context(), id, authUserID, &req)
 	if err != nil {
+		if err == repository.ErrDuplicateName {
+			writeError(w, http.StatusConflict, "ya existe una categoría con ese nombre")
+			return
+		}
 		writeInternalError(w, r, err)
 		return
 	}

@@ -19,19 +19,22 @@ func NewBillingHandler(svc service.BillingService) *BillingHandler {
 
 // List godoc
 // @Summary     Listar facturas
-// @Description Retorna todas las facturas de una cuenta, ordenadas por año/mes desc
+// @Description Retorna todas las facturas de una cuenta, ordenadas por año/mes desc (paginado)
 // @Tags        billings
 // @Security    BearerAuth
 // @Produce     json
-// @Param       accountID  path      string  true  "Account ID"
-// @Success     200        {object}  map[string][]models.AccountBilling
+// @Param       accountID  path      string  true   "Account ID"
+// @Param       page       query     int     false  "Página (default: 1)"
+// @Param       limit      query     int     false  "Resultados por página (default: 20, max: 100)"
+// @Success     200        {object}  map[string]interface{}
 // @Failure     401        {object}  map[string]string
 // @Failure     500        {object}  map[string]string
 // @Router      /accounts/{accountID}/billings [get]
 func (h *BillingHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	accountID := chi.URLParam(r, "accountID")
-	billings, err := h.svc.GetAllByAccount(r.Context(), accountID, authUserID)
+	p := parsePagination(r)
+	billings, total, err := h.svc.GetAllByAccount(r.Context(), accountID, authUserID, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -39,7 +42,7 @@ func (h *BillingHandler) List(w http.ResponseWriter, r *http.Request) {
 	if billings == nil {
 		billings = []models.AccountBilling{}
 	}
-	writeJSON(w, http.StatusOK, billings)
+	writePaginatedJSON(w, billings, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
 
 // GetOne godoc
