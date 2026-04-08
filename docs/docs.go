@@ -2315,6 +2315,147 @@ const docTemplate = `{
                 }
             }
         },
+        "/periods/{period}/billings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todos los billings del usuario para el periodo indicado. Filtrable por estado de pago.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "periods"
+                ],
+                "summary": "Listar billings de un periodo",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Periodo YYYYMM (ej: 202605)",
+                        "name": "period",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtro: all (default), paid, unpaid",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Resultados por página (default: 20, max: 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/periods/{period}/open": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Genera un billing por cada cuenta activa del usuario para el periodo indicado. Idempotente: si el billing ya existe, lo saltea. Aplica carry-over del periodo anterior si hay deuda pendiente.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "periods"
+                ],
+                "summary": "Abrir periodo",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Periodo YYYYMM (ej: 202605)",
+                        "name": "period",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.OpenPeriodResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/clerk": {
             "post": {
                 "description": "Recibe eventos de Clerk (user.created, user.updated, user.deleted). Verifica la firma con svix.",
@@ -2543,6 +2684,22 @@ const docTemplate = `{
                 "amount_billed": {
                     "type": "number"
                 },
+                "amount_paid": {
+                    "description": "opcional; si \u003e= amount_billed se marca como pagada",
+                    "type": "number"
+                },
+                "carried_from": {
+                    "description": "UUID de factura impaga anterior (carry-over manual)",
+                    "type": "string"
+                },
+                "is_paid": {
+                    "description": "opcional; fuerza estado pagado",
+                    "type": "boolean"
+                },
+                "paid_at": {
+                    "description": "opcional; fecha de pago",
+                    "type": "string"
+                },
                 "period": {
                     "type": "integer"
                 }
@@ -2709,6 +2866,20 @@ const docTemplate = `{
                 }
             }
         },
+        "models.OpenPeriodResponse": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "period": {
+                    "type": "integer"
+                },
+                "skipped": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.UpdateAccountGroupRequest": {
             "type": "object",
             "properties": {
@@ -2740,8 +2911,17 @@ const docTemplate = `{
         "models.UpdateBillingRequest": {
             "type": "object",
             "properties": {
+                "amount_billed": {
+                    "type": "number"
+                },
                 "amount_paid": {
                     "type": "number"
+                },
+                "is_paid": {
+                    "type": "boolean"
+                },
+                "paid_at": {
+                    "type": "string"
                 }
             }
         },

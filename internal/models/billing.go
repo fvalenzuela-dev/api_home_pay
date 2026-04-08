@@ -19,10 +19,31 @@ type AccountBilling struct {
 
 // CreateBillingRequest — period en formato YYYYMM, ej: 202603
 type CreateBillingRequest struct {
-	Period       int     `json:"period"`
-	AmountBilled float64 `json:"amount_billed"`
+	Period       int        `json:"period"`
+	AmountBilled float64    `json:"amount_billed"`
+	AmountPaid   *float64   `json:"amount_paid,omitempty"`  // opcional; si >= amount_billed se marca como pagada
+	IsPaid       *bool      `json:"is_paid,omitempty"`       // opcional; fuerza estado pagado
+	PaidAt       *time.Time `json:"paid_at,omitempty"`       // opcional; fecha de pago
+	CarriedFrom  *string    `json:"carried_from,omitempty"`  // UUID de factura impaga anterior (carry-over manual)
 }
 
 type UpdateBillingRequest struct {
-	AmountPaid *float64 `json:"amount_paid"`
+	AmountBilled *float64   `json:"amount_billed,omitempty"`
+	AmountPaid   *float64   `json:"amount_paid,omitempty"`
+	IsPaid       *bool      `json:"is_paid,omitempty"`
+	PaidAt       *time.Time `json:"paid_at,omitempty"`
+}
+
+// OpenPeriodResponse — resultado de la apertura de un periodo.
+type OpenPeriodResponse struct {
+	Period  int `json:"period"`
+	Created int `json:"created"`
+	Skipped int `json:"skipped"`
+}
+
+// PeriodBillingInsert — datos necesarios para insertar un billing al abrir un periodo.
+type PeriodBillingInsert struct {
+	AccountID    string
+	AmountBilled float64
+	CarriedFrom  *string
 }

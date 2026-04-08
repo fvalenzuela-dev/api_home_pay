@@ -12,6 +12,7 @@ type AccountRepository interface {
 	Create(ctx context.Context, companyID, authUserID string, req *models.CreateAccountRequest) (*models.Account, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.Account, error)
 	GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error)
+	GetAllActiveByUser(ctx context.Context, authUserID string) ([]models.Account, error)
 	GetActiveIDsByCompany(ctx context.Context, companyID string) ([]string, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateAccountRequest) (*models.Account, error)
 	SoftDelete(ctx context.Context, id, authUserID string) error
@@ -95,6 +96,30 @@ func (r *accountRepo) GetAllByCompany(ctx context.Context, companyID, authUserID
 		accounts = append(accounts, a)
 	}
 	return accounts, total, rows.Err()
+}
+
+func (r *accountRepo) GetAllActiveByUser(ctx context.Context, authUserID string) ([]models.Account, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT a.id, a.company_id, a.group_id, a.account_number, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
+		FROM homepay.accounts a
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE c.auth_user_id = $1 AND a.deleted_at IS NULL AND c.deleted_at IS NULL
+		ORDER BY a.created_at
+	`, authUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var accounts []models.Account
+	for rows.Next() {
+		var a models.Account
+		if err := rows.Scan(&a.ID, &a.CompanyID, &a.GroupID, &a.AccountNumber, &a.Name, &a.BillingDay, &a.AutoAccumulate, &a.IsActive, &a.CreatedAt, &a.DeletedAt); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, a)
+	}
+	return accounts, rows.Err()
 }
 
 func (r *accountRepo) GetActiveIDsByCompany(ctx context.Context, companyID string) ([]string, error) {

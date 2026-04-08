@@ -84,6 +84,11 @@ func New(
 			r.Put("/{id}", billings.Update)
 		})
 
+		r.Route("/periods/{period}", func(r chi.Router) {
+			r.Post("/open", billings.OpenPeriod)
+			r.Get("/billings", billings.ListByPeriod)
+		})
+
 		r.Route("/expenses", func(r chi.Router) {
 			r.Get("/", expenses.List)
 			r.Post("/", expenses.Create)

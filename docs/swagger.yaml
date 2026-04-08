@@ -117,6 +117,18 @@ definitions:
     properties:
       amount_billed:
         type: number
+      amount_paid:
+        description: opcional; si >= amount_billed se marca como pagada
+        type: number
+      carried_from:
+        description: UUID de factura impaga anterior (carry-over manual)
+        type: string
+      is_paid:
+        description: opcional; fuerza estado pagado
+        type: boolean
+      paid_at:
+        description: opcional; fecha de pago
+        type: string
       period:
         type: integer
     type: object
@@ -225,6 +237,15 @@ definitions:
       total_installments:
         type: integer
     type: object
+  models.OpenPeriodResponse:
+    properties:
+      created:
+        type: integer
+      period:
+        type: integer
+      skipped:
+        type: integer
+    type: object
   models.UpdateAccountGroupRequest:
     properties:
       name:
@@ -245,8 +266,14 @@ definitions:
     type: object
   models.UpdateBillingRequest:
     properties:
+      amount_billed:
+        type: number
       amount_paid:
         type: number
+      is_paid:
+        type: boolean
+      paid_at:
+        type: string
     type: object
   models.UpdateCategoryRequest:
     properties:
@@ -1807,6 +1834,100 @@ paths:
       summary: Pagar cuota
       tags:
       - installments
+  /periods/{period}/billings:
+    get:
+      description: Retorna todos los billings del usuario para el periodo indicado.
+        Filtrable por estado de pago.
+      parameters:
+      - description: 'Periodo YYYYMM (ej: 202605)'
+        in: path
+        name: period
+        required: true
+        type: integer
+      - description: 'Filtro: all (default), paid, unpaid'
+        in: query
+        name: status
+        type: string
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar billings de un periodo
+      tags:
+      - periods
+  /periods/{period}/open:
+    post:
+      description: 'Genera un billing por cada cuenta activa del usuario para el periodo
+        indicado. Idempotente: si el billing ya existe, lo saltea. Aplica carry-over
+        del periodo anterior si hay deuda pendiente.'
+      parameters:
+      - description: 'Periodo YYYYMM (ej: 202605)'
+        in: path
+        name: period
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OpenPeriodResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Abrir periodo
+      tags:
+      - periods
   /webhooks/clerk:
     post:
       consumes:

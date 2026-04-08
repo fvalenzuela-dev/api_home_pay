@@ -57,7 +57,7 @@ func (s *dashboardService) GetSummary(ctx context.Context, authUserID string, mo
 	period := year*100 + month
 
 	allPages := models.PaginationParams{Page: 1, Limit: 10000}
-	billings, _, err := s.billings.GetAllByPeriod(ctx, authUserID, period, allPages)
+	billings, _, err := s.billings.GetAllByPeriod(ctx, authUserID, period, nil, allPages)
 	if err != nil {
 		return nil, err
 	}

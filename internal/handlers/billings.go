@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/homepay/api/internal/middleware"
@@ -140,4 +141,85 @@ func (h *BillingHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, billing)
+}
+
+// OpenPeriod godoc
+// @Summary     Abrir periodo
+// @Description Genera un billing por cada cuenta activa del usuario para el periodo indicado. Idempotente: si el billing ya existe, lo saltea. Aplica carry-over del periodo anterior si hay deuda pendiente.
+// @Tags        periods
+// @Security    BearerAuth
+// @Produce     json
+// @Param       period  path      int  true  "Periodo YYYYMM (ej: 202605)"
+// @Success     200     {object}  models.OpenPeriodResponse
+// @Failure     400     {object}  map[string]string
+// @Failure     401     {object}  map[string]string
+// @Failure     500     {object}  map[string]string
+// @Router      /periods/{period}/open [post]
+func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	periodStr := chi.URLParam(r, "period")
+	period, err := strconv.Atoi(periodStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "period inválido: debe ser un entero YYYYMM")
+		return
+	}
+	resp, err := h.svc.OpenPeriod(r.Context(), authUserID, period)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// ListByPeriod godoc
+// @Summary     Listar billings de un periodo
+// @Description Retorna todos los billings del usuario para el periodo indicado. Filtrable por estado de pago.
+// @Tags        periods
+// @Security    BearerAuth
+// @Produce     json
+// @Param       period    path      int     true   "Periodo YYYYMM (ej: 202605)"
+// @Param       status    query     string  false  "Filtro: all (default), paid, unpaid"
+// @Param       page      query     int     false  "Página (default: 1)"
+// @Param       page_size query     int     false  "Resultados por página (default: 20, max: 100)"
+// @Success     200       {object}  map[string]interface{}
+// @Failure     400       {object}  map[string]string
+// @Failure     401       {object}  map[string]string
+// @Failure     500       {object}  map[string]string
+// @Router      /periods/{period}/billings [get]
+func (h *BillingHandler) ListByPeriod(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	periodStr := chi.URLParam(r, "period")
+	period, err := strconv.Atoi(periodStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "period inválido: debe ser un entero YYYYMM")
+		return
+	}
+
+	var isPaid *bool
+	if status := r.URL.Query().Get("status"); status != "" {
+		switch status {
+		case "paid":
+			v := true
+			isPaid = &v
+		case "unpaid":
+			v := false
+			isPaid = &v
+		case "all":
+			// isPaid queda nil = sin filtro
+		default:
+			writeError(w, http.StatusBadRequest, "status inválido: usar all, paid o unpaid")
+			return
+		}
+	}
+
+	p := parsePagination(r)
+	billings, total, err := h.svc.GetAllByPeriod(r.Context(), authUserID, period, isPaid, p)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if billings == nil {
+		billings = []models.AccountBilling{}
+	}
+	writePaginatedJSON(w, billings, models.NewPaginationMeta(p.Page, p.Limit, total))
 }
