@@ -1,14 +1,14 @@
 ---
 codacy:
   coverage:
-    # Coverage threshold - adjust to 90% as requested
+    # Coverage threshold - 80% minimum
     coverage:
-      default: 70
+      default: 80
 
     # Per-language thresholds
     languages:
       go:
-        default: 70
+        default: 80
 
     # Partial coverage (files that don't need 90%)
     partials:
