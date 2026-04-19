@@ -69,41 +69,43 @@ func (r *expenseRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 
 func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error) {
 	args := []any{authUserID}
+	argNum := 1
+
 	conds := []string{"auth_user_id = $1", "deleted_at IS NULL"}
-	n := 2
 
 	if filters.Month != nil && filters.Year != nil {
-		conds = append(conds, fmt.Sprintf("EXTRACT(MONTH FROM expense_date) = $%d", n))
+		argNum++
+		conds = append(conds, fmt.Sprintf("EXTRACT(MONTH FROM expense_date) = $%d", argNum))
 		args = append(args, *filters.Month)
-		n++
-		conds = append(conds, fmt.Sprintf("EXTRACT(YEAR FROM expense_date) = $%d", n))
+		argNum++
+		conds = append(conds, fmt.Sprintf("EXTRACT(YEAR FROM expense_date) = $%d", argNum))
 		args = append(args, *filters.Year)
-		n++
 	}
 	if filters.CompanyID != nil {
-		conds = append(conds, fmt.Sprintf("company_id = $%d", n))
+		argNum++
+		conds = append(conds, fmt.Sprintf("company_id = $%d", argNum))
 		args = append(args, *filters.CompanyID)
-		n++
 	}
 
 	where := strings.Join(conds, " AND ")
 
 	var total int
-	err := r.db.QueryRow(ctx, fmt.Sprintf(
-		`SELECT COUNT(*) FROM homepay.variable_expenses WHERE %s`, where,
-	), args...).Scan(&total)
+	err := r.db.QueryRow(ctx,
+		"SELECT COUNT(*) FROM homepay.variable_expenses WHERE "+where,
+		args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	args = append(args, p.Limit, p.Offset())
-	query := fmt.Sprintf(`
-		SELECT `+expenseCols+`
-		FROM homepay.variable_expenses
-		WHERE %s
-		ORDER BY expense_date DESC
-		LIMIT $%d OFFSET $%d
-	`, where, n, n+1)
+	argNum++
+	limitIdx := argNum
+	args = append(args, p.Limit)
+	argNum++
+	offsetIdx := argNum
+	args = append(args, p.Offset())
+
+	query := "SELECT " + expenseCols + " FROM homepay.variable_expenses WHERE " + where +
+		fmt.Sprintf(" ORDER BY expense_date DESC LIMIT $%d OFFSET $%d", limitIdx, offsetIdx)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
