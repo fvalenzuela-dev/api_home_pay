@@ -1,5 +1,5 @@
 // @title           HomePay API
-// @version         1.0
+// @version         ${VERSION}
 // @description     Backend REST para gestión de finanzas personales HomePay. Todos los endpoints protegidos requieren un JWT de Clerk en el header Authorization.
 // @BasePath        /
 // @securityDefinitions.apikey BearerAuth
@@ -23,6 +23,8 @@ import (
 	"github.com/homepay/api/internal/service"
 	_ "github.com/homepay/api/docs"
 )
+
+var version = "dev"
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
