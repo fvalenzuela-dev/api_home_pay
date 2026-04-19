@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -98,14 +99,12 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	}
 
 	argNum++
-	limitIdx := argNum
 	args = append(args, p.Limit)
 	argNum++
-	offsetIdx := argNum
 	args = append(args, p.Offset())
 
 	query := "SELECT " + expenseCols + " FROM homepay.variable_expenses WHERE " + where +
-		fmt.Sprintf(" ORDER BY expense_date DESC LIMIT $%d OFFSET $%d", limitIdx, offsetIdx)
+		" ORDER BY expense_date DESC LIMIT $" + strconv.Itoa(argNum-1) + " OFFSET $" + strconv.Itoa(argNum)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
