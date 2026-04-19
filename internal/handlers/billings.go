@@ -219,7 +219,7 @@ func (h *BillingHandler) ListByPeriod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if billings == nil {
-		billings = []models.AccountBilling{}
+		billings = []models.AccountBillingWithDetails{}
 	}
 	writePaginatedJSON(w, billings, models.NewPaginationMeta(p.Page, p.Limit, total))
 }

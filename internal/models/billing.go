@@ -41,6 +41,14 @@ type OpenPeriodResponse struct {
 	Skipped int `json:"skipped"`
 }
 
+// AccountBillingWithDetails — billing con nombre de categoría, empresa y cuenta (usado en GET /periods/{period}/billings).
+type AccountBillingWithDetails struct {
+	AccountBilling
+	CategoryName string `json:"category_name"`
+	CompanyName  string `json:"company_name"`
+	AccountName  string `json:"account_name"`
+}
+
 // PeriodBillingInsert — datos necesarios para insertar un billing al abrir un periodo.
 type PeriodBillingInsert struct {
 	AccountID    string

@@ -11,7 +11,7 @@ import (
 type BillingService interface {
 	Create(ctx context.Context, accountID, authUserID string, req *models.CreateBillingRequest) (*models.AccountBilling, error)
 	GetAllByAccount(ctx context.Context, accountID, authUserID string, p models.PaginationParams) ([]models.AccountBilling, int, error)
-	GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBilling, int, error)
+	GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.AccountBilling, error)
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateBillingRequest) (*models.AccountBilling, error)
 	OpenPeriod(ctx context.Context, authUserID string, period int) (*models.OpenPeriodResponse, error)
@@ -115,7 +115,7 @@ func (s *billingService) GetAllByAccount(ctx context.Context, accountID, authUse
 	return s.billings.GetAllByAccount(ctx, accountID, authUserID, p)
 }
 
-func (s *billingService) GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+func (s *billingService) GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error) {
 	if err := validatePeriod(period); err != nil {
 		return nil, 0, err
 	}

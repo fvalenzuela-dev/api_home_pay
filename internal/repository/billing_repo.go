@@ -15,7 +15,7 @@ type BillingRepository interface {
 	GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error)
 	GetAllByAccount(ctx context.Context, accountID, authUserID string, p models.PaginationParams) ([]models.AccountBilling, int, error)
 	GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error)
-	GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBilling, int, error)
+	GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error)
 	BulkInsertForPeriod(ctx context.Context, period int, inserts []models.PeriodBillingInsert) error
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateBillingRequest) (*models.AccountBilling, error)
 	MarkPaid(ctx context.Context, id string) error
@@ -164,7 +164,7 @@ func (r *billingRepo) GetUnpaidByAccount(ctx context.Context, accountID string) 
 	return &b, nil
 }
 
-func (r *billingRepo) GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+func (r *billingRepo) GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error) {
 	paidFilter := ""
 	if isPaid != nil {
 		if *isPaid {
@@ -186,10 +186,11 @@ func (r *billingRepo) GetAllByPeriod(ctx context.Context, authUserID string, per
 	}
 
 	rows, err := r.db.Query(ctx, `
-		SELECT `+billingColsAB+`
+		SELECT `+billingColsAB+`, cat.name, c.name, a.name
 		FROM homepay.account_billings ab
 		JOIN homepay.accounts a ON a.id = ab.account_id
 		JOIN homepay.companies c ON c.id = a.company_id
+		JOIN homepay.categories cat ON cat.id = c.category_id
 		WHERE c.auth_user_id = $1 AND ab.period = $2 AND ab.deleted_at IS NULL`+paidFilter+`
 		ORDER BY ab.created_at DESC
 		LIMIT $3 OFFSET $4`,
@@ -199,11 +200,14 @@ func (r *billingRepo) GetAllByPeriod(ctx context.Context, authUserID string, per
 	}
 	defer rows.Close()
 
-	var billings []models.AccountBilling
+	var billings []models.AccountBillingWithDetails
 	for rows.Next() {
-		var b models.AccountBilling
-		if err := rows.Scan(&b.ID, &b.AccountID, &b.Period, &b.AmountBilled, &b.AmountPaid,
-			&b.IsPaid, &b.PaidAt, &b.CarriedFrom, &b.CreatedAt, &b.DeletedAt); err != nil {
+		var b models.AccountBillingWithDetails
+		if err := rows.Scan(
+			&b.ID, &b.AccountID, &b.Period, &b.AmountBilled, &b.AmountPaid,
+			&b.IsPaid, &b.PaidAt, &b.CarriedFrom, &b.CreatedAt, &b.DeletedAt,
+			&b.CategoryName, &b.CompanyName, &b.AccountName,
+		); err != nil {
 			return nil, 0, err
 		}
 		billings = append(billings, b)
@@ -242,7 +246,7 @@ func (r *billingRepo) Update(ctx context.Context, id, authUserID string, req *mo
 		FROM homepay.accounts a
 		JOIN homepay.companies c ON c.id = a.company_id
 		WHERE ab.id = $1 AND ab.account_id = a.id AND c.auth_user_id = $2 AND ab.deleted_at IS NULL
-		RETURNING ab.`+billingCols,
+		RETURNING `+billingColsAB,
 		id, authUserID, req.AmountBilled, req.AmountPaid, req.IsPaid, req.PaidAt), &b)
 	if err == pgx.ErrNoRows {
 		return nil, nil
