@@ -78,3 +78,15 @@ installment_plans — por usuario
 | `CLERK_SECRET_KEY` | Clave secreta Clerk para validar JWT |
 | `CLERK_WEBHOOK_SECRET` | Secreto de firma de webhooks (`whsec_...`) — pasar con prefijo, el SDK ya lo stripea |
 | `PORT` | Puerto HTTP (default `8080`) |
+
+## Restricciones
+
+**Qué NO hacer:**
+- NO usar `DELETE FROM` — siempre soft delete con `deleted_at`
+- NO usar Gin, Echo u otro router — solo chi v5
+- NO usar `database/sql` — solo pgx v5
+- NO agregar migraciones SQL — el schema lo administra el usuario por fuera
+- NO hardcodear el host en Swagger
+- NO crear helpers innecesarios — si algo se usa una sola vez, va inline
+- NO usar sesiones HTTP — solo JWT via Clerk
+- NO hacer commits sin pasar `go build ./...` antes
