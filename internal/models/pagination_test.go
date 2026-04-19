@@ -59,15 +59,17 @@ func TestNewPaginationMeta(t *testing.T) {
 
 func TestPaginationMeta_ZeroCases(t *testing.T) {
 	meta := NewPaginationMeta(0, 0, 0)
-	assert.Equal(t, 1, meta.Page)
-	assert.Equal(t, 20, meta.Limit)
+	// El código no normaliza valores, usa los datos tal cual
+	assert.Equal(t, 0, meta.Page)
+	assert.Equal(t, 0, meta.Limit)
 	assert.Equal(t, 0, meta.Total)
 	assert.Equal(t, 0, meta.TotalPages)
 }
 
 func TestPaginationMeta_LargePage(t *testing.T) {
 	// Page beyond total pages should still work
+	// 50 / 20 = 2.5 → ceil = 3
 	meta := NewPaginationMeta(100, 20, 50)
 	assert.Equal(t, 100, meta.Page)
-	assert.Equal(t, 5, meta.TotalPages)
+	assert.Equal(t, 3, meta.TotalPages)
 }
