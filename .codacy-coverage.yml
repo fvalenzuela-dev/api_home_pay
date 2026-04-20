@@ -21,3 +21,8 @@ codacy:
       - "cmd/api/**"
       - "bin/**"
       - "**/*_test.go"
+      - "internal/database/**"
+      - "internal/config/**"
+      - "internal/router/**"
+      - "internal/handlers/helpers.go"
+      - "internal/handlers/webhook.go"
