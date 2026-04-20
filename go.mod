@@ -1,6 +1,6 @@
 module github.com/homepay/api
 
-go 1.25.0
+go 1.25.1
 
 require (
 	github.com/clerk/clerk-sdk-go/v2 v2.5.1
