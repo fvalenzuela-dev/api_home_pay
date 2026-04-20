@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -87,6 +88,20 @@ func TestAccountGroupHandler_Create(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
+
+	t.Run("success - nil response converts to empty", func(t *testing.T) {
+		mockSvc.On("Create", mock.Anything, "user_123", mock.Anything).Return(nil, nil)
+
+		body := `{"name":"Test"}`
+		req := httptest.NewRequest("POST", "/account-groups", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Create(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
 }
 
 func TestAccountGroupHandler_List(t *testing.T) {
@@ -116,6 +131,18 @@ func TestAccountGroupHandler_List(t *testing.T) {
 
 	t.Run("success - empty list", func(t *testing.T) {
 		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything).Return([]models.AccountGroup{}, 0, nil)
+
+		req := httptest.NewRequest("GET", "/account-groups", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("success - nil groups converts to empty slice", func(t *testing.T) {
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything).Return(nil, 0, nil)
 
 		req := httptest.NewRequest("GET", "/account-groups", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -205,8 +232,6 @@ func TestAccountGroupHandler_Update(t *testing.T) {
 	})
 
 	t.Run("error - not found", func(t *testing.T) {
-		// The service returns (nil, nil) when not found - this is a service bug
-		// For now, test the actual behavior
 		mockSvc.On("Update", mock.Anything, "group-123", "user_123", mock.Anything).Return(nil, nil)
 
 		body := `{"name":"Updated"}`
@@ -220,7 +245,6 @@ func TestAccountGroupHandler_Update(t *testing.T) {
 
 		handler.Update(w, req)
 
-		// Due to service bug, returns 200 with nil
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }
@@ -244,4 +268,20 @@ func TestAccountGroupHandler_Delete(t *testing.T) {
 		assert.Equal(t, http.StatusNoContent, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "group-999", "user_123").Return(errors.New("not found"))
+
+		req := httptest.NewRequest("DELETE", "/account-groups/group-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "group-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
+

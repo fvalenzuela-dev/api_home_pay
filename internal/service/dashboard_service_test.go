@@ -200,3 +200,25 @@ func TestDashboardService_EmptySummary(t *testing.T) {
 		assert.Equal(t, 0.0, result.TotalPaid)
 	})
 }
+
+func TestDashboardService_GetSummary(t *testing.T) {
+	t.Run("success with data", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		billings := []models.AccountBillingWithDetails{
+			{AccountBilling: models.AccountBilling{ID: "b1", AccountID: "acc1", AmountBilled: 50000, AmountPaid: 30000, IsPaid: false}},
+		}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 1, nil)
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return([]models.Expense{}, 0, nil)
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return([]models.InstallmentPayment{}, nil)
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 50000.0, result.TotalBilled)
+		assert.Equal(t, 20000.0, result.TotalPending)
+	})
+}

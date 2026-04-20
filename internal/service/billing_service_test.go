@@ -144,15 +144,38 @@ func ptrFloat64(f float64) *float64 {
 }
 
 func TestBillingService_Create(t *testing.T) {
-	mockBilling := new(MockBillingRepoForTest)
-	mockAccounts := new(MockAccountRepoForTest)
-	svc := NewBillingService(mockBilling, mockAccounts)
+	t.Run("success", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 50000}
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(&models.Account{ID: "acc1"}, nil)
+		mockBilling.On("Create", mock.Anything, "acc1", req).Return(&models.AccountBilling{ID: "b1", AmountBilled: 50000, AmountPaid: 0, IsPaid: false}, nil)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "b1", result.ID)
+	})
+
+	t.Run("account not found", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 50000}
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(nil, nil)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
 
 	t.Run("error - invalid period month", func(t *testing.T) {
-		req := &models.CreateBillingRequest{
-			Period:       202613,
-			AmountBilled: 50000,
-		}
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202613, AmountBilled: 50000}
 
 		result, err := svc.Create(context.Background(), "account-123", "user_123", req)
 
@@ -162,10 +185,10 @@ func TestBillingService_Create(t *testing.T) {
 	})
 
 	t.Run("error - year too low", func(t *testing.T) {
-		req := &models.CreateBillingRequest{
-			Period:       199912,
-			AmountBilled: 50000,
-		}
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 199912, AmountBilled: 50000}
 
 		result, err := svc.Create(context.Background(), "account-123", "user_123", req)
 
@@ -175,10 +198,10 @@ func TestBillingService_Create(t *testing.T) {
 	})
 
 	t.Run("error - amount_billed must be greater than 0", func(t *testing.T) {
-		req := &models.CreateBillingRequest{
-			Period:       202603,
-			AmountBilled: 0,
-		}
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 0}
 
 		result, err := svc.Create(context.Background(), "account-123", "user_123", req)
 
@@ -214,5 +237,77 @@ func TestBillingService_OpenPeriod(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "period inválido")
+	})
+}
+
+func TestBillingService_GetAllByAccount(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		mockBilling.On("GetAllByAccount", mock.Anything, "acc1", "user_123", mock.Anything).Return([]models.AccountBilling{{ID: "b1"}}, 1, nil)
+
+		result, total, err := svc.GetAllByAccount(context.Background(), "acc1", "user_123", models.PaginationParams{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, result, 1)
+	})
+}
+
+func TestBillingService_GetByID(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		mockBilling.On("GetByID", mock.Anything, "b1", "user_123").Return(&models.AccountBilling{ID: "b1"}, nil)
+
+		result, err := svc.GetByID(context.Background(), "b1", "user_123")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "b1", result.ID)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		mockBilling.On("GetByID", mock.Anything, "notfound", "user_123").Return(nil, nil)
+
+		result, err := svc.GetByID(context.Background(), "notfound", "user_123")
+
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestBillingService_Update(t *testing.T) {
+	t.Run("success - mark paid", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		amount := 100.0
+		req := &models.UpdateBillingRequest{AmountPaid: &amount}
+		mockBilling.On("Update", mock.Anything, "b1", "user_123", req).Return(&models.AccountBilling{ID: "b1", AmountBilled: 100, AmountPaid: 100, IsPaid: false}, nil)
+		mockBilling.On("MarkPaid", mock.Anything, "b1").Return(nil)
+
+		result, err := svc.Update(context.Background(), "b1", "user_123", req)
+
+		assert.NoError(t, err)
+		assert.True(t, result.IsPaid)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.UpdateBillingRequest{}
+		mockBilling.On("Update", mock.Anything, "notfound", "user_123", req).Return(nil, nil)
+
+		result, err := svc.Update(context.Background(), "notfound", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "not found")
 	})
 }

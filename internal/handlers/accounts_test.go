@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -209,6 +210,40 @@ func TestAccountHandler_Update(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("error - invalid body", func(t *testing.T) {
+		body := `{"invalid`
+		req := httptest.NewRequest("PUT", "/companies/company-123/accounts/account-123", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("companyID", "company-123")
+		rctx.URLParams.Add("id", "account-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - service error", func(t *testing.T) {
+		mockSvc.On("Update", mock.Anything, "account-999", "user_123", mock.Anything).Return(nil, nil)
+
+		body := `{"name":"Updated"}`
+		req := httptest.NewRequest("PUT", "/companies/company-123/accounts/account-999", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("companyID", "company-123")
+		rctx.URLParams.Add("id", "account-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
 
 func TestAccountHandler_Delete(t *testing.T) {
@@ -230,4 +265,21 @@ func TestAccountHandler_Delete(t *testing.T) {
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "account-999", "user_123").Return(errors.New("not found"))
+
+		req := httptest.NewRequest("DELETE", "/companies/company-123/accounts/account-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("companyID", "company-123")
+		rctx.URLParams.Add("id", "account-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
+

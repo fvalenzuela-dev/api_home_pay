@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/homepay/api/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -77,5 +78,95 @@ func TestExpenseService_Create(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "expense_date is required")
+	})
+}
+
+func TestExpenseService_GetAll(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		mockRepo.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return(
+			[]models.Expense{{ID: "e1"}}, 1, nil)
+
+		result, total, err := svc.GetAll(context.Background(), "user_123", models.ExpenseFilters{}, models.PaginationParams{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, result, 1)
+	})
+}
+
+func TestExpenseService_GetByID(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		mockRepo.On("GetByID", mock.Anything, "e1", "user_123").Return(&models.Expense{ID: "e1"}, nil)
+
+		result, err := svc.GetByID(context.Background(), "e1", "user_123")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "e1", result.ID)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		mockRepo.On("GetByID", mock.Anything, "notfound", "user_123").Return(nil, nil)
+
+		result, err := svc.GetByID(context.Background(), "notfound", "user_123")
+
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestExpenseService_Update(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		amount := 100.0
+		req := &models.UpdateExpenseRequest{Amount: &amount}
+		mockRepo.On("Update", mock.Anything, "e1", "user_123", req).Return(&models.Expense{ID: "e1", Amount: 100}, nil)
+
+		result, err := svc.Update(context.Background(), "e1", "user_123", req)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 100.0, result.Amount)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		req := &models.UpdateExpenseRequest{}
+		mockRepo.On("Update", mock.Anything, "notfound", "user_123", req).Return(nil, nil)
+
+		result, err := svc.Update(context.Background(), "notfound", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "not found")
+	})
+}
+
+func TestExpenseService_Delete(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		mockRepo.On("SoftDelete", mock.Anything, "e1", "user_123").Return(nil)
+
+		err := svc.Delete(context.Background(), "e1", "user_123")
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockRepo := new(MockExpenseRepoForTest)
+		svc := NewExpenseService(mockRepo)
+		mockRepo.On("SoftDelete", mock.Anything, "notfound", "user_123").Return(pgx.ErrNoRows)
+
+		err := svc.Delete(context.Background(), "notfound", "user_123")
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not found")
 	})
 }

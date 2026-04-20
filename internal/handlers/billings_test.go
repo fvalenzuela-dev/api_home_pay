@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +15,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+// Mock UserRepository for webhook tests
+type MockUserRepository struct {
+	mock.Mock
+}
+
+func (m *MockUserRepository) Upsert(ctx context.Context, user *models.User) error {
+	args := m.Called(ctx, user)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) SoftDelete(ctx context.Context, authUserID string) error {
+	args := m.Called(ctx, authUserID)
+	return args.Error(0)
+}
 
 // Mock BillingService
 type MockBillingService struct {
@@ -105,6 +121,23 @@ func TestBillingHandler_Create(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Create", mock.Anything, "account-999", "user_123", mock.Anything).Return(nil, errors.New("not found"))
+
+		body := `{"period":202603,"amount_billed":15000}`
+		req := httptest.NewRequest("POST", "/accounts/account-999/billings", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("accountID", "account-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Create(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
 
 func TestBillingHandler_List(t *testing.T) {
@@ -174,6 +207,8 @@ func TestBillingHandler_GetOne(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
+
+
 }
 
 func TestBillingHandler_Update(t *testing.T) {
@@ -199,6 +234,38 @@ func TestBillingHandler_Update(t *testing.T) {
 		handler.Update(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("error - invalid body", func(t *testing.T) {
+		body := `{"invalid`
+		req := httptest.NewRequest("PUT", "/billings/billing-123", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "billing-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Update", mock.Anything, "billing-999", "user_123", mock.Anything).Return(nil, errors.New("not found"))
+
+		body := `{"is_paid":true}`
+		req := httptest.NewRequest("PUT", "/billings/billing-999", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "billing-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }
 
@@ -262,4 +329,93 @@ func TestBillingHandler_ListByPeriod(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("success - list by period with status paid", func(t *testing.T) {
+		details := []models.AccountBillingWithDetails{
+			{AccountBilling: models.AccountBilling{ID: "billing-1", Period: 202603, IsPaid: true}},
+		}
+		isPaid := true
+		mockSvc.On("GetAllByPeriod", mock.Anything, "user_123", 202603, &isPaid, mock.Anything).Return(details, 1, nil)
+
+		req := httptest.NewRequest("GET", "/periods/202603/billings?status=paid", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("period", "202603")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListByPeriod(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("success - list by period with status unpaid", func(t *testing.T) {
+		details := []models.AccountBillingWithDetails{
+			{AccountBilling: models.AccountBilling{ID: "billing-1", Period: 202603, IsPaid: false}},
+		}
+		isPaid := false
+		mockSvc.On("GetAllByPeriod", mock.Anything, "user_123", 202603, &isPaid, mock.Anything).Return(details, 1, nil)
+
+		req := httptest.NewRequest("GET", "/periods/202603/billings?status=unpaid", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("period", "202603")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListByPeriod(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("error - invalid period", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/periods/invalid/billings", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("period", "invalid")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListByPeriod(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - invalid status", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/periods/202603/billings?status=invalid", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("period", "202603")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListByPeriod(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("success - empty list", func(t *testing.T) {
+		mockSvc.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return([]models.AccountBillingWithDetails{}, 0, nil)
+
+		req := httptest.NewRequest("GET", "/periods/202603/billings", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("period", "202603")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListByPeriod(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+// Note: Webhook handler tests require svix library mocking which is complex
+// The webhook handler is tested manually or with integration tests
+
+// errReader is a helper to simulate read errors
+type errReader struct{}
+
+func (errReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("read error")
 }

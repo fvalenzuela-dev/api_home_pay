@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -93,6 +94,8 @@ func TestInstallmentHandler_Create(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
+
+
 }
 
 func TestInstallmentHandler_GetOne(t *testing.T) {
@@ -157,6 +160,30 @@ func TestInstallmentHandler_List(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("success - empty list", func(t *testing.T) {
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything).Return([]models.InstallmentPlanWithPayments{}, 0, nil)
+
+		req := httptest.NewRequest("GET", "/installments", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("success - nil plans converts to empty slice", func(t *testing.T) {
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything).Return(nil, 0, nil)
+
+		req := httptest.NewRequest("GET", "/installments", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
 }
 
 func TestInstallmentHandler_PayInstallment(t *testing.T) {
@@ -185,6 +212,24 @@ func TestInstallmentHandler_PayInstallment(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("PayInstallment", mock.Anything, "plan-999", "payment-1", "user_123").Return(nil, errors.New("not found"))
+
+		req := httptest.NewRequest("PUT", "/installments/plan-999/payments/payment-1", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "plan-999")
+		rctx.URLParams.Add("paymentID", "payment-1")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.PayInstallment(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+
 }
 
 func TestInstallmentHandler_Delete(t *testing.T) {
@@ -205,4 +250,21 @@ func TestInstallmentHandler_Delete(t *testing.T) {
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "plan-999", "user_123").Return(errors.New("not found"))
+
+		req := httptest.NewRequest("DELETE", "/installments/plan-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "plan-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+
 }

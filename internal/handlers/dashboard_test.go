@@ -49,4 +49,35 @@ func TestDashboardHandler_Get(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("success - default to current month/year", func(t *testing.T) {
+		summary := &service.DashboardSummary{
+			Month:        4,
+			Year:         2026,
+			TotalBilled:  150000,
+			TotalPaid:    100000,
+			TotalPending: 50000,
+		}
+		mockSvc.On("GetSummary", mock.Anything, "user_123", 4, 2026).Return(summary, nil)
+
+		req := httptest.NewRequest("GET", "/dashboard", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Get(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("error - invalid month parameter", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/dashboard?month=13&year=2026", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Get(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+
 }

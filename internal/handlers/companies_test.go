@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/homepay/api/internal/middleware"
 	"github.com/homepay/api/internal/models"
 	"github.com/stretchr/testify/assert"
@@ -100,6 +102,148 @@ func TestCompanyHandler_Create(t *testing.T) {
 	})
 }
 
+// Tests for CompanyHandler.GetOne
+func TestCompanyHandler_GetOne(t *testing.T) {
+	mockSvc := new(MockCompanyService)
+	handler := NewCompanyHandler(mockSvc)
+
+	t.Run("success - get company", func(t *testing.T) {
+		mockSvc.On("GetByID", mock.Anything, "company-123", "user_123").Return(&models.Company{
+			ID:         "company-123",
+			AuthUserID: "user_123",
+			Name:       "Test Company",
+			CategoryID: 1,
+		}, nil)
+
+		req := httptest.NewRequest("GET", "/companies/company-123", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.GetOne(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("GetByID", mock.Anything, "company-999", "user_123").Return(nil, nil)
+
+		req := httptest.NewRequest("GET", "/companies/company-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.GetOne(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+
+}
+
+// Tests for CompanyHandler.Update
+func TestCompanyHandler_Update(t *testing.T) {
+	mockSvc := new(MockCompanyService)
+	handler := NewCompanyHandler(mockSvc)
+
+	t.Run("success - update company", func(t *testing.T) {
+		mockSvc.On("Update", mock.Anything, "company-123", "user_123", mock.Anything).Return(&models.Company{
+			ID:         "company-123",
+			Name:       "Updated Company",
+			CategoryID: 2,
+		}, nil)
+
+		body := `{"name":"Updated Company","category_id":2}`
+		req := httptest.NewRequest("PUT", "/companies/company-123", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("error - invalid body", func(t *testing.T) {
+		body := `{"invalid`
+		req := httptest.NewRequest("PUT", "/companies/company-123", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Update", mock.Anything, "company-999", "user_123", mock.Anything).Return(nil, nil)
+
+		body := `{"name":"Updated"}`
+		req := httptest.NewRequest("PUT", "/companies/company-999", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+
+}
+
+// Tests for CompanyHandler.Delete
+func TestCompanyHandler_Delete(t *testing.T) {
+	mockSvc := new(MockCompanyService)
+	handler := NewCompanyHandler(mockSvc)
+
+	t.Run("success - delete company", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "company-123", "user_123").Return(nil)
+
+		req := httptest.NewRequest("DELETE", "/companies/company-123", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "company-999", "user_123").Return(errors.New("not found"))
+
+		req := httptest.NewRequest("DELETE", "/companies/company-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "company-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+
+}
+
 // Tests for CompanyHandler.List
 func TestCompanyHandler_List(t *testing.T) {
 	mockSvc := new(MockCompanyService)
@@ -135,6 +279,17 @@ func TestCompanyHandler_List(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("success - nil companies converts to empty slice", func(t *testing.T) {
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything).Return(nil, 0, nil)
+
+		req := createTestRequest(t, "GET", "/companies", "", "user_123")
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
 }
 
 // Tests for helpers
@@ -154,6 +309,16 @@ func TestWriteError(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "test error")
+}
+
+func TestWriteInternalError(t *testing.T) {
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/test", nil)
+
+	writeInternalError(w, req, errors.New("database error"))
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "error interno")
 }
 
 // Tests for decode helper

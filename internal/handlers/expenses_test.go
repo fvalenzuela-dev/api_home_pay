@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -119,6 +120,21 @@ func TestExpenseHandler_List(t *testing.T) {
 		assert.Contains(t, response, "data")
 	})
 
+	t.Run("success - list expenses with filters", func(t *testing.T) {
+		expenses := []models.Expense{
+			{ID: "expense-1", Description: "Groceries", Amount: 25000},
+		}
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return(expenses, 1, nil)
+
+		req := httptest.NewRequest("GET", "/expenses?month=3&year=2026&company_id=company-123", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
 	t.Run("error - service error", func(t *testing.T) {
 		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return(nil, 0, assert.AnError)
 
@@ -196,6 +212,38 @@ func TestExpenseHandler_Update(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("error - invalid body", func(t *testing.T) {
+		body := `{"invalid`
+		req := httptest.NewRequest("PUT", "/expenses/expense-123", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "expense-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Update", mock.Anything, "expense-999", "user_123", mock.Anything).Return(nil, errors.New("not found"))
+
+		body := `{"amount":30000}`
+		req := httptest.NewRequest("PUT", "/expenses/expense-999", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "expense-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
 
 func TestExpenseHandler_Delete(t *testing.T) {
@@ -215,5 +263,20 @@ func TestExpenseHandler_Delete(t *testing.T) {
 		handler.Delete(w, req)
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "expense-999", "user_123").Return(errors.New("not found"))
+
+		req := httptest.NewRequest("DELETE", "/expenses/expense-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "expense-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/homepay/api/internal/middleware"
 	"github.com/homepay/api/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -90,6 +91,20 @@ func TestCategoryHandler_Create(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
+	t.Run("error - name required", func(t *testing.T) {
+		body := `{"name":""}`
+		req := httptest.NewRequest("POST", "/categories", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Create(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+
+
 	t.Run("error - service error", func(t *testing.T) {
 		mockRepo.On("Create", mock.Anything, "user_123", mock.Anything).Return(nil, assert.AnError)
 
@@ -113,7 +128,7 @@ func TestCategoryHandler_List(t *testing.T) {
 	t.Run("success - list categories", func(t *testing.T) {
 		categories := []models.Category{
 			{ID: 1, Name: "Utilities"},
-			{ID: 2, Name: "Entertainment"},
+			{ID: 2, Name: "Subscriptions"},
 		}
 		mockRepo.On("GetAll", mock.Anything, "user_123", mock.Anything).Return(categories, 2, nil)
 
@@ -131,8 +146,8 @@ func TestCategoryHandler_List(t *testing.T) {
 		assert.Contains(t, response, "data")
 	})
 
-	t.Run("error - service error", func(t *testing.T) {
-		mockRepo.On("GetAll", mock.Anything, "user_123", mock.Anything).Return(nil, 0, assert.AnError)
+	t.Run("success - empty list", func(t *testing.T) {
+		mockRepo.On("GetAll", mock.Anything, "user_123", mock.Anything).Return([]models.Category{}, 0, nil)
 
 		req := httptest.NewRequest("GET", "/categories", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -140,8 +155,21 @@ func TestCategoryHandler_List(t *testing.T) {
 
 		handler.List(w, req)
 
-		// Handler might return 200 or 500
-		assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+
+
+	t.Run("success - nil categories converts to empty slice", func(t *testing.T) {
+		mockRepo.On("GetAll", mock.Anything, "user_123", mock.Anything).Return(nil, 0, nil)
+
+		req := httptest.NewRequest("GET", "/categories", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }
 
@@ -181,6 +209,21 @@ func TestCategoryHandler_GetOne(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
+
+	t.Run("error - invalid id", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/categories/abc", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "abc")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.GetOne(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+
 }
 
 func TestCategoryHandler_Update(t *testing.T) {
@@ -206,6 +249,53 @@ func TestCategoryHandler_Update(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("error - invalid id", func(t *testing.T) {
+		body := `{"name":"Updated"}`
+		req := httptest.NewRequest("PUT", "/categories/abc", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "abc")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - invalid body", func(t *testing.T) {
+		body := `{"invalid`
+		req := httptest.NewRequest("PUT", "/categories/1", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "1")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockRepo.On("Update", mock.Anything, 999, "user_123", mock.Anything).Return(nil, nil)
+
+		body := `{"name":"Updated"}`
+		req := httptest.NewRequest("PUT", "/categories/999", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Update(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
 
 func TestCategoryHandler_Delete(t *testing.T) {
@@ -227,19 +317,31 @@ func TestCategoryHandler_Delete(t *testing.T) {
 		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
 
-	t.Run("error - service error", func(t *testing.T) {
-		mockRepo.On("Delete", mock.Anything, 1, "user_123").Return(assert.AnError)
-
-		req := httptest.NewRequest("DELETE", "/categories/1", nil)
+	t.Run("error - invalid id", func(t *testing.T) {
+		req := httptest.NewRequest("DELETE", "/categories/abc", nil)
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", "1")
+		rctx.URLParams.Add("id", "abc")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 
 		handler.Delete(w, req)
 
-		// The handler might return 204 even on error or 500 depending on implementation
-		assert.True(t, w.Code == http.StatusNoContent || w.Code == http.StatusInternalServerError)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockRepo.On("Delete", mock.Anything, 999, "user_123").Return(pgx.ErrNoRows)
+
+		req := httptest.NewRequest("DELETE", "/categories/999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }

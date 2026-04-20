@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/homepay/api/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -144,5 +145,95 @@ func TestInstallmentService_Create(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "invalid start_date format")
+	})
+}
+
+func TestInstallmentService_GetAll(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("GetAllPlans", mock.Anything, "user_123", mock.Anything).Return([]models.InstallmentPlan{{ID: "p1"}}, 1, nil)
+		mockRepo.On("GetPaymentsByPlan", mock.Anything, "p1", mock.Anything).Return([]models.InstallmentPayment{{ID: "pmt1"}}, 1, nil)
+
+		result, total, err := svc.GetAll(context.Background(), "user_123", models.PaginationParams{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, result, 1)
+	})
+}
+
+func TestInstallmentService_GetByID(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("GetPlan", mock.Anything, "p1", "user_123").Return(&models.InstallmentPlan{ID: "p1"}, nil)
+		mockRepo.On("GetPaymentsByPlan", mock.Anything, "p1", mock.Anything).Return([]models.InstallmentPayment{{ID: "pmt1"}}, 1, nil)
+
+		result, err := svc.GetByID(context.Background(), "p1", "user_123")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "p1", result.ID)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("GetPlan", mock.Anything, "notfound", "user_123").Return(nil, nil)
+
+		result, err := svc.GetByID(context.Background(), "notfound", "user_123")
+
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestInstallmentService_PayInstallment(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("GetPlan", mock.Anything, "p1", "user_123").Return(&models.InstallmentPlan{ID: "p1", TotalInstallments: 12}, nil)
+		mockRepo.On("UpdatePayment", mock.Anything, "p1", "pmt1", "user_123").Return(&models.InstallmentPayment{ID: "pmt1", IsPaid: true}, nil)
+		mockRepo.On("IncrementPaid", mock.Anything, "p1", 12).Return(nil)
+
+		result, err := svc.PayInstallment(context.Background(), "p1", "pmt1", "user_123")
+
+		assert.NoError(t, err)
+		assert.True(t, result.IsPaid)
+	})
+
+	t.Run("plan not found", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("GetPlan", mock.Anything, "notfound", "user_123").Return(nil, nil)
+
+		result, err := svc.PayInstallment(context.Background(), "notfound", "pmt1", "user_123")
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "not found")
+	})
+}
+
+func TestInstallmentService_Delete(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("SoftDeletePlan", mock.Anything, "p1", "user_123").Return(nil)
+
+		err := svc.Delete(context.Background(), "p1", "user_123")
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockRepo := new(MockInstallmentRepoForTest)
+		svc := NewInstallmentService(mockRepo)
+		mockRepo.On("SoftDeletePlan", mock.Anything, "notfound", "user_123").Return(pgx.ErrNoRows)
+
+		err := svc.Delete(context.Background(), "notfound", "user_123")
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not found")
 	})
 }
