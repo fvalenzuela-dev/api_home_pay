@@ -26,24 +26,24 @@ import (
 
 var version = "dev"
 
-func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
-
-	cfg, err := config.Load()
-	if err != nil {
-		slog.Error("config error", "error", err)
-		os.Exit(1)
+// App holds all application dependencies
+type App struct {
+	Config    *config.Config
+	DB        interface {
+		Close()
 	}
+	Router    http.Handler
+}
 
+// InitializeApp creates and wires up all application dependencies
+// This function is exposed for testing and integration purposes
+func InitializeApp(cfg *config.Config) (*App, error) {
 	clerkSDK.SetKey(cfg.ClerkSecretKey)
 
 	db, err := database.Connect(context.Background(), cfg.DatabaseURL)
 	if err != nil {
-		slog.Error("database connection error", "error", err)
-		os.Exit(1)
+		return nil, err
 	}
-	defer db.Close()
 
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
@@ -87,9 +87,33 @@ func main() {
 		dashboardHandler,
 	)
 
+	return &App{
+		Config: cfg,
+		DB:    db,
+		Router: r,
+	}, nil
+}
+
+func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("config error", "error", err)
+		os.Exit(1)
+	}
+
+	app, err := InitializeApp(cfg)
+	if err != nil {
+		slog.Error("app initialization error", "error", err)
+		os.Exit(1)
+	}
+	defer app.DB.Close()
+
 	addr := ":" + cfg.Port
 	slog.Info("server starting", "addr", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
+	if err := http.ListenAndServe(addr, app.Router); err != nil {
 		slog.Error("server error", "error", err)
 		os.Exit(1)
 	}
