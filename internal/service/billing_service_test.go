@@ -209,6 +209,52 @@ func TestBillingService_Create(t *testing.T) {
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "amount_billed debe ser mayor a 0")
 	})
+
+	t.Run("error - get account fails", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 50000}
+
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(nil, assert.AnError)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("error - get unpaid fails", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 50000}
+
+		account := &models.Account{ID: "acc1", AutoAccumulate: true}
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(account, nil)
+		mockBilling.On("GetUnpaidByAccount", mock.Anything, "acc1").Return(nil, assert.AnError)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("error - create billing fails", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 50000}
+
+		account := &models.Account{ID: "acc1"}
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(account, nil)
+		mockBilling.On("Create", mock.Anything, "acc1", req).Return(nil, assert.AnError)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
 }
 
 func TestBillingService_GetAllByPeriod(t *testing.T) {
@@ -309,5 +355,306 @@ func TestBillingService_Update(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "not found")
+	})
+}
+
+// Tests for OpenPeriod carry-over logic
+
+func TestBillingService_Create_CarryOver(t *testing.T) {
+	t.Run("carry-over from unpaid previous billing", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		// Account with auto_accumulate = true
+		req := &models.CreateBillingRequest{Period: 202604, AmountBilled: 50000}
+		account := &models.Account{ID: "acc1", AutoAccumulate: true}
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(account, nil)
+
+		// Previous unpaid billing
+		unpaidBilling := &models.AccountBilling{
+			ID: "unpaid-billing", AccountID: "acc1", Period: 202603,
+			AmountBilled: 10000, AmountPaid: 0, IsPaid: false,
+		}
+		mockBilling.On("GetUnpaidByAccount", mock.Anything, "acc1").Return(unpaidBilling, nil)
+
+		// Carry-over created for next period
+		carryOverBilling := &models.AccountBilling{
+			ID: "carryover-billing", AccountID: "acc1", Period: 202604,
+			AmountBilled: 10000, CarriedFrom: &unpaidBilling.ID,
+		}
+		mockBilling.On("CreateCarryOver", mock.Anything, "acc1", 202604, 10000.0, unpaidBilling.ID).Return(carryOverBilling, nil)
+
+		// The new billing for the current period
+		newBilling := &models.AccountBilling{ID: "b1", AccountID: "acc1", Period: 202604, AmountBilled: 50000}
+		mockBilling.On("Create", mock.Anything, "acc1", req).Return(newBilling, nil)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "b1", result.ID)
+		mockBilling.AssertExpectations(t)
+	})
+}
+
+func TestBillingService_Create_AutoMarkPaid(t *testing.T) {
+	t.Run("auto-mark paid when amount_paid >= amount_billed", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		amountPaid := 500.0
+		req := &models.CreateBillingRequest{Period: 202603, AmountBilled: 500, AmountPaid: &amountPaid}
+		account := &models.Account{ID: "acc1"}
+		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(account, nil)
+
+		// Billing returned with amount_paid = amount_billed, but not yet marked paid
+		billing := &models.AccountBilling{
+			ID: "b1", AccountID: "acc1", Period: 202603,
+			AmountBilled: 500, AmountPaid: 500, IsPaid: false,
+		}
+		mockBilling.On("Create", mock.Anything, "acc1", req).Return(billing, nil)
+		mockBilling.On("MarkPaid", mock.Anything, "b1").Return(nil)
+
+		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
+
+		assert.NoError(t, err)
+		assert.True(t, result.IsPaid)
+		mockBilling.AssertExpectations(t)
+	})
+}
+
+func TestBillingService_OpenPeriod_Success(t *testing.T) {
+	t.Run("open period with accounts", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		accounts := []models.Account{
+			{ID: "acc1"},
+			{ID: "acc2"},
+		}
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
+
+		// No existing billings for period 202603 for both accounts
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc2", 202603).Return(nil, nil)
+		// No previous unpaid billings
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202602).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc2", 202602).Return(nil, nil)
+
+		inserts := []models.PeriodBillingInsert{
+			{AccountID: "acc1", AmountBilled: 0},
+			{AccountID: "acc2", AmountBilled: 0},
+		}
+		mockBilling.On("BulkInsertForPeriod", mock.Anything, 202603, inserts).Return(nil)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 202603, result.Period)
+		assert.Equal(t, 2, result.Created)
+		assert.Equal(t, 0, result.Skipped)
+		mockBilling.AssertExpectations(t)
+	})
+}
+
+func TestBillingService_OpenPeriod_WithCarryOver(t *testing.T) {
+	t.Run("open period with carry-over from unpaid previous billing", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		accounts := []models.Account{{ID: "acc1"}}
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
+
+		// No existing billing for period
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, nil)
+		// Previous period has unpaid billing
+		prevBilling := &models.AccountBilling{
+			ID: "prev-billing", AccountID: "acc1", Period: 202602,
+			AmountBilled: 10000, AmountPaid: 0, IsPaid: false,
+		}
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202602).Return(prevBilling, nil)
+
+		inserts := []models.PeriodBillingInsert{
+			{AccountID: "acc1", AmountBilled: 10000, CarriedFrom: &prevBilling.ID},
+		}
+		mockBilling.On("BulkInsertForPeriod", mock.Anything, 202603, inserts).Return(nil)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 1, result.Created)
+		assert.Equal(t, 0, result.Skipped)
+		mockBilling.AssertExpectations(t)
+	})
+}
+
+func TestBillingService_OpenPeriod_SkipExisting(t *testing.T) {
+	t.Run("open period skips accounts with existing billing", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		accounts := []models.Account{{ID: "acc1"}}
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
+
+		// Existing billing for period
+		existingBilling := &models.AccountBilling{ID: "existing", AccountID: "acc1", Period: 202603}
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(existingBilling, nil)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 0, result.Created)
+		assert.Equal(t, 1, result.Skipped)
+		mockBilling.AssertExpectations(t)
+	})
+}
+
+func TestBillingService_OpenPeriod_NoActiveAccounts(t *testing.T) {
+	t.Run("open period with no active accounts", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		accounts := []models.Account{}
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 0, result.Created)
+		assert.Equal(t, 0, result.Skipped)
+	})
+}
+
+func TestBillingService_GetAllByPeriod_Success(t *testing.T) {
+	t.Run("get all by period returns billings", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		billings := []models.AccountBillingWithDetails{
+			{AccountBilling: models.AccountBilling{ID: "b1", Period: 202603}},
+			{AccountBilling: models.AccountBilling{ID: "b2", Period: 202603}},
+			{AccountBilling: models.AccountBilling{ID: "b3", Period: 202603}},
+		}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), models.PaginationParams{}).Return(billings, 3, nil)
+
+		result, total, err := svc.GetAllByPeriod(context.Background(), "user_123", 202603, nil, models.PaginationParams{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 3, total)
+		assert.Len(t, result, 3)
+		mockBilling.AssertExpectations(t)
+	})
+}
+
+func TestBillingService_ValidatePeriod_YearAbove2100(t *testing.T) {
+	t.Run("year above 2100 is invalid", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 210112)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "año fuera de rango")
+	})
+}
+
+func TestBillingService_Update_ErrorFromRepo(t *testing.T) {
+	t.Run("error when repo returns error", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		req := &models.UpdateBillingRequest{}
+		mockBilling.On("Update", mock.Anything, "b1", "user_123", req).Return(nil, assert.AnError)
+
+		result, err := svc.Update(context.Background(), "b1", "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestBillingService_Update_AlreadyPaid(t *testing.T) {
+	t.Run("does not auto-mark paid when already paid", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		amount := 50.0
+		req := &models.UpdateBillingRequest{AmountPaid: &amount}
+		// Already paid - should NOT call MarkPaid
+		billing := &models.AccountBilling{
+			ID: "b1", AmountBilled: 100, AmountPaid: 50, IsPaid: true,
+		}
+		mockBilling.On("Update", mock.Anything, "b1", "user_123", req).Return(billing, nil)
+
+		result, err := svc.Update(context.Background(), "b1", "user_123", req)
+
+		assert.NoError(t, err)
+		assert.True(t, result.IsPaid)
+		mockBilling.AssertNotCalled(t, "MarkPaid")
+	})
+}
+
+func TestBillingService_OpenPeriod_GetAccountsError(t *testing.T) {
+	t.Run("error when getting accounts fails", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return([]models.Account{}, assert.AnError)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestBillingService_OpenPeriod_GetExistingBillingError(t *testing.T) {
+	t.Run("error when getting existing billing fails", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		accounts := []models.Account{{ID: "acc1"}}
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, assert.AnError)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestBillingService_OpenPeriod_BulkInsertError(t *testing.T) {
+	t.Run("error when bulk insert fails", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForTest)
+		mockAccounts := new(MockAccountRepoForTest)
+		svc := NewBillingService(mockBilling, mockAccounts)
+
+		accounts := []models.Account{{ID: "acc1"}}
+		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202602).Return(nil, nil)
+		mockBilling.On("BulkInsertForPeriod", mock.Anything, 202603, mock.Anything).Return(assert.AnError)
+
+		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
 	})
 }
