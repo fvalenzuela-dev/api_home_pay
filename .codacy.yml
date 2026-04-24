@@ -1,0 +1,67 @@
+---
+engines:
+  golang:
+    enabled: true
+    config:
+      maxlen: 120
+      tabwidth: 2
+      spaces: 2
+      gocritic:
+        enabled: true
+      gocyclo:
+        enabled: true
+        min-complexity: 15
+      govet:
+        enabled: true
+      errcheck:
+        enabled: true
+      deadcode:
+        enabled: true
+      unused:
+        enabled: true
+      gosimple:
+        enabled: true
+      staticcheck:
+        enabled: true
+
+  shellcheck:
+    enabled: true
+
+  markdownlint:
+    enabled: true
+
+  hadolint:
+    enabled: true
+
+  docker:
+    enabled: true
+
+exclude_paths:
+  - 'docs/**'
+  - 'bin/**'
+  - '**/*.pb.go'
+  - '**/mocks/**'
+  - '**/testdata/**'
+
+coverage:
+  precision: 2
+  reporters:
+    - cli
+    - json
+    - xml
+    - lcov
+  after:
+    - provider: git
+    - provider: reporter
+      config:
+        prCommentEnabled: true
+
+codacy:
+  coverage:
+    thresholds:
+      default: 80
+      paths:
+        - "internal/models/*.go"
+        - "internal/service/*.go"
+        - "internal/handlers/*.go"
+        - "internal/repository/*.go"
