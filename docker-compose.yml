@@ -1,0 +1,21 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8082:8080"
+    env_file:
+      - .env
+
+  test-db:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: homepay_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d homepay_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
