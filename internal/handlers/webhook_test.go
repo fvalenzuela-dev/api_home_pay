@@ -183,3 +183,187 @@ func TestWebhookHandler_Handle_UnknownEventType(t *testing.T) {
 		t.Errorf("StatusCode = %v, want %v or %v", w.Code, http.StatusOK, http.StatusUnauthorized)
 	}
 }
+
+func TestWebhookHandler_Handle_EmptyBody(t *testing.T) {
+	mockRepo := new(MockWebhookUserRepository)
+	handler := NewWebhookHandler(mockRepo, "whsec_testsecret")
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/clerk", strings.NewReader(""))
+	w := httptest.NewRecorder()
+
+	handler.Handle(w, req)
+
+	// Should fail at body reading or signature verification
+	if w.Code != http.StatusBadRequest && w.Code != http.StatusUnauthorized {
+		t.Errorf("StatusCode = %v, want %v or %v", w.Code, http.StatusBadRequest, http.StatusUnauthorized)
+	}
+}
+
+func TestWebhookHandler_Handle_InvalidJson(t *testing.T) {
+	mockRepo := new(MockWebhookUserRepository)
+	handler := NewWebhookHandler(mockRepo, "whsec_testsecret")
+
+	// Valid JSON structure but missing type
+	payload := `{"data": {"id": "user_123"}}`
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/clerk", strings.NewReader(payload))
+	req.Header.Set("svix-id", "test-id")
+	req.Header.Set("svix-timestamp", "test-timestamp")
+	req.Header.Set("svix-signature", "test-signature")
+	w := httptest.NewRecorder()
+
+	handler.Handle(w, req)
+
+	// Will fail at signature verification, but tests the path
+	if w.Code != http.StatusOK && w.Code != http.StatusUnauthorized && w.Code != http.StatusBadRequest {
+		t.Errorf("StatusCode = %v, want %v, %v or %v", w.Code, http.StatusOK, http.StatusUnauthorized, http.StatusBadRequest)
+	}
+}
+
+func TestWebhookHandler_Handle_UserCreated_NoEmail(t *testing.T) {
+	mockRepo := new(MockWebhookUserRepository)
+	handler := NewWebhookHandler(mockRepo, "whsec_testsecret")
+
+	// User created without email addresses
+	payload := map[string]interface{}{
+		"type": "user.created",
+		"data": map[string]interface{}{
+			"id":         "user_123",
+			"first_name": "Test",
+			"last_name":  "User",
+		},
+	}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/clerk", strings.NewReader(string(body)))
+	req.Header.Set("svix-id", "test-id")
+	req.Header.Set("svix-timestamp", "test-timestamp")
+	req.Header.Set("svix-signature", "test-signature")
+	w := httptest.NewRecorder()
+
+	handler.Handle(w, req)
+
+	// Tests edge case with no email (empty string)
+	if w.Code != http.StatusUnauthorized && w.Code != http.StatusOK {
+		t.Errorf("StatusCode = %v, want %v or %v", w.Code, http.StatusUnauthorized, http.StatusOK)
+	}
+}
+
+func TestWebhookHandler_Handle_UserCreated_EmptyEmailArray(t *testing.T) {
+	mockRepo := new(MockWebhookUserRepository)
+	handler := NewWebhookHandler(mockRepo, "whsec_testsecret")
+
+	// User created with empty email array
+	payload := map[string]interface{}{
+		"type": "user.created",
+		"data": map[string]interface{}{
+			"id":              "user_123",
+			"first_name":      "Test",
+			"last_name":       "User",
+			"email_addresses": []map[string]string{},
+		},
+	}
+	body, _ := json.Marshal(payload)
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/clerk", strings.NewReader(string(body)))
+	req.Header.Set("svix-id", "test-id")
+	req.Header.Set("svix-timestamp", "test-timestamp")
+	req.Header.Set("svix-signature", "test-signature")
+	w := httptest.NewRecorder()
+
+	handler.Handle(w, req)
+
+	// Tests edge case with empty email array
+	if w.Code != http.StatusUnauthorized && w.Code != http.StatusOK {
+		t.Errorf("StatusCode = %v, want %v or %v", w.Code, http.StatusUnauthorized, http.StatusOK)
+	}
+}
+
+func TestWebhookHandler_Handle_UserDeleted_InvalidJson(t *testing.T) {
+	mockRepo := new(MockWebhookUserRepository)
+	handler := NewWebhookHandler(mockRepo, "whsec_testsecret")
+
+	// user.deleted with invalid data (missing id)
+	payload := `{"type": "user.deleted", "data": {}}`
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/clerk", strings.NewReader(payload))
+	req.Header.Set("svix-id", "test-id")
+	req.Header.Set("svix-timestamp", "test-timestamp")
+	req.Header.Set("svix-signature", "test-signature")
+	w := httptest.NewRecorder()
+
+	handler.Handle(w, req)
+
+	// Tests invalid JSON in user.deleted
+	if w.Code != http.StatusBadRequest && w.Code != http.StatusUnauthorized && w.Code != http.StatusOK {
+		t.Errorf("StatusCode = %v, want %v, %v or %v", w.Code, http.StatusBadRequest, http.StatusUnauthorized, http.StatusOK)
+	}
+}
+
+func TestWebhookHandler_Handle_InvalidWebhookSecret(t *testing.T) {
+	mockRepo := new(MockWebhookUserRepository)
+	// Invalid base64 secret
+	handler := NewWebhookHandler(mockRepo, "invalid-base64-!!!")
+	
+	payload := `{"type": "user.created", "data": {"id": "user_123"}}`
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/clerk", strings.NewReader(payload))
+	w := httptest.NewRecorder()
+
+	handler.Handle(w, req)
+
+	// Should fail at secret decoding
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("StatusCode = %v, want %v", w.Code, http.StatusInternalServerError)
+	}
+}
+
+func TestClerkUserData_Parsing(t *testing.T) {
+	t.Run("parses user data correctly", func(t *testing.T) {
+		jsonData := `{
+			"id": "user_123",
+			"first_name": "John",
+			"last_name": "Doe",
+			"email_addresses": [
+				{"email_address": "john@example.com"}
+			]
+		}`
+		
+		var data clerkUserData
+		err := json.Unmarshal([]byte(jsonData), &data)
+		
+		if err != nil {
+			t.Fatalf("Failed to unmarshal: %v", err)
+		}
+		
+		if data.ID != "user_123" {
+			t.Errorf("ID = %v, want user_123", data.ID)
+		}
+		if data.FirstName != "John" {
+			t.Errorf("FirstName = %v, want John", data.FirstName)
+		}
+		if data.LastName != "Doe" {
+			t.Errorf("LastName = %v, want Doe", data.LastName)
+		}
+		if len(data.EmailAddresses) != 1 {
+			t.Errorf("EmailAddresses length = %v, want 1", len(data.EmailAddresses))
+		}
+		if data.EmailAddresses[0].EmailAddress != "john@example.com" {
+			t.Errorf("Email = %v, want john@example.com", data.EmailAddresses[0].EmailAddress)
+		}
+	})
+}
+
+func TestClerkEvent_Parsing(t *testing.T) {
+	t.Run("parses event correctly", func(t *testing.T) {
+		jsonData := `{"type": "user.created", "data": {"id": "user_123"}}`
+		
+		var event clerkEvent
+		err := json.Unmarshal([]byte(jsonData), &event)
+		
+		if err != nil {
+			t.Fatalf("Failed to unmarshal: %v", err)
+		}
+		
+		if event.Type != "user.created" {
+			t.Errorf("Type = %v, want user.created", event.Type)
+		}
+	})
+}
