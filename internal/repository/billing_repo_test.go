@@ -43,7 +43,7 @@ func TestBillingModel_Full(t *testing.T) {
 	t.Run("AccountBilling struct can hold all fields", func(t *testing.T) {
 		now := time.Now()
 		paidAt := now
-		
+
 		billing := models.AccountBilling{
 			ID:           "billing-123",
 			AccountID:    "account-456",
@@ -54,7 +54,7 @@ func TestBillingModel_Full(t *testing.T) {
 			PaidAt:       &paidAt,
 			CreatedAt:    now,
 		}
-		
+
 		assert.Equal(t, "billing-123", billing.ID)
 		assert.Equal(t, "account-456", billing.AccountID)
 		assert.Equal(t, 202604, billing.Period)
@@ -74,7 +74,7 @@ func TestBillingModel_WithNilPointers(t *testing.T) {
 			IsPaid:       false,
 			CreatedAt:    time.Now(),
 		}
-		
+
 		assert.Nil(t, billing.PaidAt)
 		assert.Nil(t, billing.CarriedFrom)
 		assert.Nil(t, billing.DeletedAt)
@@ -91,7 +91,7 @@ func TestBillingModel_WithCarriedFrom(t *testing.T) {
 			AmountBilled: 5000.00,
 			CarriedFrom:  &carriedFrom,
 		}
-		
+
 		assert.NotNil(t, billing.CarriedFrom)
 		assert.Equal(t, "billing-122", *billing.CarriedFrom)
 	})
@@ -102,7 +102,7 @@ func TestCreateBillingRequest_AllFields(t *testing.T) {
 		amountPaid := 15000.00
 		isPaid := true
 		paidAt := time.Date(2026, 4, 15, 0, 0, 0, 0, time.UTC)
-		
+
 		req := models.CreateBillingRequest{
 			Period:       202604,
 			AmountBilled: 15000.00,
@@ -110,7 +110,7 @@ func TestCreateBillingRequest_AllFields(t *testing.T) {
 			IsPaid:       &isPaid,
 			PaidAt:       &paidAt,
 		}
-		
+
 		assert.Equal(t, 202604, req.Period)
 		assert.Equal(t, 15000.00, req.AmountBilled)
 		assert.NotNil(t, req.AmountPaid)
@@ -125,7 +125,7 @@ func TestCreateBillingRequest_MinimalFields(t *testing.T) {
 			Period:       202604,
 			AmountBilled: 15000.00,
 		}
-		
+
 		assert.Equal(t, 202604, req.Period)
 		assert.Equal(t, 15000.00, req.AmountBilled)
 		assert.Nil(t, req.AmountPaid)
@@ -141,14 +141,14 @@ func TestUpdateBillingRequest_AllFields(t *testing.T) {
 		amountPaid := 20000.00
 		isPaid := true
 		paidAt := time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC)
-		
+
 		req := models.UpdateBillingRequest{
 			AmountBilled: &amountBilled,
 			AmountPaid:   &amountPaid,
 			IsPaid:       &isPaid,
 			PaidAt:       &paidAt,
 		}
-		
+
 		assert.NotNil(t, req.AmountBilled)
 		assert.NotNil(t, req.AmountPaid)
 		assert.NotNil(t, req.IsPaid)
@@ -157,12 +157,12 @@ func TestUpdateBillingRequest_AllFields(t *testing.T) {
 }
 
 func TestUpdateBillingRequest_PartialFields(t *testing.T) {
-	t.Run("UpdateBillingRequest with only some fields", func(t *testing.T) {
+	t.Run("UpdateBillingRequest with only some field", func(t *testing.T) {
 		isPaid := true
 		req := models.UpdateBillingRequest{
 			IsPaid: &isPaid,
 		}
-		
+
 		assert.NotNil(t, req.IsPaid)
 		assert.Nil(t, req.AmountBilled)
 		assert.Nil(t, req.AmountPaid)
@@ -309,7 +309,7 @@ func TestBillingRepo_PeriodEdgeCases(t *testing.T) {
 
 func TestBillingRepo_AmountEdgeCases(t *testing.T) {
 	tests := []struct {
-		name        string
+		name         string
 		amountBilled float64
 		amountPaid   float64
 	}{
@@ -389,7 +389,7 @@ func TestBillingRepo_Create_Query(t *testing.T) {
 	query := `INSERT INTO homepay.account_billings (account_id, period, amount_billed, amount_paid, is_paid, paid_at, carried_from)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, account_id, period, amount_billed, amount_paid, is_paid, paid_at, carried_from, created_at, deleted_at`
-	
+
 	assert.Contains(t, query, "INSERT INTO homepay.account_billings")
 	assert.Contains(t, query, "RETURNING")
 }
@@ -398,7 +398,7 @@ func TestBillingRepo_CreateCarryOver_Query(t *testing.T) {
 	// Test carry over INSERT
 	query := `INSERT INTO homepay.account_billings (account_id, period, amount_billed, carried_from)
 		VALUES ($1, $2, $3, $4)`
-	
+
 	assert.Contains(t, query, "carried_from")
 }
 
@@ -409,7 +409,7 @@ func TestBillingRepo_GetByID_Query(t *testing.T) {
 		JOIN homepay.accounts a ON a.id = ab.account_id
 		JOIN homepay.companies c ON c.id = a.company_id
 		WHERE ab.id = $1 AND c.auth_user_id = $2 AND ab.deleted_at IS NULL`
-	
+
 	assert.Contains(t, query, "JOIN homepay.accounts")
 	assert.Contains(t, query, "JOIN homepay.companies")
 }
@@ -419,7 +419,7 @@ func TestBillingRepo_GetByAccountAndPeriod_Query(t *testing.T) {
 	query := `SELECT id, account_id, period, amount_billed, amount_paid, is_paid, paid_at, carried_from, created_at, deleted_at
 		FROM homepay.account_billings
 		WHERE account_id = $1 AND period = $2 AND deleted_at IS NULL`
-	
+
 	assert.Contains(t, query, "account_id = $1 AND period = $2")
 }
 
@@ -430,7 +430,7 @@ func TestBillingRepo_GetUnpaidByAccount_Query(t *testing.T) {
 		WHERE account_id = $1 AND is_paid = FALSE AND deleted_at IS NULL
 		ORDER BY period DESC
 		LIMIT 1`
-	
+
 	assert.Contains(t, query, "is_paid = FALSE")
 	assert.Contains(t, query, "ORDER BY period DESC")
 	assert.Contains(t, query, "LIMIT 1")
@@ -444,7 +444,7 @@ func TestBillingRepo_GetAllByPeriod_Query(t *testing.T) {
 		JOIN homepay.companies c ON c.id = a.company_id
 		JOIN homepay.categories cat ON cat.id = c.category_id
 		WHERE c.auth_user_id = $1 AND ab.period = $2 AND ab.deleted_at IS NULL`
-	
+
 	assert.Contains(t, query, "JOIN homepay.categories")
 	assert.Contains(t, query, "ab.period = $2")
 }
@@ -456,15 +456,15 @@ func TestBillingRepo_GetAllByPeriod_PaidFilter(t *testing.T) {
 	if isPaid {
 		paidFilter = " AND ab.is_paid = TRUE"
 	}
-	
+
 	assert.Contains(t, paidFilter, "ab.is_paid = TRUE")
-	
+
 	isPaid = false
 	paidFilter = ""
 	if isPaid {
 		paidFilter = " AND ab.is_paid = TRUE"
 	}
-	
+
 	// When isPaid is false, filter should be empty or use FALSE
 	paidFilter = " AND ab.is_paid = FALSE"
 	assert.Contains(t, paidFilter, "ab.is_paid = FALSE")
@@ -474,7 +474,7 @@ func TestBillingRepo_BulkInsert_Query(t *testing.T) {
 	// Test bulk INSERT transaction
 	query := `INSERT INTO homepay.account_billings (account_id, period, amount_billed, carried_from)
 		VALUES ($1, $2, $3, $4)`
-	
+
 	assert.Contains(t, query, "INSERT INTO homepay.account_billings")
 }
 
@@ -488,7 +488,7 @@ func TestBillingRepo_Update_Query(t *testing.T) {
 		FROM homepay.accounts a
 		JOIN homepay.companies c ON c.id = a.company_id
 		WHERE ab.id = $1 AND ab.account_id = a.id AND c.auth_user_id = $2 AND ab.deleted_at IS NULL`
-	
+
 	assert.Contains(t, query, "COALESCE")
 	assert.Contains(t, query, "FROM homepay.accounts a")
 }
@@ -498,7 +498,7 @@ func TestBillingRepo_MarkPaid_Query(t *testing.T) {
 	query := `UPDATE homepay.account_billings
 		SET is_paid = TRUE, paid_at = CURRENT_DATE
 		WHERE id = $1`
-	
+
 	assert.Contains(t, query, "is_paid = TRUE")
 	assert.Contains(t, query, "paid_at = CURRENT_DATE")
 }
@@ -507,7 +507,7 @@ func TestBillingRepo_SoftDeleteByAccount_Query(t *testing.T) {
 	// Test soft delete by account
 	query := `UPDATE homepay.account_billings SET deleted_at = NOW()
 		WHERE account_id = $1 AND deleted_at IS NULL`
-	
+
 	assert.Contains(t, query, "deleted_at = NOW()")
 	assert.Contains(t, query, "account_id = $1")
 }
