@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/homepay/api/internal/models"
@@ -220,5 +221,190 @@ func TestDashboardService_GetSummary(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 50000.0, result.TotalBilled)
 		assert.Equal(t, 20000.0, result.TotalPending)
+	})
+}
+
+func TestDashboardService_GetSummary_ExpensesByCompany(t *testing.T) {
+	t.Run("expenses grouped by company", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		company1 := "company-1"
+		company2 := "company-2"
+
+		billings := []models.AccountBillingWithDetails{}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 0, nil)
+
+		expenses := []models.Expense{
+			{ID: "e1", CompanyID: &company1, Amount: 10000},
+			{ID: "e2", CompanyID: &company1, Amount: 5000},
+			{ID: "e3", CompanyID: &company2, Amount: 15000},
+		}
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return(expenses, 3, nil)
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return([]models.InstallmentPayment{}, nil)
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 30000.0, result.TotalExpenses)
+		assert.Len(t, result.ExpensesByCompany, 2)
+		assert.Equal(t, 15000.0, result.ExpensesByCompany[company1])
+		assert.Equal(t, 15000.0, result.ExpensesByCompany[company2])
+	})
+}
+
+func TestDashboardService_GetSummary_NullCompanyID(t *testing.T) {
+	t.Run("expenses with null company_id included in total but not in map", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		billings := []models.AccountBillingWithDetails{}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 0, nil)
+
+		// Expense with no company (nil CompanyID)
+		expenses := []models.Expense{
+			{ID: "e1", CompanyID: nil, Amount: 8000},
+			{ID: "e2", CompanyID: nil, Amount: 2000},
+		}
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return(expenses, 2, nil)
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return([]models.InstallmentPayment{}, nil)
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 10000.0, result.TotalExpenses)
+		assert.Len(t, result.ExpensesByCompany, 0) // No company ID, so no entries
+	})
+}
+
+func TestDashboardService_GetSummary_EmptyResult(t *testing.T) {
+	t.Run("empty summary with no data", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return([]models.AccountBillingWithDetails{}, 0, nil)
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return([]models.Expense{}, 0, nil)
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return([]models.InstallmentPayment{}, nil)
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 0.0, result.TotalBilled)
+		assert.Equal(t, 0.0, result.TotalPaid)
+		assert.Equal(t, 0.0, result.TotalPending)
+		assert.Equal(t, 0.0, result.TotalExpenses)
+		assert.Len(t, result.ExpensesByCompany, 0)
+	})
+}
+
+func TestDashboardService_GetSummary_RepoError(t *testing.T) {
+	t.Run("error from installment repo propagates", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		billings := []models.AccountBillingWithDetails{}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 0, nil)
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return([]models.Expense{}, 0, nil)
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return([]models.InstallmentPayment{}, fmt.Errorf("installment repo error"))
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "installment repo error")
+	})
+}
+
+func TestDashboardService_GetSummary_DateRangeBoundary(t *testing.T) {
+	t.Run("expenses on from/to dates are included", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		billings := []models.AccountBillingWithDetails{}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 0, nil)
+
+		company1 := "company-1"
+		expenses := []models.Expense{
+			{ID: "e1", CompanyID: &company1, Amount: 5000}, // Boundary expense
+		}
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return(expenses, 1, nil)
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return([]models.InstallmentPayment{}, nil)
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 5000.0, result.TotalExpenses)
+	})
+}
+
+func TestDashboardService_GetSummary_BillingError(t *testing.T) {
+	t.Run("error from billing repo propagates", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return([]models.AccountBillingWithDetails{}, 0, fmt.Errorf("billing repo error"))
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "billing repo error")
+	})
+}
+
+func TestDashboardService_GetSummary_ExpenseError(t *testing.T) {
+	t.Run("error from expense repo propagates", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		billings := []models.AccountBillingWithDetails{}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 0, nil)
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return([]models.Expense{}, 0, fmt.Errorf("expense repo error"))
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "expense repo error")
+	})
+}
+
+func TestDashboardService_GetSummary_WithInstallments(t *testing.T) {
+	t.Run("installments included in summary", func(t *testing.T) {
+		mockBilling := new(MockBillingRepoForDashboardTest)
+		mockExpense := new(MockExpenseRepoForDashboardTest)
+		mockInstallment := new(MockInstallmentRepoForDashboardTest)
+		svc := NewDashboardService(mockBilling, mockExpense, mockInstallment)
+
+		billings := []models.AccountBillingWithDetails{}
+		mockBilling.On("GetAllByPeriod", mock.Anything, "user_123", 202603, (*bool)(nil), mock.Anything).Return(billings, 0, nil)
+		mockExpense.On("GetAll", mock.Anything, "user_123", mock.Anything, mock.Anything).Return([]models.Expense{}, 0, nil)
+
+		installments := []models.InstallmentPayment{
+			{ID: "pmt1", PlanID: "plan1", InstallmentNumber: 1, Amount: 10000, IsPaid: true},
+			{ID: "pmt2", PlanID: "plan1", InstallmentNumber: 2, Amount: 10000, IsPaid: false},
+		}
+		mockInstallment.On("GetActivePaymentsByMonth", mock.Anything, "user_123", 3, 2026).Return(installments, nil)
+
+		result, err := svc.GetSummary(context.Background(), "user_123", 3, 2026)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 20000.0, result.TotalInstallments)
+		assert.Len(t, result.PendingCommitments, 1)
+		assert.Equal(t, "installment", result.PendingCommitments[0].Type)
 	})
 }
