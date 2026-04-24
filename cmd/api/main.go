@@ -128,6 +128,8 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
+		// TLS not configured, using HTTP (development mode)
+		//nolint:gosec // G114: Use of http.ListenAndServe without TLS
 		if err := http.ListenAndServe(serverCfg.Addr, app.Router); err != nil {
 			slog.Error("server error", "error", err)
 			os.Exit(1)
