@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "golang-patterns": {
+      "source": "smithery.ai",
+      "sourceType": "well-known",
+      "computedHash": "cbd804229cb93657fc8fe07cc2e542a791a6cbd4a968ef15b2036cc1acf67633"
+    }
+  }
+}
