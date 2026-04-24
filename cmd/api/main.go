@@ -24,6 +24,14 @@ import (
 	_ "github.com/homepay/api/docs"
 )
 
+// ServerConfig holds TLS configuration
+type ServerConfig struct {
+	Addr         string
+	CertFile     string
+	KeyFile      string
+	UseTLS       bool
+}
+
 var version = "dev"
 
 // App holds all application dependencies
@@ -111,10 +119,34 @@ func main() {
 	}
 	defer app.DB.Close()
 
+	serverCfg := getServerConfig(cfg)
+	slog.Info("server starting", "addr", serverCfg.Addr, "tls", serverCfg.UseTLS)
+
+	if serverCfg.UseTLS {
+		if err := http.ListenAndServeTLS(serverCfg.Addr, serverCfg.CertFile, serverCfg.KeyFile, app.Router); err != nil {
+			slog.Error("server error", "error", err)
+			os.Exit(1)
+		}
+	} else {
+		if err := http.ListenAndServe(serverCfg.Addr, app.Router); err != nil {
+			slog.Error("server error", "error", err)
+			os.Exit(1)
+		}
+	}
+}
+
+// getServerConfig determines server configuration based on environment
+func getServerConfig(cfg *config.Config) ServerConfig {
 	addr := ":" + cfg.Port
-	slog.Info("server starting", "addr", addr)
-	if err := http.ListenAndServe(addr, app.Router); err != nil {
-		slog.Error("server error", "error", err)
-		os.Exit(1)
+	certFile := os.Getenv("TLS_CERT_FILE")
+	keyFile := os.Getenv("TLS_KEY_FILE")
+
+	useTLS := certFile != "" && keyFile != ""
+
+	return ServerConfig{
+		Addr:     addr,
+		CertFile: certFile,
+		KeyFile:  keyFile,
+		UseTLS:   useTLS,
 	}
 }
