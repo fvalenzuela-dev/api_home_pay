@@ -25,12 +25,9 @@ import (
 	_ "github.com/homepay/api/docs"
 )
 
-// ServerConfig holds TLS configuration
+// ServerConfig holds server configuration
 type ServerConfig struct {
-	Addr         string
-	CertFile     string
-	KeyFile      string
-	UseTLS       bool
+	Addr string
 }
 
 var version = "dev"
@@ -145,7 +142,7 @@ func main() {
 	mux := setupMux(app.Router)
 
 	serverCfg := getServerConfig(cfg)
-	slog.Info("server starting", "addr", serverCfg.Addr, "tls", serverCfg.UseTLS)
+	slog.Info("server starting", "addr", serverCfg.Addr)
 
 	startServer(serverCfg, mux)
 }
@@ -159,23 +156,12 @@ func initializeApp(cfg *config.Config) (*App, error) {
 }
 
 func startServer(serverCfg ServerConfig, mux *http.ServeMux) {
-	if serverCfg.UseTLS {
-		if err := startServerTLS(serverCfg, mux); err != nil {
-			slog.Error("server error", "error", err)
-			os.Exit(1)
-		}
-	} else {
-		// TLS not configured, using HTTP (development mode)
-		//nolint:gosec // G114: Use of http.ListenAndServe without TLS
-		if err := http.ListenAndServe(serverCfg.Addr, mux); err != nil {
-			slog.Error("server error", "error", err)
-			os.Exit(1)
-		}
+	// TLS is handled by Cloud Run load balancer
+	// Cloud Run terminates TLS and forwards HTTP to the container
+	if err := http.ListenAndServe(serverCfg.Addr, mux); err != nil {
+		slog.Error("server error", "error", err)
+		os.Exit(1)
 	}
-}
-
-func startServerTLS(serverCfg ServerConfig, mux *http.ServeMux) error {
-	return http.ListenAndServeTLS(serverCfg.Addr, serverCfg.CertFile, serverCfg.KeyFile, mux)
 }
 
 func setupLogger() *slog.Logger {
@@ -191,18 +177,9 @@ func setupMux(router http.Handler) *http.ServeMux {
 	return mux
 }
 
-// getServerConfig determines server configuration based on environment
+// getServerConfig determines server configuration
 func getServerConfig(cfg *config.Config) ServerConfig {
-	addr := ":" + cfg.Port
-	certFile := os.Getenv("TLS_CERT_FILE")
-	keyFile := os.Getenv("TLS_KEY_FILE")
-
-	useTLS := certFile != "" && keyFile != ""
-
 	return ServerConfig{
-		Addr:     addr,
-		CertFile: certFile,
-		KeyFile:  keyFile,
-		UseTLS:   useTLS,
+		Addr: ":" + cfg.Port,
 	}
 }
