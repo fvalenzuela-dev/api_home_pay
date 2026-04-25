@@ -54,10 +54,13 @@ func TestConfigValidation(t *testing.T) {
 	})
 
 	t.Run("config with all fields", func(t *testing.T) {
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		cfg := &config.Config{
-			DatabaseURL:         "postgres://user:pass@localhost:5432/db",
-			ClerkSecretKey:     "sk_test_xxx",
-			ClerkWebhookSecret: "whsec_xxx",
+			DatabaseURL:         os.Getenv("DATABASE_URL"),
+			ClerkSecretKey:     os.Getenv("CLERK_SECRET_KEY"),
+			ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
 			Port:              "8080",
 		}
 		if cfg == nil {
@@ -97,9 +100,9 @@ func TestInitializeApp(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		DatabaseURL:         "postgresql://***REMOVED***:5432/test",
-		ClerkSecretKey:     "sk_test_placeholder",
-		ClerkWebhookSecret: "whsec_placeholder",
+		DatabaseURL:         os.Getenv("DATABASE_URL"),
+		ClerkSecretKey:     os.Getenv("CLERK_SECRET_KEY"),
+		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
 		Port:              "0",
 	}
 
@@ -208,10 +211,14 @@ func TestInitializeAppWithMockDB(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	t.Setenv("DATABASE_URL", "postgres://invalid:invalid@localhost:5432/invalid")
+	t.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
+	t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+
 	cfg := &config.Config{
-		DatabaseURL:     "postgres://invalid:invalid@localhost:5432/invalid",
-		ClerkSecretKey:  "sk_test_xxx",
-		ClerkWebhookSecret: "whsec_xxx",
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
+		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
 		Port:            "8080",
 	}
 
@@ -293,10 +300,14 @@ func TestMainFlow(t *testing.T) {
 	}
 
 	t.Run("initialize with invalid DB", func(t *testing.T) {
+		t.Setenv("DATABASE_URL", "postgres://invalid:invalid@localhost:9999/invalid")
+		t.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
+		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+
 		cfg := &config.Config{
-			DatabaseURL:     "postgres://invalid:invalid@localhost:9999/invalid",
-			ClerkSecretKey:  "sk_test_xxx",
-			ClerkWebhookSecret: "whsec_xxx",
+			DatabaseURL:     os.Getenv("DATABASE_URL"),
+			ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
+			ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
 			Port:            "8080",
 		}
 
@@ -325,9 +336,9 @@ func TestAppIntegration(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		DatabaseURL:     "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
-		ClerkSecretKey:  "sk_test_xxx",
-		ClerkWebhookSecret: "whsec_xxx",
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
+		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
 		Port:            "8080",
 	}
 
@@ -489,9 +500,9 @@ func TestInitializeAppWrapper(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		DatabaseURL:     "postgres://invalid:invalid@localhost:5432/invalid",
-		ClerkSecretKey:  "sk_test_xxx",
-		ClerkWebhookSecret: "whsec_xxx",
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
+		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
 		Port:            "8080",
 	}
 
