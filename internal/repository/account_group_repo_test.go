@@ -52,13 +52,13 @@ func initTestRepo(t *testing.T, pgContainer *postgres.PostgresContainer) {
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err, "failed to get connection string")
 
-	// Replace database name if needed
+	// Replace database name if needed - use 'user' and 'pass' as placeholders (not real credentials)
 	if connStr == "" {
 		host, err := pgContainer.Host(ctx)
 		require.NoError(t, err)
 		port, err := pgContainer.MappedPort(ctx, "5432")
 		require.NoError(t, err)
-		connStr = fmt.Sprintf("postgres://x:x@%s:%s/homepay_test?sslmode=disable", host, port.String())
+		connStr = fmt.Sprintf("postgres://user:pass@%s:%s/homepay_test?sslmode=disable", host, port.String())
 	}
 
 	// Retry connection
