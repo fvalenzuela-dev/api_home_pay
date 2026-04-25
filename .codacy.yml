@@ -62,7 +62,7 @@ coverage:
 codacy:
   coverage:
     thresholds:
-      default: 60
+      default: 80
       paths:
         - "internal/models/*.go"
         - "internal/service/*.go"
