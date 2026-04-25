@@ -97,9 +97,9 @@ func TestInitializeApp(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		DatabaseURL:         "postgresql://postgres.***REMOVED***:***REMOVED***@***REMOVED***:5432/postgres?search_path=homepay",
-		ClerkSecretKey:     "sk_test_***REMOVED***",
-		ClerkWebhookSecret: "whsec_***REMOVED***",
+		DatabaseURL:         "postgresql://***REMOVED***:leTwTKXWqO7Dvouz@***REMOVED***:5432/postgres?search_path=homepay",
+		ClerkSecretKey:     "sk_test_SHqpiFc0TyiGVznWFwq1da22o0bRTKOm2189gJTRBi",
+		ClerkWebhookSecret: "whsec_CrNyZwao5nPMn9umX85j2JIGbRLRrd1P",
 		Port:              "0",
 	}
 
