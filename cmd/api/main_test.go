@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/homepay/api/internal/config"
 	"github.com/homepay/api/internal/router"
@@ -136,48 +135,21 @@ func (m *mockDB) Ping(ctx context.Context) error {
 
 // TestGetServerConfig tests getServerConfig function
 func TestGetServerConfig(t *testing.T) {
-	t.Run("without TLS", func(t *testing.T) {
+	t.Run("default port", func(t *testing.T) {
 		cfg := &config.Config{Port: "8080"}
 		sc := getServerConfig(cfg)
 
 		if sc.Addr != ":8080" {
 			t.Errorf("expected :8080, got %s", sc.Addr)
 		}
-		if sc.UseTLS {
-			t.Error("expected UseTLS to be false")
-		}
 	})
 
-	t.Run("with TLS", func(t *testing.T) {
-		t.Setenv("TLS_CERT_FILE", "/path/to/cert")
-		t.Setenv("TLS_KEY_FILE", "/path/to/key")
-
-		cfg := &config.Config{Port: "8443"}
+	t.Run("custom port", func(t *testing.T) {
+		cfg := &config.Config{Port: "3000"}
 		sc := getServerConfig(cfg)
 
-		if sc.Addr != ":8443" {
-			t.Errorf("expected :8443, got %s", sc.Addr)
-		}
-		if !sc.UseTLS {
-			t.Error("expected UseTLS to be true")
-		}
-		if sc.CertFile != "/path/to/cert" {
-			t.Errorf("expected cert path, got %s", sc.CertFile)
-		}
-		if sc.KeyFile != "/path/to/key" {
-			t.Errorf("expected key path, got %s", sc.KeyFile)
-		}
-	})
-
-	t.Run("TLS only cert missing", func(t *testing.T) {
-		t.Setenv("TLS_CERT_FILE", "")
-		t.Setenv("TLS_KEY_FILE", "/path/to/key")
-
-		cfg := &config.Config{Port: "8080"}
-		sc := getServerConfig(cfg)
-
-		if sc.UseTLS {
-			t.Error("expected UseTLS to be false when cert is missing")
+		if sc.Addr != ":3000" {
+			t.Errorf("expected :3000, got %s", sc.Addr)
 		}
 	})
 }
@@ -253,33 +225,13 @@ func TestInitializeAppWithMockDB(t *testing.T) {
 
 // TestServerConfigStruct tests ServerConfig struct
 func TestServerConfigStruct(t *testing.T) {
-	t.Run("create ServerConfig with TLS", func(t *testing.T) {
+	t.Run("create ServerConfig", func(t *testing.T) {
 		sc := ServerConfig{
-			Addr:     ":8443",
-			CertFile: "/path/to/cert",
-			KeyFile:  "/path/to/key",
-			UseTLS:   true,
-		}
-
-		if sc.Addr != ":8443" {
-			t.Errorf("expected :8443, got %s", sc.Addr)
-		}
-		if !sc.UseTLS {
-			t.Error("expected UseTLS to be true")
-		}
-	})
-
-	t.Run("create ServerConfig without TLS", func(t *testing.T) {
-		sc := ServerConfig{
-			Addr:   ":8080",
-			UseTLS: false,
+			Addr: ":8080",
 		}
 
 		if sc.Addr != ":8080" {
 			t.Errorf("expected :8080, got %s", sc.Addr)
-		}
-		if sc.UseTLS {
-			t.Error("expected UseTLS to be false")
 		}
 	})
 }
@@ -551,60 +503,11 @@ func TestInitializeAppWrapper(t *testing.T) {
 
 // TestStartServer tests startServer function
 func TestStartServer(t *testing.T) {
-	t.Run("verify startServer paths", func(t *testing.T) {
-		// Test both TLS and non-TLS paths in startServer
-		cfgTLS := ServerConfig{UseTLS: true}
-		cfgNoTLS := ServerConfig{UseTLS: false}
+	t.Run("verify server config", func(t *testing.T) {
+		cfg := ServerConfig{Addr: ":8080"}
 
-		if cfgTLS.UseTLS != true {
-			t.Error("TLS config incorrect")
-		}
-		if cfgNoTLS.UseTLS != false {
-			t.Error("non-TLS config incorrect")
-		}
-	})
-}
-
-// TestStartServerTLS tests startServer with TLS config
-func TestStartServerTLS(t *testing.T) {
-	t.Run("startServer with TLS but no cert files", func(t *testing.T) {
-		mux := http.NewServeMux()
-
-		serverCfg := ServerConfig{
-			Addr:     "localhost:0",
-			CertFile: "/nonexistent/cert.pem",
-			KeyFile:  "/nonexistent/key.pem",
-			UseTLS:   true,
-		}
-
-		errCh := make(chan error, 1)
-		go func() {
-			errCh <- http.ListenAndServeTLS(serverCfg.Addr, serverCfg.CertFile, serverCfg.KeyFile, mux)
-		}()
-
-		time.Sleep(50 * time.Millisecond)
-		select {
-		case err := <-errCh:
-			if err != nil {
-				t.Logf("TLS server error (expected): %v", err)
-			}
-		default:
-		}
-	})
-
-	t.Run("TLS config struct", func(t *testing.T) {
-		sc := ServerConfig{
-			Addr:     ":8443",
-			CertFile: "/path/to/cert",
-			KeyFile:  "/path/to/key",
-			UseTLS:   true,
-		}
-
-		if !sc.UseTLS {
-			t.Error("expected UseTLS to be true")
-		}
-		if sc.Addr != ":8443" {
-			t.Errorf("expected :8443, got %s", sc.Addr)
+		if cfg.Addr != ":8080" {
+			t.Error("config incorrect")
 		}
 	})
 }
@@ -747,51 +650,6 @@ func TestMainParts(t *testing.T) {
 			}
 		}
 	})
-
-	t.Run("startServer TLS config", func(t *testing.T) {
-		cfgTLS := ServerConfig{
-			Addr:     ":8443",
-			CertFile: "/path/to/cert",
-			KeyFile:  "/path/to/key",
-			UseTLS:   true,
-		}
-		if !cfgTLS.UseTLS {
-			t.Error("expected TLS to be true")
-		}
-
-		cfgNoTLS := ServerConfig{
-			Addr:   ":8080",
-			UseTLS: false,
-		}
-		if cfgNoTLS.UseTLS {
-			t.Error("expected TLS to be false")
-		}
-	})
-}
-
-// TestServerStartLogic tests the logic inside startServer
-func TestServerStartLogic(t *testing.T) {
-	t.Run("TLS branch", func(t *testing.T) {
-		cfg := ServerConfig{
-			UseTLS:   true,
-			CertFile: "/path/cert",
-			KeyFile:  "/path/key",
-			Addr:     ":8443",
-		}
-		if cfg.UseTLS != true {
-			t.Error("expected TLS branch")
-		}
-	})
-
-	t.Run("non-TLS branch", func(t *testing.T) {
-		cfg := ServerConfig{
-			UseTLS: false,
-			Addr:   ":8080",
-		}
-		if cfg.UseTLS != false {
-			t.Error("expected non-TLS branch")
-		}
-	})
 }
 
 // TestMainFlowCoverage tests parts of main function
@@ -839,6 +697,5 @@ func TestMainFlowCoverage(t *testing.T) {
 		if serverCfg.Addr == "" {
 			t.Error("server config addr should not be empty")
 		}
-		_ = serverCfg.UseTLS
 	}
 }
