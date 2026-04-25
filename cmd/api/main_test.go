@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -113,7 +114,10 @@ func TestInitializeApp(t *testing.T) {
 	}
 }
 
-// closer implements io.Closer for testing
+// closer implements io.Closer and Pinger for testing
 type closer struct{}
 
-func (c *closer) Close() {}
+func (c *closer) Close()  {}
+func (c *closer) Ping(ctx context.Context) error {
+	return nil
+}
