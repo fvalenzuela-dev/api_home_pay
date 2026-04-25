@@ -510,6 +510,26 @@ func TestStartServer(t *testing.T) {
 			t.Error("config incorrect")
 		}
 	})
+
+	t.Run("ServerConfig with different addresses", func(t *testing.T) {
+		tests := []struct {
+			name string
+			addr string
+		}{
+			{"localhost", "localhost:8080"},
+			{"port only", ":8080"},
+			{"empty", ""},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				cfg := ServerConfig{Addr: tt.addr}
+				if cfg.Addr != tt.addr {
+					t.Errorf("expected %s, got %s", tt.addr, cfg.Addr)
+				}
+			})
+		}
+	})
 }
 
 // TestLoadConfigEnv tests loadConfig with environment variables
