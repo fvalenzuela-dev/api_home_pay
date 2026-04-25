@@ -69,6 +69,8 @@ func (r *expenseRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 }
 
 func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error) {
+	// Build parameterized query safely - placeholders ($1, $2, etc.) are numbers only,
+	// user values are passed separately in args slice, preventing SQL injection
 	args := []any{authUserID}
 	argNum := 1
 
