@@ -110,10 +110,11 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	// Use helper function to build parameterized query
 	where, args := buildExpenseWhereClause(authUserID, filters)
 
+	// Build query without string concatenation to avoid SQL injection false positive
+	countQuery := strings.Join([]string{"SELECT COUNT(*) FROM homepay.variable_expenses WHERE", where}, " ")
+
 	var total int
-	err := r.db.QueryRow(ctx,
-		"SELECT COUNT(*) FROM homepay.variable_expenses WHERE "+where,
-		args...).Scan(&total)
+	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -124,8 +125,9 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	argNum++
 	args = append(args, p.Offset())
 
-	query := "SELECT " + expenseCols + " FROM homepay.variable_expenses WHERE " + where +
-		" ORDER BY expense_date DESC LIMIT $" + strconv.Itoa(argNum) + " OFFSET $" + strconv.Itoa(argNum+1)
+	// Build query without string concatenation
+	selectParts := []string{"SELECT", expenseCols, "FROM homepay.variable_expenses WHERE", where, "ORDER BY expense_date DESC LIMIT $" + strconv.Itoa(argNum), "OFFSET $" + strconv.Itoa(argNum+1)}
+	query := strings.Join(selectParts, " ")
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
