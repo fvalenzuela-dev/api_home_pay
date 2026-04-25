@@ -54,13 +54,10 @@ func TestConfigValidation(t *testing.T) {
 	})
 
 	t.Run("config with all fields", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
-		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
-		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		cfg := &config.Config{
-			DatabaseURL:         os.Getenv("DATABASE_URL"),
-			ClerkSecretKey:     os.Getenv("CLERK_SECRET_KEY"),
-			ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
+			DatabaseURL:         "",
+			ClerkSecretKey:     "",
+			ClerkWebhookSecret: "",
 			Port:              "8080",
 		}
 		if cfg == nil {
@@ -211,9 +208,9 @@ func TestInitializeAppWithMockDB(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	t.Setenv("DATABASE_URL", "postgres://invalid:invalid@localhost:5432/invalid")
-	t.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-	t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+	t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/invalid")
+	t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+	t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 
 	cfg := &config.Config{
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
@@ -300,9 +297,9 @@ func TestMainFlow(t *testing.T) {
 	}
 
 	t.Run("initialize with invalid DB", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://invalid:invalid@localhost:9999/invalid")
-		t.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:9999/invalid")
+		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 
 		cfg := &config.Config{
 			DatabaseURL:     os.Getenv("DATABASE_URL"),
@@ -550,9 +547,9 @@ func TestLoadConfigEnv(t *testing.T) {
 	}
 
 	t.Run("loadConfig with DATABASE_URL set", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-		t.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		t.Setenv("PORT", "8080")
 
 		cfg, err := loadConfig()
@@ -564,9 +561,9 @@ func TestLoadConfigEnv(t *testing.T) {
 	})
 
 	t.Run("config validation", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-		t.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		t.Setenv("PORT", "9000")
 
 		cfg, err := loadConfig()
@@ -586,9 +583,9 @@ func TestConfigCompleteFlow(t *testing.T) {
 	}
 
 	// Set all required env vars
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/homepay")
-	os.Setenv("CLERK_SECRET_KEY", "sk_test_123")
-	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_abc")
+	os.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 	os.Setenv("PORT", "3000")
 	defer func() {
 		os.Unsetenv("DATABASE_URL")
@@ -690,9 +687,9 @@ func TestMainFlowCoverage(t *testing.T) {
 	}
 
 	// Set required env vars
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-	os.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+	os.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 	os.Setenv("PORT", "8080")
 	defer func() {
 		os.Unsetenv("DATABASE_URL")
