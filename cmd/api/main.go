@@ -167,7 +167,7 @@ func startServer(serverCfg ServerConfig, mux *http.ServeMux) {
 	} else {
 		// TLS not configured, using HTTP (development mode)
 		//nolint:gosec // G114: Use of http.ListenAndServe without TLS
-		// codacy:ignore G114
+		// codacy-ignore-line G114
 		if err := http.ListenAndServe(serverCfg.Addr, mux); err != nil {
 			slog.Error("server error", "error", err)
 			os.Exit(1)
