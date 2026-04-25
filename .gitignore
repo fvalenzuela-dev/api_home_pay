@@ -60,3 +60,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# ship-safe (security analysis)
+.ship-safe/
+ship-safe-report.html
