@@ -208,7 +208,7 @@ func TestInitializeAppWithMockDB(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/invalid")
+	t.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/invalid")
 	t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 
@@ -297,7 +297,7 @@ func TestMainFlow(t *testing.T) {
 	}
 
 	t.Run("initialize with invalid DB", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:9999/invalid")
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:9999/invalid")
 		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 
@@ -547,7 +547,7 @@ func TestLoadConfigEnv(t *testing.T) {
 	}
 
 	t.Run("loadConfig with DATABASE_URL set", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
 		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		t.Setenv("PORT", "8080")
@@ -561,7 +561,7 @@ func TestLoadConfigEnv(t *testing.T) {
 	})
 
 	t.Run("config validation", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+		t.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
 		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		t.Setenv("PORT", "9000")
@@ -583,7 +583,7 @@ func TestConfigCompleteFlow(t *testing.T) {
 	}
 
 	// Set all required env vars
-	os.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+	os.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 	os.Setenv("PORT", "3000")
@@ -687,7 +687,7 @@ func TestMainFlowCoverage(t *testing.T) {
 	}
 
 	// Set required env vars
-	os.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+	os.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 	os.Setenv("PORT", "8080")
