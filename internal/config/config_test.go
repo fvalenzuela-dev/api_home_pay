@@ -20,7 +20,7 @@ func TestLoad_ValidConfig(t *testing.T) {
 	}()
 
 	// Set required env vars - use placeholders to avoid scanner warnings
-	testDBURL := "postgres://***REMOVED***localhost:5432/test"
+	testDBURL := "localhost:5432/test"
 	testClerkKey := "sk_test_placeholder"
 	testWebhookSecret := "whsec_placeholder"
 	testPort := "9090"
@@ -93,7 +93,7 @@ func TestLoad_MissingClerkSecretKey(t *testing.T) {
 		os.Setenv("CLERK_WEBHOOK_SECRET", origWebhook)
 	}()
 
-	os.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
+	os.Setenv("DATABASE_URL", "localhost:5432/test")
 	os.Unsetenv("CLERK_SECRET_KEY")
 	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 
@@ -120,7 +120,7 @@ func TestLoad_MissingClerkWebhookSecret(t *testing.T) {
 		os.Setenv("CLERK_WEBHOOK_SECRET", origWebhook)
 	}()
 
-	os.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
+	os.Setenv("DATABASE_URL", "localhost:5432/test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	os.Unsetenv("CLERK_WEBHOOK_SECRET")
 
@@ -149,7 +149,7 @@ func TestLoad_DefaultPort(t *testing.T) {
 		os.Setenv("PORT", origPort)
 	}()
 
-	os.Setenv("DATABASE_URL", "postgres://***REMOVED***localhost:5432/test")
+	os.Setenv("DATABASE_URL", "localhost:5432/test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 	os.Unsetenv("PORT")

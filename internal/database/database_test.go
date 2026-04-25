@@ -28,7 +28,7 @@ func TestConnect_InvalidDatabase(t *testing.T) {
 	ctx := context.Background()
 
 	// Test with non-existent database
-	_, err := Connect(ctx, "postgres://***REMOVED***localhost:5432/nonexistent-db")
+	_, err := Connect(ctx, "localhost:5432/nonexistent-db")
 
 	if err == nil {
 		t.Fatal("Connect() expected error for non-existent database")
