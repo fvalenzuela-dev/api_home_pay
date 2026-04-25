@@ -1,7 +1,15 @@
-.PHONY: build run swag release
+.PHONY: build run swag release test test-coverage
 
 VERSION=$(shell cat VERSION)
 LDFLAGS=-X main.version=$(VERSION)
+
+test:
+	go test -v ./...
+
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out | grep -v "cmd/api/main.go"
+	rm -f coverage.out
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/api ./cmd/api
