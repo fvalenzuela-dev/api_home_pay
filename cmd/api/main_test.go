@@ -54,13 +54,10 @@ func TestConfigValidation(t *testing.T) {
 	})
 
 	t.Run("config with all fields", func(t *testing.T) {
-		t.Setenv("DATABASE_URL", "postgres://test:test@localhost:5432/test")
-		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
-		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 		cfg := &config.Config{
-			DatabaseURL:         os.Getenv("DATABASE_URL"),
-			ClerkSecretKey:     os.Getenv("CLERK_SECRET_KEY"),
-			ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
+			DatabaseURL:         "",
+			ClerkSecretKey:     "",
+			ClerkWebhookSecret: "",
 			Port:              "8080",
 		}
 		if cfg == nil {
