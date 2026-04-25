@@ -160,7 +160,7 @@ func startServer(serverCfg ServerConfig, mux *http.ServeMux) {
 	// Cloud Run terminates TLS and forwards HTTP to the container
 	// codacy-ignore-next-line G114
 	if err := http.ListenAndServe(serverCfg.Addr, mux); err != nil {
-		slog.Error("server error", "error", err)
+		slog.Error("server error", "errors", err)
 		os.Exit(1)
 	}
 }
