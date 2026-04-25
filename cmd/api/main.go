@@ -16,13 +16,13 @@ import (
 	"os"
 
 	clerkSDK "github.com/clerk/clerk-sdk-go/v2"
+	_ "github.com/homepay/api/docs"
 	"github.com/homepay/api/internal/config"
 	"github.com/homepay/api/internal/database"
 	"github.com/homepay/api/internal/handlers"
 	"github.com/homepay/api/internal/repository"
 	"github.com/homepay/api/internal/router"
 	"github.com/homepay/api/internal/service"
-	_ "github.com/homepay/api/docs"
 )
 
 // ServerConfig holds server configuration
@@ -98,7 +98,7 @@ func InitializeApp(cfg *config.Config) (*App, error) {
 
 	return &App{
 		Config: cfg,
-		DB:    db,
+		DB:     db,
 		Router: r,
 	}, nil
 }
@@ -158,7 +158,7 @@ func initializeApp(cfg *config.Config) (*App, error) {
 func startServer(serverCfg ServerConfig, mux *http.ServeMux) {
 	// TLS is handled by Cloud Run load balancer
 	// Cloud Run terminates TLS and forwards HTTP to the container
-	// codacy-ignore-line G114
+	// codacy-ignore-next-line G114
 	if err := http.ListenAndServe(serverCfg.Addr, mux); err != nil {
 		slog.Error("server error", "error", err)
 		os.Exit(1)
