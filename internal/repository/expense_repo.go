@@ -20,6 +20,30 @@ type ExpenseRepository interface {
 	SoftDelete(ctx context.Context, id, authUserID string) error
 }
 
+// buildExpenseWhereClause builds a safe parameterized WHERE clause for expense queries
+func buildExpenseWhereClause(authUserID string, filters models.ExpenseFilters) (string, []any) {
+	args := []any{authUserID}
+	argNum := 1
+
+	conds := []string{"auth_user_id = $1", "deleted_at IS NULL"}
+
+	if filters.Month != nil && filters.Year != nil {
+		argNum++
+		conds = append(conds, fmt.Sprintf("EXTRACT(MONTH FROM expense_date) = $%d", argNum))
+		args = append(args, *filters.Month)
+		argNum++
+		conds = append(conds, fmt.Sprintf("EXTRACT(YEAR FROM expense_date) = $%d", argNum))
+		args = append(args, *filters.Year)
+	}
+	if filters.CompanyID != nil {
+		argNum++
+		conds = append(conds, fmt.Sprintf("company_id = $%d", argNum))
+		args = append(args, *filters.CompanyID)
+	}
+
+	return strings.Join(conds, " AND "), args
+}
+
 type expenseRepo struct {
 	db *pgxpool.Pool
 }
@@ -69,28 +93,8 @@ func (r *expenseRepo) GetByID(ctx context.Context, id, authUserID string) (*mode
 }
 
 func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters models.ExpenseFilters, p models.PaginationParams) ([]models.Expense, int, error) {
-	// Build parameterized query safely - placeholders ($1, $2, etc.) are numbers only,
-	// user values are passed separately in args slice, preventing SQL injection
-	args := []any{authUserID}
-	argNum := 1
-
-	conds := []string{"auth_user_id = $1", "deleted_at IS NULL"}
-
-	if filters.Month != nil && filters.Year != nil {
-		argNum++
-		conds = append(conds, fmt.Sprintf("EXTRACT(MONTH FROM expense_date) = $%d", argNum))
-		args = append(args, *filters.Month)
-		argNum++
-		conds = append(conds, fmt.Sprintf("EXTRACT(YEAR FROM expense_date) = $%d", argNum))
-		args = append(args, *filters.Year)
-	}
-	if filters.CompanyID != nil {
-		argNum++
-		conds = append(conds, fmt.Sprintf("company_id = $%d", argNum))
-		args = append(args, *filters.CompanyID)
-	}
-
-	where := strings.Join(conds, " AND ")
+	// Use helper function to build parameterized query
+	where, args := buildExpenseWhereClause(authUserID, filters)
 
 	var total int
 	err := r.db.QueryRow(ctx,
@@ -100,13 +104,14 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 		return nil, 0, err
 	}
 
-	argNum++
+	// Add pagination args
+	argNum := len(args)
 	args = append(args, p.Limit)
 	argNum++
 	args = append(args, p.Offset())
 
 	query := "SELECT " + expenseCols + " FROM homepay.variable_expenses WHERE " + where +
-		" ORDER BY expense_date DESC LIMIT $" + strconv.Itoa(argNum-1) + " OFFSET $" + strconv.Itoa(argNum)
+		" ORDER BY expense_date DESC LIMIT $" + strconv.Itoa(argNum) + " OFFSET $" + strconv.Itoa(argNum+1)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
