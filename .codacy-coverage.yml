@@ -1,21 +1,17 @@
 ---
 codacy:
   coverage:
-    # Coverage threshold - 80% minimum
     coverage:
       default: 80
 
-    # Per-language thresholds
     languages:
       go:
         default: 80
 
-    # Partial coverage (files that don't need 90%)
     partials:
       - "**/*_test.go"
       - "**/mocks/**"
 
-    # Paths that should be excluded from coverage
     exclude_paths:
       - "docs/**"
       - "cmd/api/**"
