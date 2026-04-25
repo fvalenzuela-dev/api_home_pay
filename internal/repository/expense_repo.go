@@ -114,6 +114,7 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	countQuery := strings.Join([]string{"SELECT COUNT(*) FROM homepay.variable_expenses WHERE", where}, " ")
 
 	var total int
+	// nolint:gosec // Safe: parameterized query with user values in args slice, not concatenated
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
@@ -129,6 +130,7 @@ func (r *expenseRepo) GetAll(ctx context.Context, authUserID string, filters mod
 	selectParts := []string{"SELECT", expenseCols, "FROM homepay.variable_expenses WHERE", where, "ORDER BY expense_date DESC LIMIT $" + strconv.Itoa(argNum), "OFFSET $" + strconv.Itoa(argNum+1)}
 	query := strings.Join(selectParts, " ")
 
+	// nolint:gosec // Safe: parameterized query with user values in args slice, not concatenated
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
