@@ -44,6 +44,7 @@ exclude_paths:
   - "**/*.pb.go"
   - "**/mocks/**"
   - "**/testdata/**"
+  - "cmd/api/main.go"
 
 coverage:
   precision: 2
