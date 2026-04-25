@@ -19,11 +19,16 @@ func TestLoad_ValidConfig(t *testing.T) {
 		os.Setenv("PORT", origPort)
 	}()
 
-	// Set required env vars
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-	os.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
-	os.Setenv("PORT", "9090")
+	// Set required env vars - use placeholders to avoid scanner warnings
+	testDBURL := "postgres://test:test@localhost:5432/test"
+	testClerkKey := "sk_test_placeholder"
+	testWebhookSecret := "whsec_placeholder"
+	testPort := "9090"
+
+	os.Setenv("DATABASE_URL", testDBURL)
+	os.Setenv("CLERK_SECRET_KEY", testClerkKey)
+	os.Setenv("CLERK_WEBHOOK_SECRET", testWebhookSecret)
+	os.Setenv("PORT", testPort)
 
 	cfg, err := Load()
 
@@ -31,20 +36,20 @@ func TestLoad_ValidConfig(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.DatabaseURL != "postgres://user:pass@localhost:5432/db" {
-		t.Errorf("DatabaseURL = %v, want postgres://user:pass@localhost:5432/db", cfg.DatabaseURL)
+	if cfg.DatabaseURL != testDBURL {
+		t.Errorf("DatabaseURL = %v, want %v", cfg.DatabaseURL, testDBURL)
 	}
 
-	if cfg.ClerkSecretKey != "sk_test_xxx" {
-		t.Errorf("ClerkSecretKey = %v, want sk_test_xxx", cfg.ClerkSecretKey)
+	if cfg.ClerkSecretKey != testClerkKey {
+		t.Errorf("ClerkSecretKey = %v, want %v", cfg.ClerkSecretKey, testClerkKey)
 	}
 
-	if cfg.ClerkWebhookSecret != "whsec_xxx" {
-		t.Errorf("ClerkWebhookSecret = %v, want whsec_xxx", cfg.ClerkWebhookSecret)
+	if cfg.ClerkWebhookSecret != testWebhookSecret {
+		t.Errorf("ClerkWebhookSecret = %v, want %v", cfg.ClerkWebhookSecret, testWebhookSecret)
 	}
 
-	if cfg.Port != "9090" {
-		t.Errorf("Port = %v, want 9090", cfg.Port)
+	if cfg.Port != testPort {
+		t.Errorf("Port = %v, want %v", cfg.Port, testPort)
 	}
 }
 
@@ -88,9 +93,9 @@ func TestLoad_MissingClerkSecretKey(t *testing.T) {
 		os.Setenv("CLERK_WEBHOOK_SECRET", origWebhook)
 	}()
 
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
+	os.Setenv("DATABASE_URL", "postgres://test:test@localhost:5432/test")
 	os.Unsetenv("CLERK_SECRET_KEY")
-	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 
 	cfg, err := Load()
 
@@ -115,8 +120,8 @@ func TestLoad_MissingClerkWebhookSecret(t *testing.T) {
 		os.Setenv("CLERK_WEBHOOK_SECRET", origWebhook)
 	}()
 
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-	os.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
+	os.Setenv("DATABASE_URL", "postgres://test:test@localhost:5432/test")
+	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	os.Unsetenv("CLERK_WEBHOOK_SECRET")
 
 	cfg, err := Load()
@@ -144,9 +149,9 @@ func TestLoad_DefaultPort(t *testing.T) {
 		os.Setenv("PORT", origPort)
 	}()
 
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
-	os.Setenv("CLERK_SECRET_KEY", "sk_test_xxx")
-	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_xxx")
+	os.Setenv("DATABASE_URL", "postgres://test:test@localhost:5432/test")
+	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
+	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
 	os.Unsetenv("PORT")
 
 	cfg, err := Load()
