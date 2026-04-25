@@ -127,32 +127,40 @@ func healthReady(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+	setupLogger()
 
-	cfg, err := config.Load()
+	cfg, err := loadConfig()
 	if err != nil {
 		slog.Error("config error", "error", err)
 		os.Exit(1)
 	}
 
-	app, err := InitializeApp(cfg)
+	app, err := initializeApp(cfg)
 	if err != nil {
 		slog.Error("app initialization error", "error", err)
 		os.Exit(1)
 	}
 	defer app.DB.Close()
 
-	// Combined router: health check first, then authenticated routes
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health/ready", healthReady)
-	mux.Handle("/", app.Router)
+	mux := setupMux(app.Router)
 
 	serverCfg := getServerConfig(cfg)
 	slog.Info("server starting", "addr", serverCfg.Addr, "tls", serverCfg.UseTLS)
 
+	startServer(serverCfg, mux)
+}
+
+func loadConfig() (*config.Config, error) {
+	return config.Load()
+}
+
+func initializeApp(cfg *config.Config) (*App, error) {
+	return InitializeApp(cfg)
+}
+
+func startServer(serverCfg ServerConfig, mux *http.ServeMux) {
 	if serverCfg.UseTLS {
-		if err := http.ListenAndServeTLS(serverCfg.Addr, serverCfg.CertFile, serverCfg.KeyFile, mux); err != nil {
+		if err := startServerTLS(serverCfg, mux); err != nil {
 			slog.Error("server error", "error", err)
 			os.Exit(1)
 		}
@@ -164,6 +172,23 @@ func main() {
 			os.Exit(1)
 		}
 	}
+}
+
+func startServerTLS(serverCfg ServerConfig, mux *http.ServeMux) error {
+	return http.ListenAndServeTLS(serverCfg.Addr, serverCfg.CertFile, serverCfg.KeyFile, mux)
+}
+
+func setupLogger() *slog.Logger {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+	return logger
+}
+
+func setupMux(router http.Handler) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health/ready", healthReady)
+	mux.Handle("/", router)
+	return mux
 }
 
 // getServerConfig determines server configuration based on environment
