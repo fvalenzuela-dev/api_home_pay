@@ -17,7 +17,7 @@ Several files contain test credentials for **local development and testing only*
 - `internal/database/database_test.go`
 - `internal/repository/*_integration_test.go`
 
-These files use hardcoded credentials like `postgres://***REMOVED***:5432/test` which are:
+These files use hardcoded credentials in test code (e.g., `[TEST_USER]:[TEST_PASS]@localhost`) which are:
 - **Local test databases only** - not connected to any production system
 - **Intentionally invalid or test data** - used for unit/integration testing
 - **Never exposed** - only used in test environments
@@ -26,7 +26,8 @@ These files use hardcoded credentials like `postgres://***REMOVED***:5432/test` 
 
 ```go
 // This is a test database URL - not a real credential
-t.Setenv("DATABASE_URL", "postgres://***REMOVED***:5432/test")
+// Use environment variable or mock for production code
+t.Setenv("DATABASE_URL", "postgres://[TEST_USER]:[TEST_PASS]@localhost:5432/[TEST_DB]")
 ```
 
 These credentials:
