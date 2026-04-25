@@ -51,7 +51,7 @@ func initTestRepoInstallment(t *testing.T, pgContainer *postgres.PostgresContain
 		require.NoError(t, err)
 		port, err := pgContainer.MappedPort(ctx, "5432")
 		require.NoError(t, err)
-		connStr = fmt.Sprintf("postgres://***REMOVED***%s:%s/homepay_test?sslmode=disable", host, port.String())
+		connStr = fmt.Sprintf("postgres://x:x@%s:%s/homepay_test?sslmode=disable", host, port.String())
 	}
 
 	var pool *pgxpool.Pool
