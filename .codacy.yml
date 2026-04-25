@@ -24,13 +24,6 @@ engines:
       staticcheck:
         enabled: true
 
-  gosec:
-    enabled: true
-    config:
-      rules:
-        G114:
-          enabled: false
-
   shellcheck:
     enabled: true
 
