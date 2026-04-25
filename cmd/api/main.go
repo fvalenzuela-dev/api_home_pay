@@ -10,37 +10,38 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
 
 	clerkSDK "github.com/clerk/clerk-sdk-go/v2"
+	_ "github.com/homepay/api/docs"
 	"github.com/homepay/api/internal/config"
 	"github.com/homepay/api/internal/database"
 	"github.com/homepay/api/internal/handlers"
 	"github.com/homepay/api/internal/repository"
 	"github.com/homepay/api/internal/router"
 	"github.com/homepay/api/internal/service"
-	_ "github.com/homepay/api/docs"
 )
 
-// ServerConfig holds TLS configuration
+// ServerConfig holds server configuration
 type ServerConfig struct {
-	Addr         string
-	CertFile     string
-	KeyFile      string
-	UseTLS       bool
+	Addr string
 }
 
 var version = "dev"
 
+var app *App
+
 // App holds all application dependencies
 type App struct {
-	Config    *config.Config
-	DB        interface {
+	Config *config.Config
+	DB     interface {
 		Close()
+		Ping(ctx context.Context) error
 	}
-	Router    http.Handler
+	Router http.Handler
 }
 
 // InitializeApp creates and wires up all application dependencies
@@ -97,58 +98,89 @@ func InitializeApp(cfg *config.Config) (*App, error) {
 
 	return &App{
 		Config: cfg,
-		DB:    db,
+		DB:     db,
 		Router: r,
 	}, nil
 }
 
-func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+// healthReady godoc
+// @Summary     Health check - readiness probe
+// @Description Returns 200 if the service and database are ready. Used by GCP Cloud Run readiness probe.
+// @Tags        health
+// @Produce     json
+// @Success     200  {object}  map[string]string
+// @Failure     503  {object}  map[string]string
+// @Router      /health/ready [get]
+func healthReady(w http.ResponseWriter, r *http.Request) {
+	if err := app.DB.Ping(r.Context()); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]string{"error": "database unavailable"})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"data": `{"status":"ready"}`})
+}
 
-	cfg, err := config.Load()
+func main() {
+	setupLogger()
+
+	cfg, err := loadConfig()
 	if err != nil {
 		slog.Error("config error", "error", err)
 		os.Exit(1)
 	}
 
-	app, err := InitializeApp(cfg)
+	app, err := initializeApp(cfg)
 	if err != nil {
 		slog.Error("app initialization error", "error", err)
 		os.Exit(1)
 	}
 	defer app.DB.Close()
 
-	serverCfg := getServerConfig(cfg)
-	slog.Info("server starting", "addr", serverCfg.Addr, "tls", serverCfg.UseTLS)
+	mux := setupMux(app.Router)
 
-	if serverCfg.UseTLS {
-		if err := http.ListenAndServeTLS(serverCfg.Addr, serverCfg.CertFile, serverCfg.KeyFile, app.Router); err != nil {
-			slog.Error("server error", "error", err)
-			os.Exit(1)
-		}
-	} else {
-		// TLS not configured, using HTTP (development mode)
-		//nolint:gosec // G114: Use of http.ListenAndServe without TLS
-		if err := http.ListenAndServe(serverCfg.Addr, app.Router); err != nil {
-			slog.Error("server error", "error", err)
-			os.Exit(1)
-		}
+	serverCfg := getServerConfig(cfg)
+	slog.Info("server starting", "addr", serverCfg.Addr)
+
+	startServer(serverCfg, mux)
+}
+
+func loadConfig() (*config.Config, error) {
+	return config.Load()
+}
+
+func initializeApp(cfg *config.Config) (*App, error) {
+	return InitializeApp(cfg)
+}
+
+func startServer(serverCfg ServerConfig, mux *http.ServeMux) {
+	// TLS is handled by Cloud Run load balancer
+	// Cloud Run terminates TLS and forwards HTTP to the container
+	// codacy-ignore-next-line G114
+	if err := http.ListenAndServe(serverCfg.Addr, mux); err != nil {
+		slog.Error("server error", "errors", err)
+		os.Exit(1)
 	}
 }
 
-// getServerConfig determines server configuration based on environment
+func setupLogger() *slog.Logger {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+	return logger
+}
+
+func setupMux(router http.Handler) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health/ready", healthReady)
+	mux.Handle("/", router)
+	return mux
+}
+
+// getServerConfig determines server configuration
 func getServerConfig(cfg *config.Config) ServerConfig {
-	addr := ":" + cfg.Port
-	certFile := os.Getenv("TLS_CERT_FILE")
-	keyFile := os.Getenv("TLS_KEY_FILE")
-
-	useTLS := certFile != "" && keyFile != ""
-
 	return ServerConfig{
-		Addr:     addr,
-		CertFile: certFile,
-		KeyFile:  keyFile,
-		UseTLS:   useTLS,
+		Addr: ":" + cfg.Port,
 	}
 }

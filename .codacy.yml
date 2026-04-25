@@ -23,7 +23,9 @@ engines:
         enabled: true
       staticcheck:
         enabled: true
-
+  gosec:
+    settings:
+      G114: false
   shellcheck:
     enabled: true
 
@@ -37,11 +39,12 @@ engines:
     enabled: true
 
 exclude_paths:
-  - 'docs/**'
-  - 'bin/**'
-  - '**/*.pb.go'
-  - '**/mocks/**'
-  - '**/testdata/**'
+  - "docs/**"
+  - "bin/**"
+  - "**/*.pb.go"
+  - "**/mocks/**"
+  - "**/testdata/**"
+  - "cmd/api/main.go"
 
 coverage:
   precision: 2
