@@ -32,6 +32,7 @@ jobs:
     with:
       suggestion_type: ${{ inputs.suggestion_type }}
     secrets:
-      # Pasa el secreto necesario (debes tenerlo configurado en el repo origen o en la organización)
+      # Use GITHUB_TOKEN (automatically available, scoped to repo)
+      # Only pass external secrets if absolutely required
+      GH_PAT: ${{ GITHUB_TOKEN }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GH_PAT: ${{ secrets.GH_PAT }}
