@@ -16,8 +16,8 @@ jobs:
       image_name: "gh-backend-homepay"
       dockerfile_path: "./Dockerfile"
       artifact_registry_region: "us-central1"
-      artifact_registry_repository: "backend-go-repo-dev"
-      cloudrun_service: "fvalenzuela-dev-deploy"
+      artifact_registry_repository: "homepay-dev"
+      cloudrun_service: "api-home-pay-go-dev"
       cloudrun_region: "us-central1"
     secrets:
       gcp_project_id: ${{ secrets.GCP_PROJECT_ID_DEV }}

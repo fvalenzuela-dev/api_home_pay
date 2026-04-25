@@ -158,3 +158,32 @@ Flujo de una request: `Handler → Service → Repository → Supabase`
 - **Repository**: ejecuta SQL, mapea filas a structs
 
 Todos los deletes son **soft delete** (`deleted_at = NOW()`). Las categorías son por usuario. La categoría de un gasto variable se hereda de la empresa asociada.
+
+## Deployment a GCP Cloud Run
+
+### Requisitos
+
+- Google Cloud SDK (`gcloud`)
+- Workflows de GitHub configurados con Workload Identity Federation
+- Secrets configurados en GitHub:
+  - `GCP_PROJECT_ID_DEV` / `GCP_PROJECT_ID_PROD`
+  - `GCP_WORKLOAD_IDENTITY_PROVIDER_DEV` / `GCP_WORKLOAD_IDENTITY_PROVIDER_PROD`
+  - `GCP_SERVICE_ACCOUNT_DEV` / `GCP_SERVICE_ACCOUNT_PROD`
+
+### Variables de entorno en Cloud Run
+
+| Variable | Descripción |
+|---|---|
+| `DATABASE_URL` | Connection string de Supabase con `search_path=homepay` |
+| `CLERK_SECRET_KEY` | Clave secreta de Clerk para validar JWT |
+| `CLERK_WEBHOOK_SECRET` | Secreto de firma de webhooks de Clerk (`whsec_...`) |
+| `PORT` | Puerto del servidor (default: `8080`) |
+
+### Health check
+
+El endpoint `GET /health/ready` se usa como readiness probe de Cloud Run. Retorna `200` si la base de datos está accesible, `503` si no.
+
+### Workflows
+
+- `develop` → `docker-gcp-dev.yml` → `api-home-pay-go-dev`
+- `main` → `docker-gcp-prod.yml` → `api-home-pay-go-prod`
