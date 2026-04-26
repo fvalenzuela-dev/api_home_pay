@@ -34,5 +34,5 @@ jobs:
     secrets:
       # Use GITHUB_TOKEN (automatically available, scoped to repo)
       # Only pass external secrets if absolutely required
-      GH_PAT: ${{ GITHUB_TOKEN }}
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
