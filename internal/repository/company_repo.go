@@ -30,6 +30,10 @@ func scanCompany(row pgx.Row, c *models.Company) error {
 	return row.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt)
 }
 
+func scanCompanyWithCategory(row pgx.Row, c *models.Company) error {
+	return row.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.CategoryName, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt)
+}
+
 func (r *companyRepo) Create(ctx context.Context, authUserID string, req *models.CreateCompanyRequest) (*models.Company, error) {
 	var c models.Company
 	err := scanCompany(r.db.QueryRow(ctx, `
@@ -70,10 +74,12 @@ func (r *companyRepo) GetAll(ctx context.Context, authUserID string, p models.Pa
 	}
 
 	rows, err := r.db.Query(ctx, `
-		SELECT `+companyCols+`
-		FROM homepay.companies
-		WHERE auth_user_id = $1 AND deleted_at IS NULL
-		ORDER BY created_at DESC
+		SELECT co.id, co.auth_user_id, co.category_id, c.name AS category_name,
+		       co.name, co.website, co.phone, co.is_active, co.created_at, co.deleted_at
+		FROM homepay.companies co
+		LEFT JOIN homepay.categories c ON c.id = co.category_id
+		WHERE co.auth_user_id = $1 AND co.deleted_at IS NULL
+		ORDER BY co.created_at DESC
 		LIMIT $2 OFFSET $3
 	`, authUserID, p.Limit, p.Offset())
 	if err != nil {
@@ -84,7 +90,7 @@ func (r *companyRepo) GetAll(ctx context.Context, authUserID string, p models.Pa
 	var companies []models.Company
 	for rows.Next() {
 		var c models.Company
-		if err := rows.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.AuthUserID, &c.CategoryID, &c.CategoryName, &c.Name, &c.Website, &c.Phone, &c.IsActive, &c.CreatedAt, &c.DeletedAt); err != nil {
 			return nil, 0, err
 		}
 		companies = append(companies, c)

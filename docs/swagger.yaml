@@ -80,6 +80,8 @@ definitions:
         type: string
       category_id:
         type: integer
+      category_name:
+        type: string
       created_at:
         type: string
       deleted_at:
@@ -342,7 +344,7 @@ info:
   description: Backend REST para gestión de finanzas personales HomePay. Todos los
     endpoints protegidos requieren un JWT de Clerk en el header Authorization.
   title: HomePay API
-  version: "1.0"
+  version: ${VERSION}
 paths:
   /account-groups:
     get:
@@ -1636,6 +1638,28 @@ paths:
       summary: Editar gasto
       tags:
       - expenses
+  /health/ready:
+    get:
+      description: Returns 200 if the service and database are ready. Used by GCP
+        Cloud Run readiness probe.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check - readiness probe
+      tags:
+      - health
   /installments:
     get:
       description: Retorna todos los planes activos del usuario con sus pagos individuales
