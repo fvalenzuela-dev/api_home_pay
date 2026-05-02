@@ -2011,6 +2011,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/health/ready": {
+            "get": {
+                "description": "Returns 200 if the service and database are ready. Used by GCP Cloud Run readiness probe.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check - readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/installments": {
             "get": {
                 "security": [
@@ -2627,6 +2659,9 @@ const docTemplate = `{
                 "category_id": {
                     "type": "integer"
                 },
+                "category_name": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3033,7 +3068,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "${VERSION}",
 	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},

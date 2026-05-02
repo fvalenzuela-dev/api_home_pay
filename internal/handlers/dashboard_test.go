@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/homepay/api/internal/middleware"
 	"github.com/homepay/api/internal/service"
@@ -51,14 +52,18 @@ func TestDashboardHandler_Get(t *testing.T) {
 	})
 
 	t.Run("success - default to current month/year", func(t *testing.T) {
+		now := time.Now()
+		currentMonth := int(now.Month())
+		currentYear := now.Year()
+
 		summary := &service.DashboardSummary{
-			Month:        4,
-			Year:         2026,
+			Month:        currentMonth,
+			Year:         currentYear,
 			TotalBilled:  150000,
 			TotalPaid:    100000,
 			TotalPending: 50000,
 		}
-		mockSvc.On("GetSummary", mock.Anything, "user_123", 4, 2026).Return(summary, nil)
+		mockSvc.On("GetSummary", mock.Anything, "user_123", currentMonth, currentYear).Return(summary, nil)
 
 		req := httptest.NewRequest("GET", "/dashboard", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))

@@ -4,7 +4,7 @@
         "description": "Backend REST para gestión de finanzas personales HomePay. Todos los endpoints protegidos requieren un JWT de Clerk en el header Authorization.",
         "title": "HomePay API",
         "contact": {},
-        "version": "1.0"
+        "version": "${VERSION}"
     },
     "basePath": "/",
     "paths": {
@@ -2004,6 +2004,38 @@
                 }
             }
         },
+        "/health/ready": {
+            "get": {
+                "description": "Returns 200 if the service and database are ready. Used by GCP Cloud Run readiness probe.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check - readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/installments": {
             "get": {
                 "security": [
@@ -2619,6 +2651,9 @@
                 },
                 "category_id": {
                     "type": "integer"
+                },
+                "category_name": {
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
