@@ -33,10 +33,10 @@ func NewCategoryRepository(db *pgxpool.Pool) CategoryRepository {
 	return &categoryRepo{db: db}
 }
 
-const categoryCols = `id, name, auth_user_id, created_at, updated_at, deleted_at`
+const categoryCols = `id, name, auth_user_id, icon_web, icon_apk, color_web, color_apk, created_at, updated_at, deleted_at`
 
 func scanCategory(row pgx.Row, c *models.Category) error {
-	return row.Scan(&c.ID, &c.Name, &c.AuthUserID, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
+	return row.Scan(&c.ID, &c.Name, &c.AuthUserID, &c.IconWeb, &c.IconApk, &c.ColorWeb, &c.ColorApk, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
 }
 
 func (r *categoryRepo) GetAll(ctx context.Context, authUserID string, p models.PaginationParams) ([]models.Category, int, error) {
@@ -64,7 +64,7 @@ func (r *categoryRepo) GetAll(ctx context.Context, authUserID string, p models.P
 	var cats []models.Category
 	for rows.Next() {
 		var c models.Category
-		if err := rows.Scan(&c.ID, &c.Name, &c.AuthUserID, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.AuthUserID, &c.IconWeb, &c.IconApk, &c.ColorWeb, &c.ColorApk, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt); err != nil {
 			return nil, 0, err
 		}
 		cats = append(cats, c)
@@ -120,10 +120,10 @@ func (r *categoryRepo) Create(ctx context.Context, authUserID string, req *model
 
 	var c models.Category
 	err = scanCategory(r.db.QueryRow(ctx, `
-		INSERT INTO homepay.categories (name, auth_user_id)
-		VALUES ($1, $2)
+		INSERT INTO homepay.categories (name, auth_user_id, icon_web, icon_apk, color_web, color_apk)
+		VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''), NULLIF($6, ''))
 		RETURNING `+categoryCols,
-		req.Name, authUserID), &c)
+		req.Name, authUserID, req.IconWeb, req.IconApk, req.ColorWeb, req.ColorApk), &c)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return nil, ErrDuplicateName
@@ -148,10 +148,14 @@ func (r *categoryRepo) Update(ctx context.Context, id int, authUserID string, re
 	err := scanCategory(r.db.QueryRow(ctx, `
 		UPDATE homepay.categories
 		SET name       = COALESCE($3, name),
+		    icon_web   = COALESCE($4, icon_web),
+		    icon_apk   = COALESCE($5, icon_apk),
+		    color_web  = COALESCE($6, color_web),
+		    color_apk  = COALESCE($7, color_apk),
 		    updated_at = NOW()
 		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
 		RETURNING `+categoryCols,
-		id, authUserID, req.Name), &c)
+		id, authUserID, req.Name, req.IconWeb, req.IconApk, req.ColorWeb, req.ColorApk), &c)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
