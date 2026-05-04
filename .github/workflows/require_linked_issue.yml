@@ -9,23 +9,31 @@ on:
 jobs:
   check-linked-issue:
     runs-on: ubuntu-latest
-    if: |
-      startsWith(github.head_ref, 'fix/') ||
-      startsWith(github.head_ref, 'feat/') ||
-      startsWith(github.head_ref, 'feature/') ||
-      startsWith(github.head_ref, 'chore/') ||
-      startsWith(github.head_ref, 'docs/') ||
-      startsWith(github.head_ref, 'style/') ||
-      startsWith(github.head_ref, 'refactor/') ||
-      startsWith(github.head_ref, 'perf/') ||
-      startsWith(github.head_ref, 'test/') ||
-      startsWith(github.head_ref, 'build/') ||
-      startsWith(github.head_ref, 'ci/') ||
-      startsWith(github.head_ref, 'revert/')
     permissions:
       pull-requests: read
 
     steps:
+      - name: Validar nombre de rama
+        run: |
+          HEAD_REF="${{ github.head_ref }}"
+          VALID_PREFIXES="fix/ feat/ feature/ chore/ docs/ style/ refactor/ perf/ test/ build/ ci/ revert/"
+          
+          IS_VALID=false
+          for PREFIX in $VALID_PREFIXES; do
+            if [[ "$HEAD_REF" == "$PREFIX"* ]]; then
+              IS_VALID=true
+              break
+            fi
+          done
+
+          if [ "$IS_VALID" = false ]; then
+            echo "❌ Rama inválida: '$HEAD_REF'"
+            echo "Las ramas deben usar prefijo: fix/, feat/, chore/, docs/, etc."
+            exit 1
+          fi
+
+          echo "✅ Prefijo de rama válido."
+
       - name: Verificar issue vinculada
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
