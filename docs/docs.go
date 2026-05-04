@@ -2633,10 +2633,22 @@ const docTemplate = `{
                 "auth_user_id": {
                     "type": "string"
                 },
+                "color_apk": {
+                    "type": "string"
+                },
+                "color_web": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "deleted_at": {
+                    "type": "string"
+                },
+                "icon_apk": {
+                    "type": "string"
+                },
+                "icon_web": {
                     "type": "string"
                 },
                 "id": {
@@ -2743,6 +2755,18 @@ const docTemplate = `{
         "models.CreateCategoryRequest": {
             "type": "object",
             "properties": {
+                "color_apk": {
+                    "type": "string"
+                },
+                "color_web": {
+                    "type": "string"
+                },
+                "icon_apk": {
+                    "type": "string"
+                },
+                "icon_web": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 }
@@ -2963,6 +2987,18 @@ const docTemplate = `{
         "models.UpdateCategoryRequest": {
             "type": "object",
             "properties": {
+                "color_apk": {
+                    "type": "string"
+                },
+                "color_web": {
+                    "type": "string"
+                },
+                "icon_apk": {
+                    "type": "string"
+                },
+                "icon_web": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 }

@@ -22,7 +22,7 @@ func TestScanCategory(t *testing.T) {
 
 func TestCategoryRepo_GetAll(t *testing.T) {
 	t.Run("categoryCols constant", func(t *testing.T) {
-		assert.Equal(t, `id, name, auth_user_id, created_at, updated_at, deleted_at`, categoryCols)
+		assert.Equal(t, `id, name, auth_user_id, icon_web, icon_apk, color_web, color_apk, created_at, updated_at, deleted_at`, categoryCols)
 	})
 }
 
