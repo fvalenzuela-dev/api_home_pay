@@ -14,10 +14,11 @@ jobs:
 
     steps:
       - name: Validar nombre de rama
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          HEAD_REF="${{ github.head_ref }}"
           VALID_PREFIXES="fix/ feat/ feature/ chore/ docs/ style/ refactor/ perf/ test/ build/ ci/ revert/"
-          
+
           IS_VALID=false
           for PREFIX in $VALID_PREFIXES; do
             if [[ "$HEAD_REF" == "$PREFIX"* ]]; then
