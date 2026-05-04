@@ -24,9 +24,13 @@ type Category struct {
 // The Icon and Color fields are optional; they will be stored as NULL in the database if empty strings are provided.
 type CreateCategoryRequest struct {
 	Name     string `json:"name"`
+	// IconWeb is the identifier or URL for the icon displayed on web platforms.
 	IconWeb  string `json:"icon_web"`
+	// IconApk is the identifier or resource name for the icon displayed on mobile (APK) platforms.
 	IconApk  string `json:"icon_apk"`
+	// ColorWeb is the hex color code or identifier used for the web platform.
 	ColorWeb string `json:"color_web"`
+	// ColorApk is the hex color code or identifier used for the mobile (APK) platform.
 	ColorApk string `json:"color_apk"`
 }
 
@@ -34,8 +38,12 @@ type CreateCategoryRequest struct {
 // Pointers are used to allow partial updates; fields that are nil in the request will remain unchanged.
 type UpdateCategoryRequest struct {
 	Name     *string `json:"name"`
+	// IconWeb is the identifier or URL for the icon displayed on web platforms.
 	IconWeb  *string `json:"icon_web"`
+	// IconApk is the identifier or resource name for the icon displayed on mobile (APK) platforms.
 	IconApk  *string `json:"icon_apk"`
+	// ColorWeb is the hex color code or identifier used for the web platform.
 	ColorWeb *string `json:"color_web"`
+	// ColorApk is the hex color code or identifier used for the mobile (APK) platform.
 	ColorApk *string `json:"color_apk"`
 }
