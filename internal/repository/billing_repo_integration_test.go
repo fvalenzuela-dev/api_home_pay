@@ -78,8 +78,10 @@ func initTestRepoBilling(t *testing.T, pgContainer *postgres.PostgresContainer) 
 			id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 			auth_user_id VARCHAR(255) NOT NULL,
 			name VARCHAR(100) NOT NULL,
-			icon VARCHAR(50),
-			color VARCHAR(20),
+			icon_web VARCHAR(100),
+			icon_apk VARCHAR(100),
+			color_web VARCHAR(50),
+			color_apk VARCHAR(50),
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			deleted_at TIMESTAMPTZ
 		);
