@@ -152,7 +152,7 @@ func createTestCategoryBilling(t *testing.T) string {
 	ctx := context.Background()
 	var categoryID int
 	err := testPoolBilling.QueryRow(ctx, `
-		INSERT INTO homepay.categories (auth_user_id, name, icon, color)
+		INSERT INTO homepay.categories (auth_user_id, name, icon_web, color_web)
 		VALUES ($1, 'Test Category', 'test', '#000000')
 		RETURNING id
 	`, testUserIDBilling).Scan(&categoryID)
