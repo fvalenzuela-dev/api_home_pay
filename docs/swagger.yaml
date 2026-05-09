@@ -10,6 +10,8 @@ definitions:
         type: integer
       company_id:
         type: string
+      company_name:
+        type: string
       created_at:
         type: string
       deleted_at:
@@ -64,16 +66,24 @@ definitions:
       auth_user_id:
         type: string
       color_apk:
+        description: ColorApk is the hex color code or identifier used for the mobile
+          (APK) platform.
         type: string
       color_web:
+        description: ColorWeb is the hex color code or identifier used for the web
+          platform.
         type: string
       created_at:
         type: string
       deleted_at:
         type: string
       icon_apk:
+        description: IconApk is the identifier or resource name for the icon displayed
+          on mobile (APK) platforms.
         type: string
       icon_web:
+        description: IconWeb is the identifier or URL for the icon displayed on web
+          platforms.
         type: string
       id:
         type: integer
@@ -118,6 +128,8 @@ definitions:
         type: boolean
       billing_day:
         type: integer
+      company_id:
+        type: string
       group_id:
         type: string
       name:
@@ -145,12 +157,20 @@ definitions:
   models.CreateCategoryRequest:
     properties:
       color_apk:
+        description: ColorApk is the hex color code or identifier used for the mobile
+          (APK) platform.
         type: string
       color_web:
+        description: ColorWeb is the hex color code or identifier used for the web
+          platform.
         type: string
       icon_apk:
+        description: IconApk is the identifier or resource name for the icon displayed
+          on mobile (APK) platforms.
         type: string
       icon_web:
+        description: IconWeb is the identifier or URL for the icon displayed on web
+          platforms.
         type: string
       name:
         type: string
@@ -277,6 +297,8 @@ definitions:
         type: boolean
       billing_day:
         type: integer
+      company_id:
+        type: string
       group_id:
         type: string
       name:
@@ -296,12 +318,20 @@ definitions:
   models.UpdateCategoryRequest:
     properties:
       color_apk:
+        description: ColorApk is the hex color code or identifier used for the mobile
+          (APK) platform.
         type: string
       color_web:
+        description: ColorWeb is the hex color code or identifier used for the web
+          platform.
         type: string
       icon_apk:
+        description: IconApk is the identifier or resource name for the icon displayed
+          on mobile (APK) platforms.
         type: string
       icon_web:
+        description: IconWeb is the identifier or URL for the icon displayed on web
+          platforms.
         type: string
       name:
         type: string
@@ -587,6 +617,92 @@ paths:
       summary: Editar grupo de cuentas
       tags:
       - account-groups
+  /accounts:
+    get:
+      description: Retorna todas las cuentas del usuario (paginado, con filtros opcionales)
+      parameters:
+      - description: Filtrar por empresa
+        in: query
+        name: company_id
+        type: string
+      - description: Campo de orden (created_at, name, billing_day, company_name)
+        in: query
+        name: sort
+        type: string
+      - description: Dirección (asc, desc)
+        in: query
+        name: order
+        type: string
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar cuentas
+      tags:
+      - accounts
+    post:
+      consumes:
+      - application/json
+      description: Crea una nueva cuenta para una empresa
+      parameters:
+      - description: Datos de la cuenta (company_id requerido)
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/models.Account'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Crear cuenta
+      tags:
+      - accounts
   /accounts/{accountID}/billings:
     get:
       description: Retorna todas las facturas de una cuenta, ordenadas por año/mes
@@ -777,6 +893,129 @@ paths:
       summary: Actualizar factura
       tags:
       - billings
+  /accounts/{id}:
+    delete:
+      description: Soft delete de la cuenta. Propaga a sus facturas activas.
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar cuenta
+      tags:
+      - accounts
+    get:
+      description: Retorna una cuenta por ID
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Account'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener cuenta
+      tags:
+      - accounts
+    put:
+      consumes:
+      - application/json
+      description: Actualiza nombre, billing_day o auto_accumulate de una cuenta
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a actualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/models.Account'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Editar cuenta
+      tags:
+      - accounts
   /categories:
     get:
       description: Retorna las categorías activas del usuario autenticado (paginado)
@@ -1068,228 +1307,6 @@ paths:
       summary: Crear empresa
       tags:
       - companies
-  /companies/{companyID}/accounts:
-    get:
-      description: Retorna todas las cuentas activas de una empresa (paginado)
-      parameters:
-      - description: Company ID
-        in: path
-        name: companyID
-        required: true
-        type: string
-      - description: 'Página (default: 1)'
-        in: query
-        name: page
-        type: integer
-      - description: 'Resultados por página (default: 20, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Listar cuentas
-      tags:
-      - accounts
-    post:
-      consumes:
-      - application/json
-      description: Crea una nueva cuenta dentro de una empresa
-      parameters:
-      - description: Company ID
-        in: path
-        name: companyID
-        required: true
-        type: string
-      - description: Datos de la cuenta
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateAccountRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties:
-              $ref: '#/definitions/models.Account'
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Crear cuenta
-      tags:
-      - accounts
-  /companies/{companyID}/accounts/{id}:
-    delete:
-      description: Soft delete de la cuenta. Propaga a sus facturas activas.
-      parameters:
-      - description: Company ID
-        in: path
-        name: companyID
-        required: true
-        type: string
-      - description: Account ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Eliminar cuenta
-      tags:
-      - accounts
-    get:
-      description: Retorna una cuenta por ID
-      parameters:
-      - description: Company ID
-        in: path
-        name: companyID
-        required: true
-        type: string
-      - description: Account ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Account'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Obtener cuenta
-      tags:
-      - accounts
-    put:
-      consumes:
-      - application/json
-      description: Actualiza nombre, billing_day o auto_accumulate de una cuenta
-      parameters:
-      - description: Company ID
-        in: path
-        name: companyID
-        required: true
-        type: string
-      - description: Account ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Campos a actualizar
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateAccountRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              $ref: '#/definitions/models.Account'
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Editar cuenta
-      tags:
-      - accounts
   /companies/{id}:
     delete:
       description: Soft delete de la empresa. Propaga a sus cuentas y facturas activas.
