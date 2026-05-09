@@ -40,13 +40,13 @@ func scanAccountWithCompanyName(row pgx.Row, a *models.Account) error {
 
 func (r *accountRepo) Create(ctx context.Context, companyID, authUserID string, req *models.CreateAccountRequest) (*models.Account, error) {
 	var a models.Account
-	err := scanAccountWithCompanyName(r.db.QueryRow(ctx, `
+	err := r.db.QueryRow(ctx, `
 		INSERT INTO homepay.accounts (company_id, group_id, account_number, name, billing_day, auto_accumulate)
 		SELECT id, $3, $4, $5, $6, $7
 		FROM homepay.companies
 		WHERE id = $1 AND auth_user_id = $2 AND deleted_at IS NULL
-		RETURNING a.id, a.company_id, c.name as company_name, a.group_id, a.account_number, a.name, a.billing_day, a.auto_accumulate, a.is_active, a.created_at, a.deleted_at
-	`, companyID, authUserID, req.GroupID, req.AccountNumber, req.Name, req.BillingDay, req.AutoAccumulate), &a)
+		RETURNING id, company_id, group_id, account_number, name, billing_day, auto_accumulate, is_active, created_at, deleted_at
+	`, companyID, authUserID, req.GroupID, req.AccountNumber, req.Name, req.BillingDay, req.AutoAccumulate).Scan(&a.ID, &a.CompanyID, &a.GroupID, &a.AccountNumber, &a.Name, &a.BillingDay, &a.AutoAccumulate, &a.IsActive, &a.CreatedAt, &a.DeletedAt)
 	if err != nil {
 		return nil, err
 	}
