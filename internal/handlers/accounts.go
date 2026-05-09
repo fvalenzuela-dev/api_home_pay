@@ -19,22 +19,30 @@ func NewAccountHandler(svc service.AccountService) *AccountHandler {
 
 // List godoc
 // @Summary     Listar cuentas
-// @Description Retorna todas las cuentas activas de una empresa (paginado)
+// @Description Retorna todas las cuentas del usuario (paginado, con filtros opcionales)
 // @Tags        accounts
 // @Security    BearerAuth
 // @Produce     json
-// @Param       companyID  path      string  true   "Company ID"
-// @Param       page       query     int     false  "Página (default: 1)"
-// @Param       limit      query     int     false  "Resultados por página (default: 20, max: 100)"
+// @Param       company_id  query     string  false  "Filtrar por empresa"
+// @Param       sort        query     string  false  "Campo de orden (created_at, name, billing_day, company_name)"
+// @Param       order       query     string  false  "Dirección (asc, desc)"
+// @Param       page        query     int     false  "Página (default: 1)"
+// @Param       limit       query     int     false  "Resultados por página (default: 20, max: 100)"
 // @Success     200        {object}  map[string]interface{}
 // @Failure     401        {object}  map[string]string
 // @Failure     500        {object}  map[string]string
-// @Router      /companies/{companyID}/accounts [get]
+// @Router      /accounts [get]
 func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
-	companyID := chi.URLParam(r, "companyID")
+	companyID := r.URL.Query().Get("company_id")
+	var companyIDPtr *string
+	if companyID != "" {
+		companyIDPtr = &companyID
+	}
+	sort := r.URL.Query().Get("sort")
+	order := r.URL.Query().Get("order")
 	p := parsePagination(r)
-	accounts, total, err := h.svc.GetAllByCompany(r.Context(), companyID, authUserID, p)
+	accounts, total, err := h.svc.GetAll(r.Context(), authUserID, companyIDPtr, sort, order, p)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -51,13 +59,12 @@ func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Tags        accounts
 // @Security    BearerAuth
 // @Produce     json
-// @Param       companyID  path      string  true  "Company ID"
 // @Param       id         path      string  true  "Account ID"
 // @Success     200        {object}  models.Account
 // @Failure     401        {object}  map[string]string
 // @Failure     404        {object}  map[string]string
 // @Failure     500        {object}  map[string]string
-// @Router      /companies/{companyID}/accounts/{id} [get]
+// @Router      /accounts/{id} [get]
 func (h *AccountHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")
@@ -75,26 +82,24 @@ func (h *AccountHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 
 // Create godoc
 // @Summary     Crear cuenta
-// @Description Crea una nueva cuenta dentro de una empresa
+// @Description Crea una nueva cuenta para una empresa
 // @Tags        accounts
 // @Security    BearerAuth
 // @Accept      json
 // @Produce     json
-// @Param       companyID  path      string                      true  "Company ID"
-// @Param       body       body      models.CreateAccountRequest  true  "Datos de la cuenta"
+// @Param       body       body      models.CreateAccountRequest  true  "Datos de la cuenta (company_id requerido)"
 // @Success     201        {object}  map[string]models.Account
 // @Failure     400        {object}  map[string]string
 // @Failure     401        {object}  map[string]string
-// @Router      /companies/{companyID}/accounts [post]
+// @Router      /accounts [post]
 func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
-	companyID := chi.URLParam(r, "companyID")
 	var req models.CreateAccountRequest
 	if err := decode(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
-	account, err := h.svc.Create(r.Context(), companyID, authUserID, &req)
+	account, err := h.svc.Create(r.Context(), authUserID, &req)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -109,14 +114,13 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Accept      json
 // @Produce     json
-// @Param       companyID  path      string                      true  "Company ID"
 // @Param       id         path      string                      true  "Account ID"
 // @Param       body       body      models.UpdateAccountRequest  true  "Campos a actualizar"
 // @Success     200        {object}  map[string]models.Account
 // @Failure     400        {object}  map[string]string
 // @Failure     401        {object}  map[string]string
 // @Failure     404        {object}  map[string]string
-// @Router      /companies/{companyID}/accounts/{id} [put]
+// @Router      /accounts/{id} [put]
 func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")
@@ -143,13 +147,12 @@ func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags        accounts
 // @Security    BearerAuth
 // @Produce     json
-// @Param       companyID  path  string  true  "Company ID"
 // @Param       id         path  string  true  "Account ID"
 // @Success     204
 // @Failure     401  {object}  map[string]string
 // @Failure     404  {object}  map[string]string
 // @Failure     500  {object}  map[string]string
-// @Router      /companies/{companyID}/accounts/{id} [delete]
+// @Router      /accounts/{id} [delete]
 func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")

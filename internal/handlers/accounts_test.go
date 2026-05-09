@@ -21,8 +21,8 @@ type MockAccountService struct {
 	mock.Mock
 }
 
-func (m *MockAccountService) Create(ctx context.Context, companyID, authUserID string, req *models.CreateAccountRequest) (*models.Account, error) {
-	args := m.Called(ctx, companyID, authUserID, req)
+func (m *MockAccountService) Create(ctx context.Context, authUserID string, req *models.CreateAccountRequest) (*models.Account, error) {
+	args := m.Called(ctx, authUserID, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -37,8 +37,8 @@ func (m *MockAccountService) GetByID(ctx context.Context, id, authUserID string)
 	return args.Get(0).(*models.Account), args.Error(1)
 }
 
-func (m *MockAccountService) GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error) {
-	args := m.Called(ctx, companyID, authUserID, p)
+func (m *MockAccountService) GetAll(ctx context.Context, authUserID string, companyID *string, sort, order string, p models.PaginationParams) ([]models.Account, int, error) {
+	args := m.Called(ctx, authUserID, companyID, sort, order, p)
 	return args.Get(0).([]models.Account), args.Int(1), args.Error(2)
 }
 
@@ -61,20 +61,18 @@ func TestAccountHandler_Create(t *testing.T) {
 	handler := NewAccountHandler(mockSvc)
 
 	t.Run("success - create account", func(t *testing.T) {
-		mockSvc.On("Create", mock.Anything, "company-123", "user_123", mock.Anything).Return(&models.Account{
+		mockSvc.On("Create", mock.Anything, "user_123", mock.Anything).Return(&models.Account{
 			ID:             "account-123",
 			CompanyID:      "company-123",
+			CompanyName:    "Test Company",
 			Name:           "Electricity",
 			BillingDay:     15,
 			AutoAccumulate: true,
 		}, nil)
 
-		body := `{"name":"Electricity","billing_day":15,"auto_accumulate":true}`
-		req := httptest.NewRequest("POST", "/companies/company-123/accounts", bytes.NewBufferString(body))
+		body := `{"company_id":"company-123","name":"Electricity","billing_day":15,"auto_accumulate":true}`
+		req := httptest.NewRequest("POST", "/accounts", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 
@@ -86,11 +84,8 @@ func TestAccountHandler_Create(t *testing.T) {
 
 	t.Run("error - invalid body", func(t *testing.T) {
 		body := `{"invalid`
-		req := httptest.NewRequest("POST", "/companies/company-123/accounts", bytes.NewBufferString(body))
+		req := httptest.NewRequest("POST", "/accounts", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 
@@ -109,12 +104,9 @@ func TestAccountHandler_List(t *testing.T) {
 			{ID: "account-1", Name: "Electricity"},
 			{ID: "account-2", Name: "Water"},
 		}
-		mockSvc.On("GetAllByCompany", mock.Anything, "company-123", "user_123", mock.Anything).Return(accounts, 2, nil)
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything, "", "", mock.Anything).Return(accounts, 2, nil)
 
-		req := httptest.NewRequest("GET", "/companies/company-123/accounts", nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest("GET", "/accounts", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 
@@ -128,19 +120,31 @@ func TestAccountHandler_List(t *testing.T) {
 		assert.Contains(t, response, "data")
 	})
 
-	t.Run("error - service error", func(t *testing.T) {
-		mockSvc.On("GetAllByCompany", mock.Anything, "company-123", "user_123", mock.Anything).Return(nil, 0, assert.AnError)
+	t.Run("success - list accounts with company_id filter", func(t *testing.T) {
+		accounts := []models.Account{
+			{ID: "account-1", Name: "Electricity"},
+		}
+		companyID := "company-123"
+		mockSvc.On("GetAll", mock.Anything, "user_123", &companyID, "", "", mock.Anything).Return(accounts, 1, nil)
 
-		req := httptest.NewRequest("GET", "/companies/company-123/accounts", nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest("GET", "/accounts?company_id=company-123", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 
 		handler.List(w, req)
 
-		// Handler might return 200 with empty data or 500
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("error - service error", func(t *testing.T) {
+		mockSvc.On("GetAll", mock.Anything, "user_123", mock.Anything, "", "", mock.Anything).Return(nil, 0, assert.AnError)
+
+		req := httptest.NewRequest("GET", "/accounts", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.List(w, req)
+
 		assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError)
 	})
 }
@@ -156,9 +160,8 @@ func TestAccountHandler_GetOne(t *testing.T) {
 			Name:      "Electricity",
 		}, nil)
 
-		req := httptest.NewRequest("GET", "/companies/company-123/accounts/account-123", nil)
+		req := httptest.NewRequest("GET", "/accounts/account-123", nil)
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-123")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -172,9 +175,8 @@ func TestAccountHandler_GetOne(t *testing.T) {
 	t.Run("error - not found", func(t *testing.T) {
 		mockSvc.On("GetByID", mock.Anything, "account-999", "user_123").Return(nil, nil)
 
-		req := httptest.NewRequest("GET", "/companies/company-123/accounts/account-999", nil)
+		req := httptest.NewRequest("GET", "/accounts/account-999", nil)
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-999")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -197,10 +199,9 @@ func TestAccountHandler_Update(t *testing.T) {
 		}, nil)
 
 		body := `{"name":"Updated"}`
-		req := httptest.NewRequest("PUT", "/companies/company-123/accounts/account-123", bytes.NewBufferString(body))
+		req := httptest.NewRequest("PUT", "/accounts/account-123", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-123")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -213,10 +214,9 @@ func TestAccountHandler_Update(t *testing.T) {
 
 	t.Run("error - invalid body", func(t *testing.T) {
 		body := `{"invalid`
-		req := httptest.NewRequest("PUT", "/companies/company-123/accounts/account-123", bytes.NewBufferString(body))
+		req := httptest.NewRequest("PUT", "/accounts/account-123", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-123")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -231,10 +231,9 @@ func TestAccountHandler_Update(t *testing.T) {
 		mockSvc.On("Update", mock.Anything, "account-999", "user_123", mock.Anything).Return(nil, nil)
 
 		body := `{"name":"Updated"}`
-		req := httptest.NewRequest("PUT", "/companies/company-123/accounts/account-999", bytes.NewBufferString(body))
+		req := httptest.NewRequest("PUT", "/accounts/account-999", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-999")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -253,9 +252,8 @@ func TestAccountHandler_Delete(t *testing.T) {
 	t.Run("success - delete account", func(t *testing.T) {
 		mockSvc.On("Delete", mock.Anything, "account-123", "user_123").Return(nil)
 
-		req := httptest.NewRequest("DELETE", "/companies/company-123/accounts/account-123", nil)
+		req := httptest.NewRequest("DELETE", "/accounts/account-123", nil)
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-123")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
@@ -269,9 +267,8 @@ func TestAccountHandler_Delete(t *testing.T) {
 	t.Run("error - not found", func(t *testing.T) {
 		mockSvc.On("Delete", mock.Anything, "account-999", "user_123").Return(errors.New("not found"))
 
-		req := httptest.NewRequest("DELETE", "/companies/company-123/accounts/account-999", nil)
+		req := httptest.NewRequest("DELETE", "/accounts/account-999", nil)
 		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("companyID", "company-123")
 		rctx.URLParams.Add("id", "account-999")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
