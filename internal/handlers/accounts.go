@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/homepay/api/internal/middleware"
 	"github.com/homepay/api/internal/models"
 	"github.com/homepay/api/internal/service"
@@ -37,6 +38,10 @@ func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {
 	companyID := r.URL.Query().Get("company_id")
 	var companyIDPtr *string
 	if companyID != "" {
+		if _, err := uuid.Parse(companyID); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid company_id format")
+			return
+		}
 		companyIDPtr = &companyID
 	}
 	sort := r.URL.Query().Get("sort")
