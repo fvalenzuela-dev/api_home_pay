@@ -67,14 +67,14 @@ func New(
 			r.Get("/{id}", companies.GetOne)
 			r.Put("/{id}", companies.Update)
 			r.Delete("/{id}", companies.Delete)
+		})
 
-			r.Route("/{companyID}/accounts", func(r chi.Router) {
-				r.Get("/", accounts.List)
-				r.Post("/", accounts.Create)
-				r.Get("/{id}", accounts.GetOne)
-				r.Put("/{id}", accounts.Update)
-				r.Delete("/{id}", accounts.Delete)
-			})
+		r.Route("/accounts", func(r chi.Router) {
+			r.Get("/", accounts.List)
+			r.Post("/", accounts.Create)
+			r.Get("/{id}", accounts.GetOne)
+			r.Put("/{id}", accounts.Update)
+			r.Delete("/{id}", accounts.Delete)
 		})
 
 		r.Route("/accounts/{accountID}/billings", func(r chi.Router) {

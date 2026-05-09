@@ -160,10 +160,9 @@ func strPtr(s string) *string {
 
 // Additional Account Repository Tests with Mocks - Only unique ones
 
-func TestAccountRepo_GetAllByCompany_WithMock(t *testing.T) {
+func TestAccountRepo_GetAllFiltered_WithMock(t *testing.T) {
 	mockRepo := new(MockAccountRepository)
 
-	companyID := "company-123"
 	authUserID := "user-123"
 	pagination := models.PaginationParams{Limit: 10}
 
@@ -172,9 +171,9 @@ func TestAccountRepo_GetAllByCompany_WithMock(t *testing.T) {
 		{ID: "account-2", Name: "Account 2"},
 	}
 
-	mockRepo.On("GetAllByCompany", mock.Anything, companyID, authUserID, pagination).Return(accounts, 2, nil)
+	mockRepo.On("GetAllFiltered", mock.Anything, authUserID, (*string)(nil), "", "", pagination).Return(accounts, 2, nil)
 
-	result, total, err := mockRepo.GetAllByCompany(context.Background(), companyID, authUserID, pagination)
+	result, total, err := mockRepo.GetAllFiltered(context.Background(), authUserID, nil, "", "", pagination)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(result))

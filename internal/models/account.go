@@ -5,6 +5,7 @@ import "time"
 type Account struct {
 	ID             string     `json:"id"`
 	CompanyID      string     `json:"company_id"`
+	CompanyName    string     `json:"company_name"`
 	GroupID        *string    `json:"group_id,omitempty"`
 	AccountNumber  *string    `json:"account_number,omitempty"`
 	Name           string     `json:"name"`
@@ -16,6 +17,7 @@ type Account struct {
 }
 
 type CreateAccountRequest struct {
+	CompanyID      string  `json:"company_id"`
 	GroupID        *string `json:"group_id"`
 	AccountNumber  *string `json:"account_number"`
 	Name           string  `json:"name"`
@@ -24,6 +26,7 @@ type CreateAccountRequest struct {
 }
 
 type UpdateAccountRequest struct {
+	CompanyID      *string `json:"company_id"`
 	GroupID        *string `json:"group_id"`
 	AccountNumber  *string `json:"account_number"`
 	Name           *string `json:"name"`

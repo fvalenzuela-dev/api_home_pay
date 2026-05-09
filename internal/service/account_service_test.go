@@ -11,23 +11,28 @@ import (
 
 func TestAccountService_Create(t *testing.T) {
 	mockAccounts := new(AccountRepoMock)
+	mockCompanies := new(CompanyRepoMock)
 	mockBillings := new(BillingRepoMock)
-	svc := NewAccountService(mockAccounts, mockBillings)
+	svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
 
 	t.Run("success - create account", func(t *testing.T) {
 		req := &models.CreateAccountRequest{
-			Name:            "Test Account",
-			BillingDay:      15,
+			CompanyID:      "company-123",
+			Name:           "Test Account",
+			BillingDay:     15,
 			AutoAccumulate: true,
 		}
-		mockAccounts.On("Create", mock.Anything, "company-123", "user_123", req).Return(&models.Account{
+		mockCompanies.On("GetByID", mock.Anything, "company-123", "user_123").Return(&models.Company{
+			ID: "company-123",
+		}, nil)
+		mockAccounts.On("Create", mock.Anything, "company-123", "user_123", mock.Anything).Return(&models.Account{
 			ID:         "account-123",
 			CompanyID:  "company-123",
 			Name:       "Test Account",
 			BillingDay: 15,
 		}, nil)
 
-		result, err := svc.Create(context.Background(), "company-123", "user_123", req)
+		result, err := svc.Create(context.Background(), "user_123", req)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "account-123", result.ID)
@@ -36,11 +41,12 @@ func TestAccountService_Create(t *testing.T) {
 
 	t.Run("error - empty name", func(t *testing.T) {
 		req := &models.CreateAccountRequest{
+			CompanyID:  "company-123",
 			Name:       "",
 			BillingDay: 15,
 		}
 
-		result, err := svc.Create(context.Background(), "company-123", "user_123", req)
+		result, err := svc.Create(context.Background(), "user_123", req)
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
@@ -49,11 +55,12 @@ func TestAccountService_Create(t *testing.T) {
 
 	t.Run("error - invalid billing day", func(t *testing.T) {
 		req := &models.CreateAccountRequest{
+			CompanyID:  "company-123",
 			Name:       "Test Account",
 			BillingDay: 0,
 		}
 
-		result, err := svc.Create(context.Background(), "company-123", "user_123", req)
+		result, err := svc.Create(context.Background(), "user_123", req)
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
@@ -62,22 +69,45 @@ func TestAccountService_Create(t *testing.T) {
 
 	t.Run("error - billing day too high", func(t *testing.T) {
 		req := &models.CreateAccountRequest{
+			CompanyID:  "company-123",
 			Name:       "Test Account",
 			BillingDay: 32,
 		}
 
-		result, err := svc.Create(context.Background(), "company-123", "user_123", req)
+		result, err := svc.Create(context.Background(), "user_123", req)
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "billing_day must be between 1 and 31")
 	})
+
+	t.Run("error - company not found", func(t *testing.T) {
+		// Create fresh mocks for this specific test to avoid state issues
+		mockAccts := new(AccountRepoMock)
+		mockComps := new(CompanyRepoMock)
+		mockBill := new(BillingRepoMock)
+		svc := NewAccountService(mockAccts, mockComps, mockBill)
+
+		req := &models.CreateAccountRequest{
+			CompanyID:  "company-123",
+			Name:       "Test Account",
+			BillingDay: 15,
+		}
+		mockComps.On("GetByID", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+
+		result, err := svc.Create(context.Background(), "user_123", req)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "company not found or access denied")
+	})
 }
 
 func TestAccountService_GetByID(t *testing.T) {
 	mockAccounts := new(AccountRepoMock)
+	mockCompanies := new(CompanyRepoMock)
 	mockBillings := new(BillingRepoMock)
-	svc := NewAccountService(mockAccounts, mockBillings)
+	svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
 
 	t.Run("success", func(t *testing.T) {
 		mockAccounts.On("GetByID", mock.Anything, "account-123", "user_123").Return(&models.Account{
@@ -103,31 +133,72 @@ func TestAccountService_GetByID(t *testing.T) {
 	})
 }
 
-func TestAccountService_GetAllByCompany(t *testing.T) {
-	mockAccounts := new(AccountRepoMock)
-	mockBillings := new(BillingRepoMock)
-	svc := NewAccountService(mockAccounts, mockBillings)
+func TestAccountService_GetAll(t *testing.T) {
+	t.Run("success - list all accounts", func(t *testing.T) {
+		mockAccounts := new(AccountRepoMock)
+		mockCompanies := new(CompanyRepoMock)
+		mockBillings := new(BillingRepoMock)
+		svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
 
-	t.Run("success", func(t *testing.T) {
 		accounts := []models.Account{
 			{ID: "account-1", Name: "Account 1"},
 			{ID: "account-2", Name: "Account 2"},
 		}
-		mockAccounts.On("GetAllByCompany", mock.Anything, "company-123", "user_123", mock.Anything).Return(accounts, 2, nil)
+		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", (*string)(nil), "", "", mock.Anything).Return(accounts, 2, nil)
 
-		result, total, err := svc.GetAllByCompany(context.Background(), "company-123", "user_123", models.PaginationParams{Page: 1, Limit: 20})
+		result, total, err := svc.GetAll(context.Background(), "user_123", nil, "", "", models.PaginationParams{Page: 1, Limit: 20})
 
 		assert.NoError(t, err)
 		assert.Equal(t, 2, total)
 		assert.Len(t, result, 2)
 		mockAccounts.AssertExpectations(t)
 	})
+
+	t.Run("success - filter by company", func(t *testing.T) {
+		mockAccounts := new(AccountRepoMock)
+		mockCompanies := new(CompanyRepoMock)
+		mockBillings := new(BillingRepoMock)
+		svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
+
+		accounts := []models.Account{
+			{ID: "account-1", Name: "Account 1"},
+		}
+		companyID := "company-123"
+		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", &companyID, "", "", mock.Anything).Return(accounts, 1, nil)
+
+		result, total, err := svc.GetAll(context.Background(), "user_123", &companyID, "", "", models.PaginationParams{Page: 1, Limit: 20})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, result, 1)
+		mockAccounts.AssertExpectations(t)
+	})
+
+	t.Run("success - with sort and order", func(t *testing.T) {
+		mockAccounts := new(AccountRepoMock)
+		mockCompanies := new(CompanyRepoMock)
+		mockBillings := new(BillingRepoMock)
+		svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
+
+		accounts := []models.Account{
+			{ID: "account-1", Name: "Account 1"},
+		}
+		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", (*string)(nil), "name", "asc", mock.Anything).Return(accounts, 1, nil)
+
+		result, total, err := svc.GetAll(context.Background(), "user_123", nil, "name", "asc", models.PaginationParams{Page: 1, Limit: 20})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, result, 1)
+		mockAccounts.AssertExpectations(t)
+	})
 }
 
 func TestAccountService_Update(t *testing.T) {
 	mockAccounts := new(AccountRepoMock)
+	mockCompanies := new(CompanyRepoMock)
 	mockBillings := new(BillingRepoMock)
-	svc := NewAccountService(mockAccounts, mockBillings)
+	svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
 
 	t.Run("success", func(t *testing.T) {
 		name := "Updated Account"
@@ -169,8 +240,9 @@ func TestAccountService_Update(t *testing.T) {
 
 func TestAccountService_Delete(t *testing.T) {
 	mockAccounts := new(AccountRepoMock)
+	mockCompanies := new(CompanyRepoMock)
 	mockBillings := new(BillingRepoMock)
-	svc := NewAccountService(mockAccounts, mockBillings)
+	svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
 
 	t.Run("success", func(t *testing.T) {
 		mockBillings.On("SoftDeleteByAccount", mock.Anything, "account-123").Return(nil)

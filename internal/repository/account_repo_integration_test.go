@@ -250,7 +250,7 @@ func TestAccountRepo_GetByID_Integration(t *testing.T) {
 	})
 }
 
-func TestAccountRepo_GetAllByCompany_Integration(t *testing.T) {
+func TestAccountRepo_GetAllFiltered_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -274,7 +274,7 @@ func TestAccountRepo_GetAllByCompany_Integration(t *testing.T) {
 	t.Run("gets all accounts with pagination", func(t *testing.T) {
 		pagination := models.PaginationParams{Page: 1, Limit: 2}
 
-		accounts, total, err := testRepoAccount.GetAllByCompany(ctx, companyID, testUserIDAccount, pagination)
+		accounts, total, err := testRepoAccount.GetAllFiltered(ctx, testUserIDAccount, nil, "", "", pagination)
 
 		require.NoError(t, err)
 		assert.Len(t, accounts, 2)
@@ -284,7 +284,17 @@ func TestAccountRepo_GetAllByCompany_Integration(t *testing.T) {
 	t.Run("gets all accounts without pagination limits", func(t *testing.T) {
 		pagination := models.PaginationParams{Page: 1, Limit: 100}
 
-		accounts, total, err := testRepoAccount.GetAllByCompany(ctx, companyID, testUserIDAccount, pagination)
+		accounts, total, err := testRepoAccount.GetAllFiltered(ctx, testUserIDAccount, nil, "", "", pagination)
+
+		require.NoError(t, err)
+		assert.Len(t, accounts, 5)
+		assert.Equal(t, 5, total)
+	})
+
+	t.Run("filters by company_id", func(t *testing.T) {
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+
+		accounts, total, err := testRepoAccount.GetAllFiltered(ctx, testUserIDAccount, &companyID, "", "", pagination)
 
 		require.NoError(t, err)
 		assert.Len(t, accounts, 5)

@@ -31,8 +31,8 @@ func (m *MockAccountRepository) GetByID(ctx context.Context, id, authUserID stri
 	return args.Get(0).(*models.Account), args.Error(1)
 }
 
-func (m *MockAccountRepository) GetAllByCompany(ctx context.Context, companyID, authUserID string, p models.PaginationParams) ([]models.Account, int, error) {
-	args := m.Called(ctx, companyID, authUserID, p)
+func (m *MockAccountRepository) GetAllFiltered(ctx context.Context, authUserID string, companyID *string, sort, order string, p models.PaginationParams) ([]models.Account, int, error) {
+	args := m.Called(ctx, authUserID, companyID, sort, order, p)
 	return args.Get(0).([]models.Account), args.Int(1), args.Error(2)
 }
 

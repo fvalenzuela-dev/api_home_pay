@@ -67,7 +67,7 @@ func InitializeApp(cfg *config.Config) (*App, error) {
 	// Services
 	companySvc := service.NewCompanyService(companyRepo, accountRepo, billingRepo)
 	accountGroupSvc := service.NewAccountGroupService(accountGroupRepo)
-	accountSvc := service.NewAccountService(accountRepo, billingRepo)
+	accountSvc := service.NewAccountService(accountRepo, companyRepo, billingRepo)
 	billingSvc := service.NewBillingService(billingRepo, accountRepo)
 	expenseSvc := service.NewExpenseService(expenseRepo)
 	installmentSvc := service.NewInstallmentService(installmentRepo)
