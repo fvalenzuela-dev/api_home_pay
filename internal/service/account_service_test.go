@@ -25,7 +25,7 @@ func TestAccountService_Create(t *testing.T) {
 		mockCompanies.On("GetByID", mock.Anything, "company-123", "user_123").Return(&models.Company{
 			ID: "company-123",
 		}, nil)
-		mockAccounts.On("Create", mock.Anything, "company-123", "user_123", req).Return(&models.Account{
+		mockAccounts.On("Create", mock.Anything, "company-123", "user_123", mock.Anything).Return(&models.Account{
 			ID:         "account-123",
 			CompanyID:  "company-123",
 			Name:       "Test Account",
