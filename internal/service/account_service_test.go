@@ -134,17 +134,17 @@ func TestAccountService_GetByID(t *testing.T) {
 }
 
 func TestAccountService_GetAll(t *testing.T) {
-	mockAccounts := new(AccountRepoMock)
-	mockCompanies := new(CompanyRepoMock)
-	mockBillings := new(BillingRepoMock)
-	svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
-
 	t.Run("success - list all accounts", func(t *testing.T) {
+		mockAccounts := new(AccountRepoMock)
+		mockCompanies := new(CompanyRepoMock)
+		mockBillings := new(BillingRepoMock)
+		svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
+
 		accounts := []models.Account{
 			{ID: "account-1", Name: "Account 1"},
 			{ID: "account-2", Name: "Account 2"},
 		}
-		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", mock.Anything, "", "", mock.Anything).Return(accounts, 2, nil)
+		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", (*string)(nil), "", "", mock.Anything).Return(accounts, 2, nil)
 
 		result, total, err := svc.GetAll(context.Background(), "user_123", nil, "", "", models.PaginationParams{Page: 1, Limit: 20})
 
@@ -155,6 +155,11 @@ func TestAccountService_GetAll(t *testing.T) {
 	})
 
 	t.Run("success - filter by company", func(t *testing.T) {
+		mockAccounts := new(AccountRepoMock)
+		mockCompanies := new(CompanyRepoMock)
+		mockBillings := new(BillingRepoMock)
+		svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
+
 		accounts := []models.Account{
 			{ID: "account-1", Name: "Account 1"},
 		}
@@ -170,10 +175,15 @@ func TestAccountService_GetAll(t *testing.T) {
 	})
 
 	t.Run("success - with sort and order", func(t *testing.T) {
+		mockAccounts := new(AccountRepoMock)
+		mockCompanies := new(CompanyRepoMock)
+		mockBillings := new(BillingRepoMock)
+		svc := NewAccountService(mockAccounts, mockCompanies, mockBillings)
+
 		accounts := []models.Account{
 			{ID: "account-1", Name: "Account 1"},
 		}
-		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", mock.Anything, "name", "asc", mock.Anything).Return(accounts, 1, nil)
+		mockAccounts.On("GetAllFiltered", mock.Anything, "user_123", (*string)(nil), "name", "asc", mock.Anything).Return(accounts, 1, nil)
 
 		result, total, err := svc.GetAll(context.Background(), "user_123", nil, "name", "asc", models.PaginationParams{Page: 1, Limit: 20})
 
