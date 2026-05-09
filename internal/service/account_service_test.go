@@ -83,13 +83,18 @@ func TestAccountService_Create(t *testing.T) {
 	})
 
 	t.Run("error - company not found", func(t *testing.T) {
+		// Create fresh mocks for this specific test to avoid state issues
+		mockAccts := new(AccountRepoMock)
+		mockComps := new(CompanyRepoMock)
+		mockBill := new(BillingRepoMock)
+		svc := NewAccountService(mockAccts, mockComps, mockBill)
+
 		req := &models.CreateAccountRequest{
 			CompanyID:  "company-123",
 			Name:       "Test Account",
 			BillingDay: 15,
 		}
-		mockCompanies.On("GetByID", mock.Anything, "company-123", "user_123").Return(nil, nil).Maybe()
-		mockAccounts.On("Create", mock.Anything, "company-123", "user_123", mock.Anything).Return(nil, errors.New("should not be called")).Maybe()
+		mockComps.On("GetByID", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
 		result, err := svc.Create(context.Background(), "user_123", req)
 
