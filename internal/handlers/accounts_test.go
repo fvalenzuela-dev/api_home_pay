@@ -124,10 +124,10 @@ func TestAccountHandler_List(t *testing.T) {
 		accounts := []models.Account{
 			{ID: "account-1", Name: "Electricity"},
 		}
-		companyID := "company-123"
+		companyID := "550e8400-e29b-41d4-a716-446655440000"
 		mockSvc.On("GetAll", mock.Anything, "user_123", &companyID, "", "", mock.Anything).Return(accounts, 1, nil)
 
-		req := httptest.NewRequest("GET", "/accounts?company_id=company-123", nil)
+		req := httptest.NewRequest("GET", "/accounts?company_id=550e8400-e29b-41d4-a716-446655440000", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 

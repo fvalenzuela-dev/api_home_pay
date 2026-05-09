@@ -164,7 +164,6 @@ func TestAccountRepo_GetAllFiltered_WithMock(t *testing.T) {
 	mockRepo := new(MockAccountRepository)
 
 	authUserID := "user-123"
-	companyID := "company-123"
 	pagination := models.PaginationParams{Limit: 10}
 
 	accounts := []models.Account{
