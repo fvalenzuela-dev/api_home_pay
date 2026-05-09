@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/homepay/api/internal/models"
@@ -87,7 +88,8 @@ func TestAccountService_Create(t *testing.T) {
 			Name:       "Test Account",
 			BillingDay: 15,
 		}
-		mockCompanies.On("GetByID", mock.Anything, "company-123", "user_123").Return(nil, nil)
+		mockCompanies.On("GetByID", mock.Anything, "company-123", "user_123").Return(nil, nil).Maybe()
+		mockAccounts.On("Create", mock.Anything, "company-123", "user_123", mock.Anything).Return(nil, errors.New("should not be called")).Maybe()
 
 		result, err := svc.Create(context.Background(), "user_123", req)
 
