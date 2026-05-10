@@ -128,7 +128,7 @@ func (h *BillingHandler) Update(w http.ResponseWriter, r *http.Request) {
 // OpenPeriod godoc
 // @Summary     Abrir periodo
 // @Description Genera un billing por cada cuenta activa del usuario para el periodo indicado. Idempotente: si el billing ya existe, lo saltea. Aplica carry-over del periodo anterior si hay deuda pendiente.
-// @Tags        periods
+// @Tags        billings
 // @Security    BearerAuth
 // @Produce     json
 // @Param       period  path      int  true  "Periodo YYYYMM (ej: 202605)"
@@ -136,7 +136,7 @@ func (h *BillingHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Failure     400     {object}  map[string]string
 // @Failure     401     {object}  map[string]string
 // @Failure     500     {object}  map[string]string
-// @Router      /periods/{period}/open [post]
+// @Router      /billings/{period}/open [post]
 func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	periodStr := chi.URLParam(r, "period")
@@ -156,7 +156,7 @@ func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
 // ListByPeriod godoc
 // @Summary     Listar billings de un periodo
 // @Description Retorna todos los billings del usuario para el periodo indicado. Filtrable por estado de pago.
-// @Tags        periods
+// @Tags        billings
 // @Security    BearerAuth
 // @Produce     json
 // @Param       period    path      int     true   "Periodo YYYYMM (ej: 202605)"
@@ -167,7 +167,7 @@ func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
 // @Failure     400       {object}  map[string]string
 // @Failure     401       {object}  map[string]string
 // @Failure     500       {object}  map[string]string
-// @Router      /periods/{period}/billings [get]
+// @Router      /billings/{period} [get]
 func (h *BillingHandler) ListByPeriod(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	periodStr := chi.URLParam(r, "period")
