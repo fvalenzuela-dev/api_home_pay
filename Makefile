@@ -18,6 +18,8 @@ run:
 	go run -ldflags "$(LDFLAGS)" ./cmd/api
 
 swag:
+	@sed 's/\$${VERSION}/$(VERSION)/g' cmd/api/main.go > cmd/api/main.go.tmp && \
+	mv cmd/api/main.go.tmp cmd/api/main.go
 	go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/api/main.go --output docs
 
 release: swag build

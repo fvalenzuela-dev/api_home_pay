@@ -1,5 +1,5 @@
 // @title           HomePay API
-// @version         ${VERSION}
+// @version         1.0.1
 // @description     Backend REST para gestión de finanzas personales HomePay. Todos los endpoints protegidos requieren un JWT de Clerk en el header Authorization.
 // @BasePath        /
 // @securityDefinitions.apikey BearerAuth
