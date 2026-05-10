@@ -4,7 +4,7 @@ Backend REST para HomePay. Gestiona categorías, empresas, cuentas, facturas, ga
 
 ## Stack
 
-- **Go 1.26.1**
+- **Go 1.25**
 - **chi v5** — router HTTP
 - **pgx v5** — driver PostgreSQL con pool de conexiones
 - **Clerk SDK v2** — autenticación JWT
