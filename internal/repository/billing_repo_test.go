@@ -176,6 +176,7 @@ func TestBillingRepo_GetByAccountAndPeriod_WithMock(t *testing.T) {
 	mockRepo := new(MockBillingRepository)
 
 	accountID := "account-123"
+	authUserID := "user-123"
 	period := 202604
 
 	expectedBilling := &models.AccountBilling{
@@ -185,9 +186,9 @@ func TestBillingRepo_GetByAccountAndPeriod_WithMock(t *testing.T) {
 		AmountBilled: 15000.00,
 	}
 
-	mockRepo.On("GetByAccountAndPeriod", mock.Anything, accountID, period).Return(expectedBilling, nil)
+	mockRepo.On("GetByAccountAndPeriod", mock.Anything, accountID, authUserID, period).Return(expectedBilling, nil)
 
-	result, err := mockRepo.GetByAccountAndPeriod(context.Background(), accountID, period)
+	result, err := mockRepo.GetByAccountAndPeriod(context.Background(), accountID, authUserID, period)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)

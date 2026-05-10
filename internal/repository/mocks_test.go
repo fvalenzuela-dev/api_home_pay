@@ -93,8 +93,8 @@ func (m *MockBillingRepository) GetByID(ctx context.Context, id, authUserID stri
 	return args.Get(0).(*models.AccountBilling), args.Error(1)
 }
 
-func (m *MockBillingRepository) GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID, period)
+func (m *MockBillingRepository) GetByAccountAndPeriod(ctx context.Context, accountID, authUserID string, period int) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID, period)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -106,8 +106,8 @@ func (m *MockBillingRepository) GetAllByAccount(ctx context.Context, accountID, 
 	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
 }
 
-func (m *MockBillingRepository) GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID)
+func (m *MockBillingRepository) GetUnpaidByAccount(ctx context.Context, accountID, authUserID string) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -338,12 +338,13 @@ func TestBillingRepo_GetUnpaidByAccount_WithMock(t *testing.T) {
 	mockRepo := new(MockBillingRepository)
 
 	accountID := "account-123"
+	authUserID := "user-123"
 
 	expectedBilling := createTestBilling("billing-123", accountID, 202603, 15000.00, false)
 
-	mockRepo.On("GetUnpaidByAccount", mock.Anything, accountID).Return(expectedBilling, nil)
+	mockRepo.On("GetUnpaidByAccount", mock.Anything, accountID, authUserID).Return(expectedBilling, nil)
 
-	result, err := mockRepo.GetUnpaidByAccount(context.Background(), accountID)
+	result, err := mockRepo.GetUnpaidByAccount(context.Background(), accountID, authUserID)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)

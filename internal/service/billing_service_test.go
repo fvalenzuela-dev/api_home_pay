@@ -37,8 +37,8 @@ func (m *MockBillingRepoForTest) GetByID(ctx context.Context, id, authUserID str
 	return args.Get(0).(*models.AccountBilling), args.Error(1)
 }
 
-func (m *MockBillingRepoForTest) GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID, period)
+func (m *MockBillingRepoForTest) GetByAccountAndPeriod(ctx context.Context, accountID, authUserID string, period int) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID, period)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -50,8 +50,8 @@ func (m *MockBillingRepoForTest) GetAllByAccount(ctx context.Context, accountID,
 	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
 }
 
-func (m *MockBillingRepoForTest) GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID)
+func (m *MockBillingRepoForTest) GetUnpaidByAccount(ctx context.Context, accountID, authUserID string) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -232,7 +232,7 @@ func TestBillingService_Create(t *testing.T) {
 
 		account := &models.Account{ID: "acc1", AutoAccumulate: true}
 		mockAccounts.On("GetByID", mock.Anything, "acc1", "user_123").Return(account, nil)
-		mockBilling.On("GetUnpaidByAccount", mock.Anything, "acc1").Return(nil, assert.AnError)
+		mockBilling.On("GetUnpaidByAccount", mock.Anything, "acc1", "user_123").Return(nil, assert.AnError)
 
 		result, err := svc.Create(context.Background(), "acc1", "user_123", req)
 
@@ -376,7 +376,7 @@ func TestBillingService_Create_CarryOver(t *testing.T) {
 			ID: "unpaid-billing", AccountID: "acc1", Period: 202603,
 			AmountBilled: 10000, AmountPaid: 0, IsPaid: false,
 		}
-		mockBilling.On("GetUnpaidByAccount", mock.Anything, "acc1").Return(unpaidBilling, nil)
+		mockBilling.On("GetUnpaidByAccount", mock.Anything, "acc1", "user_123").Return(unpaidBilling, nil)
 
 		// Carry-over created for next period
 		carryOverBilling := &models.AccountBilling{
@@ -437,11 +437,11 @@ func TestBillingService_OpenPeriod_Success(t *testing.T) {
 		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
 
 		// No existing billings for period 202603 for both accounts
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, nil)
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc2", 202603).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202603).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc2", "user_123", 202603).Return(nil, nil)
 		// No previous unpaid billings
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202602).Return(nil, nil)
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc2", 202602).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202602).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc2", "user_123", 202602).Return(nil, nil)
 
 		inserts := []models.PeriodBillingInsert{
 			{AccountID: "acc1", AmountBilled: 0},
@@ -470,13 +470,13 @@ func TestBillingService_OpenPeriod_WithCarryOver(t *testing.T) {
 		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
 
 		// No existing billing for period
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202603).Return(nil, nil)
 		// Previous period has unpaid billing
 		prevBilling := &models.AccountBilling{
 			ID: "prev-billing", AccountID: "acc1", Period: 202602,
 			AmountBilled: 10000, AmountPaid: 0, IsPaid: false,
 		}
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202602).Return(prevBilling, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202602).Return(prevBilling, nil)
 
 		inserts := []models.PeriodBillingInsert{
 			{AccountID: "acc1", AmountBilled: 10000, CarriedFrom: &prevBilling.ID},
@@ -504,7 +504,7 @@ func TestBillingService_OpenPeriod_SkipExisting(t *testing.T) {
 
 		// Existing billing for period
 		existingBilling := &models.AccountBilling{ID: "existing", AccountID: "acc1", Period: 202603}
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(existingBilling, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202603).Return(existingBilling, nil)
 
 		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
 
@@ -631,7 +631,7 @@ func TestBillingService_OpenPeriod_GetExistingBillingError(t *testing.T) {
 
 		accounts := []models.Account{{ID: "acc1"}}
 		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, assert.AnError)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202603).Return(nil, assert.AnError)
 
 		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)
 
@@ -648,8 +648,8 @@ func TestBillingService_OpenPeriod_BulkInsertError(t *testing.T) {
 
 		accounts := []models.Account{{ID: "acc1"}}
 		mockAccounts.On("GetAllActiveByUser", mock.Anything, "user_123").Return(accounts, nil)
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202603).Return(nil, nil)
-		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", 202602).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202603).Return(nil, nil)
+		mockBilling.On("GetByAccountAndPeriod", mock.Anything, "acc1", "user_123", 202602).Return(nil, nil)
 		mockBilling.On("BulkInsertForPeriod", mock.Anything, 202603, mock.Anything).Return(assert.AnError)
 
 		result, err := svc.OpenPeriod(context.Background(), "user_123", 202603)

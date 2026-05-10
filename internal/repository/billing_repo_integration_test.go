@@ -330,7 +330,7 @@ func TestBillingRepo_GetByAccountAndPeriod_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("gets billing by account and period", func(t *testing.T) {
-		billing, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID, 202603)
+		billing, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID, testUserIDBilling, 202603)
 
 		require.NoError(t, err)
 		require.NotNil(t, billing)
@@ -339,7 +339,7 @@ func TestBillingRepo_GetByAccountAndPeriod_Integration(t *testing.T) {
 	})
 
 	t.Run("returns nil for non-existent period", func(t *testing.T) {
-		billing, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID, 209912)
+		billing, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID, testUserIDBilling, 209912)
 
 		assert.NoError(t, err)
 		assert.Nil(t, billing)
@@ -419,7 +419,7 @@ func TestBillingRepo_GetUnpaidByAccount_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("gets unpaid billing", func(t *testing.T) {
-		billing, err := testRepoBilling.GetUnpaidByAccount(ctx, accountID)
+		billing, err := testRepoBilling.GetUnpaidByAccount(ctx, accountID, testUserIDBilling)
 
 		require.NoError(t, err)
 		require.NotNil(t, billing)
@@ -437,7 +437,7 @@ func TestBillingRepo_GetUnpaidByAccount_Integration(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		billing, err := testRepoBilling.GetUnpaidByAccount(ctx, accountID)
+		billing, err := testRepoBilling.GetUnpaidByAccount(ctx, accountID, testUserIDBilling)
 
 		assert.NoError(t, err)
 		assert.Nil(t, billing)
@@ -615,12 +615,12 @@ func TestBillingRepo_BulkInsertForPeriod_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify
-		billing1, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID1, 202603)
+		billing1, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID1, testUserIDBilling, 202603)
 		require.NoError(t, err)
 		require.NotNil(t, billing1)
 		assert.Equal(t, 100.00, billing1.AmountBilled)
 
-		billing2, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID2, 202603)
+		billing2, err := testRepoBilling.GetByAccountAndPeriod(ctx, accountID2, testUserIDBilling, 202603)
 		require.NoError(t, err)
 		require.NotNil(t, billing2)
 		assert.Equal(t, 150.00, billing2.AmountBilled)

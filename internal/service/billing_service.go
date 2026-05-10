@@ -83,7 +83,7 @@ func (s *billingService) Create(ctx context.Context, accountID, authUserID strin
 
 	// Si auto_accumulate y hay una factura impaga, crear carry-over al siguiente período
 	if account.AutoAccumulate {
-		unpaid, err := s.billings.GetUnpaidByAccount(ctx, accountID)
+		unpaid, err := s.billings.GetUnpaidByAccount(ctx, accountID, authUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +137,7 @@ func (s *billingService) OpenPeriod(ctx context.Context, authUserID string, peri
 	skipped := 0
 
 	for _, acc := range accounts {
-		existing, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, period)
+		existing, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, authUserID, period)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (s *billingService) OpenPeriod(ctx context.Context, authUserID string, peri
 		var amount float64
 		var carriedFrom *string
 
-		prev, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, prevPeriod)
+		prev, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, authUserID, prevPeriod)
 		if err != nil {
 			return nil, err
 		}

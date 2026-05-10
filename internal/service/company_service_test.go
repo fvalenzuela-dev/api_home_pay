@@ -128,8 +128,8 @@ func (m *BillingRepoMock) GetByID(ctx context.Context, id, authUserID string) (*
 	return args.Get(0).(*models.AccountBilling), args.Error(1)
 }
 
-func (m *BillingRepoMock) GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID, period)
+func (m *BillingRepoMock) GetByAccountAndPeriod(ctx context.Context, accountID, authUserID string, period int) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID, period)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -141,8 +141,8 @@ func (m *BillingRepoMock) GetAllByAccount(ctx context.Context, accountID, authUs
 	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
 }
 
-func (m *BillingRepoMock) GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID)
+func (m *BillingRepoMock) GetUnpaidByAccount(ctx context.Context, accountID, authUserID string) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
