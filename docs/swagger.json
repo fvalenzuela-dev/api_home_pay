@@ -2407,6 +2407,7 @@
                     "periods"
                 ],
                 "summary": "Listar billings de un periodo",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "integer",
@@ -2487,6 +2488,7 @@
                     "periods"
                 ],
                 "summary": "Abrir periodo",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "integer",

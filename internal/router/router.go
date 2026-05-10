@@ -81,9 +81,14 @@ func New(
 		r.Route("/billings", func(r chi.Router) {
 			r.Get("/", billings.ListAll)
 			r.Post("/", billings.Create)
-			r.Get("/{id}", billings.GetOne)
-			r.Put("/{id}", billings.Update)
-			r.Delete("/{id}", billings.Delete)
+			// Route for period-based billing listing (YYYYMM format) - must come before /{id}
+			r.Get("/{period}", billings.ListByPeriod)
+			// Route for opening a period - must come before /{id}
+			r.Post("/{period}/open", billings.OpenPeriod)
+			// Route for individual billing by UUID - constrained with regex
+			r.Get("/{id:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})}", billings.GetOne)
+			r.Put("/{id:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})}", billings.Update)
+			r.Delete("/{id:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})}", billings.Delete)
 		})
 
 		r.Route("/periods/{period}", func(r chi.Router) {

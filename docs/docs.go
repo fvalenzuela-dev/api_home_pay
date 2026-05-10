@@ -2414,6 +2414,7 @@ const docTemplate = `{
                     "periods"
                 ],
                 "summary": "Listar billings de un periodo",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "integer",
@@ -2494,6 +2495,7 @@ const docTemplate = `{
                     "periods"
                 ],
                 "summary": "Abrir periodo",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "integer",

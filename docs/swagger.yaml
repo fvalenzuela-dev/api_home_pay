@@ -1948,6 +1948,7 @@ paths:
       - installments
   /periods/{period}/billings:
     get:
+      deprecated: true
       description: Retorna todos los billings del usuario para el periodo indicado.
         Filtrable por estado de pago.
       parameters:
@@ -2001,6 +2002,7 @@ paths:
       - periods
   /periods/{period}/open:
     post:
+      deprecated: true
       description: 'Genera un billing por cada cuenta activa del usuario para el periodo
         indicado. Idempotente: si el billing ya existe, lo saltea. Aplica carry-over
         del periodo anterior si hay deuda pendiente.'

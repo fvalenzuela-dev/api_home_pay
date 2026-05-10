@@ -137,6 +137,7 @@ func (h *BillingHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Failure     401     {object}  map[string]string
 // @Failure     500     {object}  map[string]string
 // @Router      /periods/{period}/open [post]
+// @Deprecated  Use POST /billings/{period}/open instead
 func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	periodStr := chi.URLParam(r, "period")
@@ -168,6 +169,7 @@ func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
 // @Failure     401       {object}  map[string]string
 // @Failure     500       {object}  map[string]string
 // @Router      /periods/{period}/billings [get]
+// @Deprecated  Use GET /billings/{period} instead
 func (h *BillingHandler) ListByPeriod(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	periodStr := chi.URLParam(r, "period")
