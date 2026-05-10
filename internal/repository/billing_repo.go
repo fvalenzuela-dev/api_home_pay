@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 
 	"github.com/homepay/api/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -282,23 +282,24 @@ func (r *billingRepo) SoftDeleteByAccount(ctx context.Context, accountID string)
 }
 
 func (r *billingRepo) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
-	// Build filter conditions
+	// Build filter conditions using parameterized queries — NO sql injection risk
+	// All filter values go into args[], not concatenated into the query string
 	conditions := "c.auth_user_id = $1 AND ab.deleted_at IS NULL"
 	args := []interface{}{authUserID}
 	argIdx := 2
 
 	if filters.AccountID != nil {
-		conditions += " AND ab.account_id = $" + strconv.Itoa(argIdx)
+		conditions += fmt.Sprintf(" AND ab.account_id = $%d", argIdx)
 		args = append(args, *filters.AccountID)
 		argIdx++
 	}
 	if filters.FromPeriod != nil {
-		conditions += " AND ab.period >= $" + strconv.Itoa(argIdx)
+		conditions += fmt.Sprintf(" AND ab.period >= $%d", argIdx)
 		args = append(args, *filters.FromPeriod)
 		argIdx++
 	}
 	if filters.ToPeriod != nil {
-		conditions += " AND ab.period <= $" + strconv.Itoa(argIdx)
+		conditions += fmt.Sprintf(" AND ab.period <= $%d", argIdx)
 		args = append(args, *filters.ToPeriod)
 		argIdx++
 	}
@@ -312,25 +313,25 @@ func (r *billingRepo) GetAll(ctx context.Context, authUserID string, filters mod
 
 	// Count query
 	var total int
-	countQuery := `
+	countQuery := fmt.Sprintf(`
 		SELECT COUNT(*) FROM homepay.account_billings ab
 		JOIN homepay.accounts a ON a.id = ab.account_id
 		JOIN homepay.companies c ON c.id = a.company_id
-		WHERE ` + conditions
+		WHERE %s`, conditions)
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Main query with pagination
-	query := `
-		SELECT ` + billingColsAB + `
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM homepay.account_billings ab
 		JOIN homepay.accounts a ON a.id = ab.account_id
 		JOIN homepay.companies c ON c.id = a.company_id
-		WHERE ` + conditions + `
+		WHERE %s
 		ORDER BY ab.period DESC
-		LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+		LIMIT $%d OFFSET $%d`, billingColsAB, conditions, argIdx, argIdx+1)
 	args = append(args, p.Limit, p.Offset())
 
 	rows, err := r.db.Query(ctx, query, args...)
