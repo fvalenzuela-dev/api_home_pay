@@ -1049,7 +1049,6 @@ const docTemplate = `{
                     "billings"
                 ],
                 "summary": "Listar billings de un periodo",
-                "deprecated": true,
                 "parameters": [
                     {
                         "type": "integer",

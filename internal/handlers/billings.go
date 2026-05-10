@@ -168,7 +168,6 @@ func (h *BillingHandler) OpenPeriod(w http.ResponseWriter, r *http.Request) {
 // @Failure     401       {object}  map[string]string
 // @Failure     500       {object}  map[string]string
 // @Router      /billings/{period} [get]
-// @Deprecated  Route: /periods/{period}/billings
 func (h *BillingHandler) ListByPeriod(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	periodStr := chi.URLParam(r, "period")
