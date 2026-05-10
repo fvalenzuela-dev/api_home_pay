@@ -38,8 +38,8 @@ func (m *MockBillingRepoForDashboardTest) GetByID(ctx context.Context, id, authU
 	return args.Get(0).(*models.AccountBilling), args.Error(1)
 }
 
-func (m *MockBillingRepoForDashboardTest) GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID, period)
+func (m *MockBillingRepoForDashboardTest) GetByAccountAndPeriod(ctx context.Context, accountID, authUserID string, period int) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID, period)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -51,8 +51,8 @@ func (m *MockBillingRepoForDashboardTest) GetAllByAccount(ctx context.Context, a
 	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
 }
 
-func (m *MockBillingRepoForDashboardTest) GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error) {
-	args := m.Called(ctx, accountID)
+func (m *MockBillingRepoForDashboardTest) GetUnpaidByAccount(ctx context.Context, accountID, authUserID string) (*models.AccountBilling, error) {
+	args := m.Called(ctx, accountID, authUserID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -84,6 +84,16 @@ func (m *MockBillingRepoForDashboardTest) MarkPaid(ctx context.Context, id strin
 
 func (m *MockBillingRepoForDashboardTest) SoftDeleteByAccount(ctx context.Context, accountID string) error {
 	args := m.Called(ctx, accountID)
+	return args.Error(0)
+}
+
+func (m *MockBillingRepoForDashboardTest) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+	args := m.Called(ctx, authUserID, filters, p)
+	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
+}
+
+func (m *MockBillingRepoForDashboardTest) SoftDelete(ctx context.Context, id, authUserID string) error {
+	args := m.Called(ctx, id, authUserID)
 	return args.Error(0)
 }
 

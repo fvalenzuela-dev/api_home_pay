@@ -137,6 +137,9 @@ definitions:
     type: object
   models.CreateBillingRequest:
     properties:
+      account_id:
+        description: requerido en top-level /billings, ignorado en nested
+        type: string
       amount_billed:
         type: number
       amount_paid:
@@ -703,196 +706,6 @@ paths:
       summary: Crear cuenta
       tags:
       - accounts
-  /accounts/{accountID}/billings:
-    get:
-      description: Retorna todas las facturas de una cuenta, ordenadas por año/mes
-        desc (paginado)
-      parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
-      - description: 'Página (default: 1)'
-        in: query
-        name: page
-        type: integer
-      - description: 'Resultados por página (default: 20, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Listar facturas
-      tags:
-      - billings
-    post:
-      consumes:
-      - application/json
-      description: Registra la factura del mes para una cuenta. Si auto_accumulate=true
-        y hay una factura impaga, se crea un carry-over automáticamente.
-      parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
-      - description: Datos de la factura
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateBillingRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties:
-              $ref: '#/definitions/models.AccountBilling'
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Registrar factura
-      tags:
-      - billings
-  /accounts/{accountID}/billings/{id}:
-    get:
-      description: Retorna una factura por ID
-      parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
-      - description: Billing ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.AccountBilling'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Obtener factura
-      tags:
-      - billings
-    put:
-      consumes:
-      - application/json
-      description: Actualiza monto pagado. Si amount_paid >= amount_billed se marca
-        automáticamente como pagada.
-      parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
-      - description: Billing ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Campos a actualizar
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateBillingRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              $ref: '#/definitions/models.AccountBilling'
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Actualizar factura
-      tags:
-      - billings
   /accounts/{id}:
     delete:
       description: Soft delete de la cuenta. Propaga a sus facturas activas.
@@ -1016,6 +829,240 @@ paths:
       summary: Editar cuenta
       tags:
       - accounts
+  /billings:
+    get:
+      description: Retorna todas las facturas del usuario con filtros opcionales.
+        Si no se pasa account_id, busca en todas las cuentas.
+      parameters:
+      - description: Filtrar por account ID
+        in: query
+        name: account_id
+        type: string
+      - description: Periodo inicio YYYYMM (inclusive)
+        in: query
+        name: from_period
+        type: integer
+      - description: Periodo fin YYYYMM (inclusive)
+        in: query
+        name: to_period
+        type: integer
+      - description: 'Filtrar por estado: true=pagadas, false=impagas'
+        in: query
+        name: is_paid
+        type: boolean
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Resultados por página (default: 20, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Listar todas las facturas
+      tags:
+      - billings
+    post:
+      consumes:
+      - application/json
+      description: Registra la factura del mes para una cuenta. Si auto_accumulate=true
+        y hay una factura impaga, se crea un carry-over automáticamente.
+      parameters:
+      - description: Account ID (nested routes)
+        in: path
+        name: accountID
+        type: string
+      - description: Datos de la factura
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateBillingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/models.AccountBilling'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Registrar factura
+      tags:
+      - billings
+  /billings/{id}:
+    delete:
+      description: Realiza un soft-delete de una factura por ID.
+      parameters:
+      - description: Billing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Eliminar factura
+      tags:
+      - billings
+    get:
+      description: Retorna una factura por ID
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: string
+      - description: Billing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AccountBilling'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener factura
+      tags:
+      - billings
+    put:
+      consumes:
+      - application/json
+      description: Actualiza monto pagado. Si amount_paid >= amount_billed se marca
+        automáticamente como pagada.
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: string
+      - description: Billing ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campos a actualizar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateBillingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/models.AccountBilling'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar factura
+      tags:
+      - billings
   /categories:
     get:
       description: Retorna las categorías activas del usuario autenticado (paginado)

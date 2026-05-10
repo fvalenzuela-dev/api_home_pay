@@ -10,6 +10,8 @@ import (
 
 type BillingService interface {
 	Create(ctx context.Context, accountID, authUserID string, req *models.CreateBillingRequest) (*models.AccountBilling, error)
+	GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error)
+	Delete(ctx context.Context, billingID, authUserID string) error
 	GetAllByAccount(ctx context.Context, accountID, authUserID string, p models.PaginationParams) ([]models.AccountBilling, int, error)
 	GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.AccountBilling, error)
@@ -83,7 +85,7 @@ func (s *billingService) Create(ctx context.Context, accountID, authUserID strin
 
 	// Si auto_accumulate y hay una factura impaga, crear carry-over al siguiente período
 	if account.AutoAccumulate {
-		unpaid, err := s.billings.GetUnpaidByAccount(ctx, accountID)
+		unpaid, err := s.billings.GetUnpaidByAccount(ctx, accountID, authUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -115,6 +117,23 @@ func (s *billingService) GetAllByAccount(ctx context.Context, accountID, authUse
 	return s.billings.GetAllByAccount(ctx, accountID, authUserID, p)
 }
 
+func (s *billingService) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+	return s.billings.GetAll(ctx, authUserID, filters, p)
+}
+
+func (s *billingService) Delete(ctx context.Context, billingID, authUserID string) error {
+	// Verify billing belongs to user before allowing delete
+	billing, err := s.billings.GetByID(ctx, billingID, authUserID)
+	if err != nil {
+		return err
+	}
+	if billing == nil {
+		return fmt.Errorf("not found")
+	}
+
+	return s.billings.SoftDelete(ctx, billingID, authUserID)
+}
+
 func (s *billingService) GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error) {
 	if err := validatePeriod(period); err != nil {
 		return nil, 0, err
@@ -137,7 +156,7 @@ func (s *billingService) OpenPeriod(ctx context.Context, authUserID string, peri
 	skipped := 0
 
 	for _, acc := range accounts {
-		existing, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, period)
+		existing, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, authUserID, period)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +168,7 @@ func (s *billingService) OpenPeriod(ctx context.Context, authUserID string, peri
 		var amount float64
 		var carriedFrom *string
 
-		prev, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, prevPeriod)
+		prev, err := s.billings.GetByAccountAndPeriod(ctx, acc.ID, authUserID, prevPeriod)
 		if err != nil {
 			return nil, err
 		}

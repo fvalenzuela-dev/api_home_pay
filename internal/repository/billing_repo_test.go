@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/homepay/api/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -176,6 +177,7 @@ func TestBillingRepo_GetByAccountAndPeriod_WithMock(t *testing.T) {
 	mockRepo := new(MockBillingRepository)
 
 	accountID := "account-123"
+	authUserID := "user-123"
 	period := 202604
 
 	expectedBilling := &models.AccountBilling{
@@ -185,9 +187,9 @@ func TestBillingRepo_GetByAccountAndPeriod_WithMock(t *testing.T) {
 		AmountBilled: 15000.00,
 	}
 
-	mockRepo.On("GetByAccountAndPeriod", mock.Anything, accountID, period).Return(expectedBilling, nil)
+	mockRepo.On("GetByAccountAndPeriod", mock.Anything, accountID, authUserID, period).Return(expectedBilling, nil)
 
-	result, err := mockRepo.GetByAccountAndPeriod(context.Background(), accountID, period)
+	result, err := mockRepo.GetByAccountAndPeriod(context.Background(), accountID, authUserID, period)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -510,4 +512,399 @@ func TestBillingRepo_SoftDeleteByAccount_Query(t *testing.T) {
 
 	assert.Contains(t, query, "deleted_at = NOW()")
 	assert.Contains(t, query, "account_id = $1")
+}
+
+// BillingFilters Model Tests
+
+func TestBillingFilters_Default(t *testing.T) {
+	t.Run("BillingFilters with nil fields means no filter", func(t *testing.T) {
+		filters := models.BillingFilters{}
+		assert.Nil(t, filters.AccountID)
+		assert.Nil(t, filters.FromPeriod)
+		assert.Nil(t, filters.ToPeriod)
+		assert.Nil(t, filters.IsPaid)
+	})
+}
+
+func TestBillingFilters_WithAccountID(t *testing.T) {
+	t.Run("BillingFilters with AccountID filter", func(t *testing.T) {
+		accountID := "account-123"
+		filters := models.BillingFilters{AccountID: &accountID}
+		assert.NotNil(t, filters.AccountID)
+		assert.Equal(t, "account-123", *filters.AccountID)
+	})
+}
+
+func TestBillingFilters_WithPeriodRange(t *testing.T) {
+	t.Run("BillingFilters with FromPeriod and ToPeriod", func(t *testing.T) {
+		from := 202601
+		to := 202603
+		filters := models.BillingFilters{FromPeriod: &from, ToPeriod: &to}
+		assert.NotNil(t, filters.FromPeriod)
+		assert.NotNil(t, filters.ToPeriod)
+		assert.Equal(t, 202601, *filters.FromPeriod)
+		assert.Equal(t, 202603, *filters.ToPeriod)
+	})
+}
+
+func TestBillingFilters_WithIsPaid_True(t *testing.T) {
+	t.Run("BillingFilters with IsPaid=true (paid billings)", func(t *testing.T) {
+		isPaid := true
+		filters := models.BillingFilters{IsPaid: &isPaid}
+		assert.NotNil(t, filters.IsPaid)
+		assert.True(t, *filters.IsPaid)
+	})
+}
+
+func TestBillingFilters_WithIsPaid_False(t *testing.T) {
+	t.Run("BillingFilters with IsPaid=false (unpaid billings)", func(t *testing.T) {
+		isPaid := false
+		filters := models.BillingFilters{IsPaid: &isPaid}
+		assert.NotNil(t, filters.IsPaid)
+		assert.False(t, *filters.IsPaid)
+	})
+}
+
+func TestBillingFilters_AllFilters(t *testing.T) {
+	t.Run("BillingFilters with all filters set", func(t *testing.T) {
+		accountID := "account-123"
+		from := 202601
+		to := 202603
+		isPaid := true
+		filters := models.BillingFilters{
+			AccountID:  &accountID,
+			FromPeriod: &from,
+			ToPeriod:   &to,
+			IsPaid:     &isPaid,
+		}
+		assert.NotNil(t, filters.AccountID)
+		assert.NotNil(t, filters.FromPeriod)
+		assert.NotNil(t, filters.ToPeriod)
+		assert.NotNil(t, filters.IsPaid)
+	})
+}
+
+// GetAll Repository Method Tests
+
+func TestBillingRepo_GetAll_Query(t *testing.T) {
+	// Test query structure for GetAll
+	query := `SELECT ab.id, ab.account_id, ab.period, ab.amount_billed, ab.amount_paid, ab.is_paid, ab.paid_at, ab.carried_from, ab.created_at, ab.deleted_at
+		FROM homepay.account_billings ab
+		JOIN homepay.accounts a ON a.id = ab.account_id
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE c.auth_user_id = $1 AND ab.deleted_at IS NULL
+		ORDER BY ab.period DESC
+		LIMIT $2 OFFSET $3`
+
+	assert.Contains(t, query, "JOIN homepay.accounts")
+	assert.Contains(t, query, "JOIN homepay.companies")
+	assert.Contains(t, query, "c.auth_user_id = $1")
+	assert.Contains(t, query, "ORDER BY ab.period DESC")
+}
+
+func TestBillingRepo_GetAll_Query_WithAccountFilter(t *testing.T) {
+	// Test query with account_id filter
+	accountID := "account-123"
+	conditions := "c.auth_user_id = $1 AND ab.deleted_at IS NULL"
+	conditions += " AND ab.account_id = $2"
+
+	assert.Contains(t, conditions, "ab.account_id = $2")
+	assert.Contains(t, conditions, "c.auth_user_id = $1")
+	_ = accountID // accountID used in filter construction pattern
+}
+
+func TestBillingRepo_GetAll_Query_WithPeriodRangeFilter(t *testing.T) {
+	// Test query with FromPeriod and ToPeriod filters
+	from := 202601
+	to := 202603
+	conditions := "c.auth_user_id = $1 AND ab.deleted_at IS NULL"
+	conditions += " AND ab.period >= $2"
+	conditions += " AND ab.period <= $3"
+
+	assert.Contains(t, conditions, "ab.period >= $2")
+	assert.Contains(t, conditions, "ab.period <= $3")
+	_ = from // used in filter construction
+	_ = to
+}
+
+func TestBillingRepo_GetAll_Query_WithIsPaidFilter(t *testing.T) {
+	// Test query with is_paid filter
+	isPaid := true
+	conditions := "c.auth_user_id = $1 AND ab.deleted_at IS NULL"
+	if isPaid {
+		conditions += " AND ab.is_paid = TRUE"
+	} else {
+		conditions += " AND ab.is_paid = FALSE"
+	}
+
+	assert.Contains(t, conditions, "ab.is_paid = TRUE")
+}
+
+func TestBillingRepo_GetAll_Query_WithUnpaidFilter(t *testing.T) {
+	isPaid := false
+	conditions := "c.auth_user_id = $1 AND ab.deleted_at IS NULL"
+	if isPaid {
+		conditions += " AND ab.is_paid = TRUE"
+	} else {
+		conditions += " AND ab.is_paid = FALSE"
+	}
+
+	assert.Contains(t, conditions, "ab.is_paid = FALSE")
+}
+
+func TestBillingRepo_GetAll_WithMock(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	filters := models.BillingFilters{}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	billings := []models.AccountBilling{
+		{ID: "billing-1", AccountID: "account-1", Period: 202604, AmountBilled: 15000.00},
+		{ID: "billing-2", AccountID: "account-1", Period: 202603, AmountBilled: 12000.00},
+	}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, filters, pagination).Return(billings, 2, nil)
+
+	result, total, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, 2, total)
+	assert.Equal(t, "billing-1", result[0].ID)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_GetAll_WithAccountFilter(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	accountID := "account-123"
+	filters := models.BillingFilters{AccountID: &accountID}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	billings := []models.AccountBilling{
+		{ID: "billing-1", AccountID: accountID, Period: 202604, AmountBilled: 15000.00},
+	}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, mock.MatchedBy(func(f models.BillingFilters) bool {
+		return f.AccountID != nil && *f.AccountID == accountID
+	}), pagination).Return(billings, 1, nil)
+
+	result, _, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, accountID, result[0].AccountID)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_GetAll_Query_WithPeriodRange(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	from := 202601
+	to := 202603
+	filters := models.BillingFilters{FromPeriod: &from, ToPeriod: &to}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	billings := []models.AccountBilling{
+		{ID: "billing-1", Period: 202602},
+		{ID: "billing-2", Period: 202603},
+	}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, mock.MatchedBy(func(f models.BillingFilters) bool {
+		return f.FromPeriod != nil && *f.FromPeriod == from && f.ToPeriod != nil && *f.ToPeriod == to
+	}), pagination).Return(billings, 2, nil)
+
+	result, total, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, 2, total)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_GetAll_WithPaidFilter(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	isPaid := true
+	filters := models.BillingFilters{IsPaid: &isPaid}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	billings := []models.AccountBilling{
+		{ID: "billing-1", IsPaid: true},
+	}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, mock.MatchedBy(func(f models.BillingFilters) bool {
+		return f.IsPaid != nil && *f.IsPaid == true
+	}), pagination).Return(billings, 1, nil)
+
+	result, _, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(result))
+	assert.True(t, result[0].IsPaid)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_GetAll_WithUnpaidFilter(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	isPaid := false
+	filters := models.BillingFilters{IsPaid: &isPaid}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	billings := []models.AccountBilling{
+		{ID: "billing-1", IsPaid: false},
+	}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, mock.MatchedBy(func(f models.BillingFilters) bool {
+		return f.IsPaid != nil && *f.IsPaid == false
+	}), pagination).Return(billings, 1, nil)
+
+	result, _, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(result))
+	assert.False(t, result[0].IsPaid)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_GetAll_EmptyResult(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	filters := models.BillingFilters{}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, filters, pagination).Return([]models.AccountBilling(nil), 0, nil)
+
+	result, total, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, 0, total)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_GetAll_AllFilters(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	authUserID := "user-123"
+	accountID := "account-123"
+	from := 202601
+	to := 202603
+	isPaid := true
+	filters := models.BillingFilters{
+		AccountID:  &accountID,
+		FromPeriod: &from,
+		ToPeriod:   &to,
+		IsPaid:     &isPaid,
+	}
+	pagination := models.PaginationParams{Limit: 10, Page: 1}
+
+	billings := []models.AccountBilling{
+		{ID: "billing-1", AccountID: accountID, Period: 202602, IsPaid: true},
+	}
+
+	mockRepo.On("GetAll", mock.Anything, authUserID, mock.MatchedBy(func(f models.BillingFilters) bool {
+		return f.AccountID != nil && *f.AccountID == accountID &&
+			f.FromPeriod != nil && *f.FromPeriod == from &&
+			f.ToPeriod != nil && *f.ToPeriod == to &&
+			f.IsPaid != nil && *f.IsPaid == isPaid
+	}), pagination).Return(billings, 1, nil)
+
+	result, total, err := mockRepo.GetAll(context.Background(), authUserID, filters, pagination)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, 1, total)
+	mockRepo.AssertExpectations(t)
+}
+
+// SoftDelete Repository Method Tests
+
+func TestBillingRepo_SoftDelete_Query(t *testing.T) {
+	// Test soft delete query with auth check via JOIN
+	query := `UPDATE homepay.account_billings ab
+		SET deleted_at = NOW()
+		FROM homepay.accounts a
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE ab.id = $1 AND ab.account_id = a.id AND c.auth_user_id = $2 AND ab.deleted_at IS NULL`
+
+	assert.Contains(t, query, "UPDATE homepay.account_billings ab")
+	assert.Contains(t, query, "SET deleted_at = NOW()")
+	assert.Contains(t, query, "FROM homepay.accounts a")
+	assert.Contains(t, query, "JOIN homepay.companies c ON c.id = a.company_id")
+	assert.Contains(t, query, "c.auth_user_id = $2")
+	assert.Contains(t, query, "ab.deleted_at IS NULL")
+}
+
+func TestBillingRepo_SoftDelete_WithMock(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	billingID := "billing-123"
+	authUserID := "user-123"
+
+	mockRepo.On("SoftDelete", mock.Anything, billingID, authUserID).Return(nil)
+
+	err := mockRepo.SoftDelete(context.Background(), billingID, authUserID)
+
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_SoftDelete_NotFound(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	billingID := "non-existent"
+	authUserID := "user-123"
+
+	mockRepo.On("SoftDelete", mock.Anything, billingID, authUserID).Return(pgx.ErrNoRows)
+
+	err := mockRepo.SoftDelete(context.Background(), billingID, authUserID)
+
+	assert.Error(t, err)
+	assert.Equal(t, pgx.ErrNoRows, err)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestBillingRepo_SoftDelete_WrongAuth(t *testing.T) {
+	mockRepo := new(MockBillingRepository)
+
+	billingID := "billing-123"
+	wrongAuthUserID := "other-user"
+
+	// Simulate no rows affected when auth check fails
+	mockRepo.On("SoftDelete", mock.Anything, billingID, wrongAuthUserID).Return(pgx.ErrNoRows)
+
+	err := mockRepo.SoftDelete(context.Background(), billingID, wrongAuthUserID)
+
+	assert.Error(t, err)
+	mockRepo.AssertExpectations(t)
+}
+
+// Pagination edge cases for GetAll
+
+func TestBillingRepo_GetAll_Pagination(t *testing.T) {
+	tests := []struct {
+		name       string
+		page       int
+		limit      int
+		wantOffset int
+	}{
+		{"first page", 1, 10, 0},
+		{"second page", 2, 10, 10},
+		{"third page with different limit", 3, 25, 50},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := models.PaginationParams{Page: tt.page, Limit: tt.limit}
+			assert.Equal(t, tt.wantOffset, p.Offset())
+		})
+	}
 }

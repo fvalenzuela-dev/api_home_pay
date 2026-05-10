@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/homepay/api/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -12,13 +13,15 @@ type BillingRepository interface {
 	Create(ctx context.Context, accountID string, req *models.CreateBillingRequest) (*models.AccountBilling, error)
 	CreateCarryOver(ctx context.Context, accountID string, period int, amount float64, carriedFrom string) (*models.AccountBilling, error)
 	GetByID(ctx context.Context, id, authUserID string) (*models.AccountBilling, error)
-	GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error)
+	GetByAccountAndPeriod(ctx context.Context, accountID, authUserID string, period int) (*models.AccountBilling, error)
+	GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error)
 	GetAllByAccount(ctx context.Context, accountID, authUserID string, p models.PaginationParams) ([]models.AccountBilling, int, error)
-	GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error)
+	GetUnpaidByAccount(ctx context.Context, accountID, authUserID string) (*models.AccountBilling, error)
 	GetAllByPeriod(ctx context.Context, authUserID string, period int, isPaid *bool, p models.PaginationParams) ([]models.AccountBillingWithDetails, int, error)
 	BulkInsertForPeriod(ctx context.Context, period int, inserts []models.PeriodBillingInsert) error
 	Update(ctx context.Context, id, authUserID string, req *models.UpdateBillingRequest) (*models.AccountBilling, error)
 	MarkPaid(ctx context.Context, id string) error
+	SoftDelete(ctx context.Context, id, authUserID string) error
 	SoftDeleteByAccount(ctx context.Context, accountID string) error
 }
 
@@ -130,13 +133,15 @@ func (r *billingRepo) GetAllByAccount(ctx context.Context, accountID, authUserID
 	return billings, total, rows.Err()
 }
 
-func (r *billingRepo) GetByAccountAndPeriod(ctx context.Context, accountID string, period int) (*models.AccountBilling, error) {
+func (r *billingRepo) GetByAccountAndPeriod(ctx context.Context, accountID, authUserID string, period int) (*models.AccountBilling, error) {
 	var b models.AccountBilling
 	err := scanBilling(r.db.QueryRow(ctx, `
-		SELECT `+billingCols+`
-		FROM homepay.account_billings
-		WHERE account_id = $1 AND period = $2 AND deleted_at IS NULL
-	`, accountID, period), &b)
+		SELECT `+billingColsAB+`
+		FROM homepay.account_billings ab
+		JOIN homepay.accounts a ON a.id = ab.account_id
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE ab.account_id = $1 AND c.auth_user_id = $2 AND ab.period = $3 AND ab.deleted_at IS NULL
+	`, accountID, authUserID, period), &b)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
@@ -146,15 +151,17 @@ func (r *billingRepo) GetByAccountAndPeriod(ctx context.Context, accountID strin
 	return &b, nil
 }
 
-func (r *billingRepo) GetUnpaidByAccount(ctx context.Context, accountID string) (*models.AccountBilling, error) {
+func (r *billingRepo) GetUnpaidByAccount(ctx context.Context, accountID, authUserID string) (*models.AccountBilling, error) {
 	var b models.AccountBilling
 	err := scanBilling(r.db.QueryRow(ctx, `
-		SELECT `+billingCols+`
-		FROM homepay.account_billings
-		WHERE account_id = $1 AND is_paid = FALSE AND deleted_at IS NULL
-		ORDER BY period DESC
+		SELECT `+billingColsAB+`
+		FROM homepay.account_billings ab
+		JOIN homepay.accounts a ON a.id = ab.account_id
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE ab.account_id = $1 AND c.auth_user_id = $2 AND ab.is_paid = FALSE AND ab.deleted_at IS NULL
+		ORDER BY ab.period DESC
 		LIMIT 1
-	`, accountID), &b)
+	`, accountID, authUserID), &b)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
@@ -272,4 +279,92 @@ func (r *billingRepo) SoftDeleteByAccount(ctx context.Context, accountID string)
 		WHERE account_id = $1 AND deleted_at IS NULL
 	`, accountID)
 	return err
+}
+
+func (r *billingRepo) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+	// Build filter conditions using parameterized queries — NO sql injection risk
+	// All filter values go into args[], not concatenated into the query string
+	conditions := "c.auth_user_id = $1 AND ab.deleted_at IS NULL"
+	args := []interface{}{authUserID}
+	argIdx := 2
+
+	if filters.AccountID != nil {
+		conditions += fmt.Sprintf(" AND ab.account_id = $%d", argIdx)
+		args = append(args, *filters.AccountID)
+		argIdx++
+	}
+	if filters.FromPeriod != nil {
+		conditions += fmt.Sprintf(" AND ab.period >= $%d", argIdx)
+		args = append(args, *filters.FromPeriod)
+		argIdx++
+	}
+	if filters.ToPeriod != nil {
+		conditions += fmt.Sprintf(" AND ab.period <= $%d", argIdx)
+		args = append(args, *filters.ToPeriod)
+		argIdx++
+	}
+	if filters.IsPaid != nil {
+		if *filters.IsPaid {
+			conditions += " AND ab.is_paid = TRUE"
+		} else {
+			conditions += " AND ab.is_paid = FALSE"
+		}
+	}
+
+	// Count query
+	var total int
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*) FROM homepay.account_billings ab
+		JOIN homepay.accounts a ON a.id = ab.account_id
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE %s`, conditions)
+	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Main query with pagination
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM homepay.account_billings ab
+		JOIN homepay.accounts a ON a.id = ab.account_id
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE %s
+		ORDER BY ab.period DESC
+		LIMIT $%d OFFSET $%d`, billingColsAB, conditions, argIdx, argIdx+1)
+	args = append(args, p.Limit, p.Offset())
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var billings []models.AccountBilling
+	for rows.Next() {
+		var b models.AccountBilling
+		if err := rows.Scan(&b.ID, &b.AccountID, &b.Period, &b.AmountBilled, &b.AmountPaid,
+			&b.IsPaid, &b.PaidAt, &b.CarriedFrom, &b.CreatedAt, &b.DeletedAt); err != nil {
+			return nil, 0, err
+		}
+		billings = append(billings, b)
+	}
+	return billings, total, rows.Err()
+}
+
+func (r *billingRepo) SoftDelete(ctx context.Context, id, authUserID string) error {
+	result, err := r.db.Exec(ctx, `
+		UPDATE homepay.account_billings ab
+		SET deleted_at = NOW()
+		FROM homepay.accounts a
+		JOIN homepay.companies c ON c.id = a.company_id
+		WHERE ab.id = $1 AND ab.account_id = a.id AND c.auth_user_id = $2 AND ab.deleted_at IS NULL
+	`, id, authUserID)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }

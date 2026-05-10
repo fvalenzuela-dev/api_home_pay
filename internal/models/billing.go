@@ -18,7 +18,10 @@ type AccountBilling struct {
 }
 
 // CreateBillingRequest — period en formato YYYYMM, ej: 202603
+// Para POST /accounts/{accountID}/billings el accountID viene del path.
+// Para POST /billings (top-level) el account_id es requerido en el body.
 type CreateBillingRequest struct {
+	AccountID    string     `json:"account_id"` // requerido en top-level /billings, ignorado en nested
 	Period       int        `json:"period"`
 	AmountBilled float64    `json:"amount_billed"`
 	AmountPaid   *float64   `json:"amount_paid,omitempty"`  // opcional; si >= amount_billed se marca como pagada
@@ -54,4 +57,12 @@ type PeriodBillingInsert struct {
 	AccountID    string
 	AmountBilled float64
 	CarriedFrom  *string
+}
+
+// BillingFilters — filtros para la consulta GetAll a nivel top-level /billings.
+type BillingFilters struct {
+	AccountID  *string // opcional, filtra por cuenta específica
+	FromPeriod *int    // YYYYMM start (inclusive), filtra por period >= FromPeriod
+	ToPeriod   *int    // YYYYMM end (inclusive), filtra por period <= ToPeriod
+	IsPaid     *bool   // nil = sin filtro, true = pagadas, false = impagas
 }

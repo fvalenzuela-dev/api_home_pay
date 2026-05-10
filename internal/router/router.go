@@ -77,11 +77,13 @@ func New(
 			r.Delete("/{id}", accounts.Delete)
 		})
 
-		r.Route("/accounts/{accountID}/billings", func(r chi.Router) {
-			r.Get("/", billings.List)
+		// Top-level billings routes
+		r.Route("/billings", func(r chi.Router) {
+			r.Get("/", billings.ListAll)
 			r.Post("/", billings.Create)
 			r.Get("/{id}", billings.GetOne)
 			r.Put("/{id}", billings.Update)
+			r.Delete("/{id}", billings.Delete)
 		})
 
 		r.Route("/periods/{period}", func(r chi.Router) {
