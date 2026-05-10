@@ -289,16 +289,14 @@ func TestBillingHandler_List(t *testing.T) {
 			{ID: "billing-1", Period: 202603, AmountBilled: 15000},
 			{ID: "billing-2", Period: 202602, AmountBilled: 14000},
 		}
-		mockSvc.On("GetAllByAccount", mock.Anything, "account-123", "user_123", mock.Anything).Return(billings, 2, nil)
+		accountID := "account-123"
+		mockSvc.On("GetAll", mock.Anything, "user_123", models.BillingFilters{AccountID: &accountID}, mock.Anything).Return(billings, 2, nil)
 
-		req := httptest.NewRequest("GET", "/accounts/account-123/billings", nil)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("accountID", "account-123")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req := httptest.NewRequest("GET", "/billings?account_id=account-123", nil)
 		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
 		w := httptest.NewRecorder()
 
-		handler.List(w, req)
+		handler.ListAll(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 

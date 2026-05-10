@@ -18,34 +18,6 @@ func NewBillingHandler(svc service.BillingService) *BillingHandler {
 	return &BillingHandler{svc: svc}
 }
 
-// List godoc
-// @Summary     Listar facturas
-// @Description Retorna todas las facturas de una cuenta, ordenadas por año/mes desc (paginado)
-// @Tags        billings
-// @Security    BearerAuth
-// @Produce     json
-// @Param       accountID  path      string  true   "Account ID"
-// @Param       page       query     int     false  "Página (default: 1)"
-// @Param       limit      query     int     false  "Resultados por página (default: 20, max: 100)"
-// @Success     200        {object}  map[string]interface{}
-// @Failure     401        {object}  map[string]string
-// @Failure     500        {object}  map[string]string
-// @Router      /accounts/{accountID}/billings [get]
-func (h *BillingHandler) List(w http.ResponseWriter, r *http.Request) {
-	authUserID := middleware.GetAuthUserID(r)
-	accountID := chi.URLParam(r, "accountID")
-	p := parsePagination(r)
-	billings, total, err := h.svc.GetAllByAccount(r.Context(), accountID, authUserID, p)
-	if err != nil {
-		writeInternalError(w, r, err)
-		return
-	}
-	if billings == nil {
-		billings = []models.AccountBilling{}
-	}
-	writePaginatedJSON(w, billings, models.NewPaginationMeta(p.Page, p.Limit, total))
-}
-
 // GetOne godoc
 // @Summary     Obtener factura
 // @Description Retorna una factura por ID
@@ -58,7 +30,7 @@ func (h *BillingHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Failure     401        {object}  map[string]string
 // @Failure     404        {object}  map[string]string
 // @Failure     500        {object}  map[string]string
-// @Router      /accounts/{accountID}/billings/{id} [get]
+// @Router      /billings/{id} [get]
 func (h *BillingHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")
@@ -89,7 +61,6 @@ func (h *BillingHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 // @Failure     400        {object}  map[string]string
 // @Failure     401        {object}  map[string]string
 // @Failure     404        {object}  map[string]string
-// @Router      /accounts/{accountID}/billings [post]
 // @Router      /billings [post]
 func (h *BillingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
@@ -133,7 +104,7 @@ func (h *BillingHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Failure     400        {object}  map[string]string
 // @Failure     401        {object}  map[string]string
 // @Failure     404        {object}  map[string]string
-// @Router      /accounts/{accountID}/billings/{id} [put]
+// @Router      /billings/{id} [put]
 func (h *BillingHandler) Update(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
 	id := chi.URLParam(r, "id")

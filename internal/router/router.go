@@ -77,14 +77,7 @@ func New(
 			r.Delete("/{id}", accounts.Delete)
 		})
 
-		r.Route("/accounts/{accountID}/billings", func(r chi.Router) {
-			r.Get("/", billings.List)
-			r.Post("/", billings.Create)
-			r.Get("/{id}", billings.GetOne)
-			r.Put("/{id}", billings.Update)
-		})
-
-		// Top-level billings routes (Phase 4)
+		// Top-level billings routes
 		r.Route("/billings", func(r chi.Router) {
 			r.Get("/", billings.ListAll)
 			r.Post("/", billings.Create)
