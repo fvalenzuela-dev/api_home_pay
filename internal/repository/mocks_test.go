@@ -142,6 +142,16 @@ func (m *MockBillingRepository) SoftDeleteByAccount(ctx context.Context, account
 	return args.Error(0)
 }
 
+func (m *MockBillingRepository) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+	args := m.Called(ctx, authUserID, filters, p)
+	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
+}
+
+func (m *MockBillingRepository) SoftDelete(ctx context.Context, id, authUserID string) error {
+	args := m.Called(ctx, id, authUserID)
+	return args.Error(0)
+}
+
 // Helper function to create test account
 func createTestAccount(id, companyID, name string) *models.Account {
 	return &models.Account{

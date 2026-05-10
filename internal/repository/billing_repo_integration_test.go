@@ -660,3 +660,141 @@ func TestBillingRepo_SoftDeleteByAccount_Integration(t *testing.T) {
 		assert.Len(t, billings, 0)
 	})
 }
+
+// TestBillingRepo_GetAll_CrossUserAuthIsolation tests that GetAll properly filters by auth_user_id.
+// User A should never see User B's billings, even if they guess the billing ID.
+func TestBillingRepo_GetAll_CrossUserAuthIsolation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	pgContainer := setupTestDBBilling(t)
+	initTestRepoBilling(t, pgContainer)
+	defer teardownTestDBBilling(t, pgContainer)
+
+	// User A setup
+	categoryID_A := createTestCategoryBilling(t)
+	companyID_A := createTestCompanyBilling(t, categoryID_A)
+	accountID_A := createTestAccountBilling(t, companyID_A)
+
+	// User B setup (different auth_user_id)
+	var userBID = "test-user-B"
+	var categoryID_B int
+	err := testPoolBilling.QueryRow(ctx, `
+		INSERT INTO homepay.categories (auth_user_id, name, icon_web, color_web)
+		VALUES ($1, 'Test Category B', 'test', '#000000')
+		RETURNING id
+	`, userBID).Scan(&categoryID_B)
+	require.NoError(t, err)
+
+	var companyID_B string
+	err = testPoolBilling.QueryRow(ctx, `
+		INSERT INTO homepay.companies (auth_user_id, category_id, name)
+		VALUES ($1, $2, 'Test Company B')
+		RETURNING id
+	`, userBID, categoryID_B).Scan(&companyID_B)
+	require.NoError(t, err)
+
+	var accountID_B string
+	err = testPoolBilling.QueryRow(ctx, `
+		INSERT INTO homepay.accounts (company_id, name, billing_day, auto_accumulate)
+		VALUES ($1, 'Test Account B', 15, true)
+		RETURNING id
+	`, companyID_B).Scan(&accountID_B)
+	require.NoError(t, err)
+
+	// Create billings for User A
+	billingA, err := testRepoBilling.Create(ctx, accountID_A, &models.CreateBillingRequest{
+		Period:       202603,
+		AmountBilled: 100.00,
+	})
+	require.NoError(t, err)
+
+	// Create billings for User B
+	billingB, err := testRepoBilling.Create(ctx, accountID_B, &models.CreateBillingRequest{
+		Period:       202603,
+		AmountBilled: 200.00,
+	})
+	require.NoError(t, err)
+
+	t.Run("GetAll returns only user's own billings", func(t *testing.T) {
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+
+		billings, total, err := testRepoBilling.GetAll(ctx, testUserIDBilling, models.BillingFilters{}, pagination)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, billings, 1)
+		assert.Equal(t, billingA.ID, billings[0].ID)
+		assert.Equal(t, accountID_A, billings[0].AccountID)
+	})
+
+	t.Run("GetAll with account_id filter returns only that account's billings", func(t *testing.T) {
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+		filters := models.BillingFilters{AccountID: &accountID_A}
+
+		billings, total, err := testRepoBilling.GetAll(ctx, testUserIDBilling, filters, pagination)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, billings, 1)
+		assert.Equal(t, billingA.ID, billings[0].ID)
+	})
+
+	t.Run("GetAll with wrong account_id returns empty for user A", func(t *testing.T) {
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+		filters := models.BillingFilters{AccountID: &accountID_B}
+
+		billings, total, err := testRepoBilling.GetAll(ctx, testUserIDBilling, filters, pagination)
+
+		require.NoError(t, err)
+		assert.Equal(t, 0, total)
+		assert.Len(t, billings, 0)
+	})
+
+	t.Run("GetByID returns 404 for other user's billing", func(t *testing.T) {
+		billing, err := testRepoBilling.GetByID(ctx, billingB.ID, testUserIDBilling)
+
+		assert.NoError(t, err)
+		assert.Nil(t, billing)
+	})
+
+	t.Run("GetAll filters by period correctly", func(t *testing.T) {
+		fromPeriod := 202601
+		toPeriod := 202612
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+		filters := models.BillingFilters{FromPeriod: &fromPeriod, ToPeriod: &toPeriod}
+
+		billings, total, err := testRepoBilling.GetAll(ctx, testUserIDBilling, filters, pagination)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, billings, 1)
+		assert.Equal(t, 202603, billings[0].Period)
+	})
+
+	t.Run("GetAll filters by is_paid correctly", func(t *testing.T) {
+		isPaid := false
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+		filters := models.BillingFilters{IsPaid: &isPaid}
+
+		billings, total, err := testRepoBilling.GetAll(ctx, testUserIDBilling, filters, pagination)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, total)
+		assert.Len(t, billings, 1)
+		assert.False(t, billings[0].IsPaid)
+	})
+
+	t.Run("GetAll returns empty for user B with no billings matching filter", func(t *testing.T) {
+		pagination := models.PaginationParams{Page: 1, Limit: 100}
+		filters := models.BillingFilters{AccountID: &accountID_A}
+
+		billings, total, err := testRepoBilling.GetAll(ctx, userBID, filters, pagination)
+
+		require.NoError(t, err)
+		assert.Equal(t, 0, total)
+		assert.Len(t, billings, 0)
+	})
+}

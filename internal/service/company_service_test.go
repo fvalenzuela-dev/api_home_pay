@@ -177,6 +177,16 @@ func (m *BillingRepoMock) SoftDeleteByAccount(ctx context.Context, accountID str
 	return args.Error(0)
 }
 
+func (m *BillingRepoMock) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+	args := m.Called(ctx, authUserID, filters, p)
+	return args.Get(0).([]models.AccountBilling), args.Int(1), args.Error(2)
+}
+
+func (m *BillingRepoMock) SoftDelete(ctx context.Context, id, authUserID string) error {
+	args := m.Called(ctx, id, authUserID)
+	return args.Error(0)
+}
+
 func TestCompanyService_Create(t *testing.T) {
 	mockCompanies := new(CompanyRepoMock)
 	mockAccounts := new(AccountRepoMock)

@@ -214,3 +214,48 @@ func TestPeriodBillingInsert_Struct(t *testing.T) {
 	assert.Equal(t, 15000.00, insert.AmountBilled)
 	assert.NotNil(t, insert.CarriedFrom)
 }
+
+func TestBillingFilters_Struct(t *testing.T) {
+	accountID := "acc-123"
+	fromPeriod := 202601
+	toPeriod := 202606
+	isPaid := false
+
+	filters := BillingFilters{
+		AccountID:  &accountID,
+		FromPeriod: &fromPeriod,
+		ToPeriod:   &toPeriod,
+		IsPaid:     &isPaid,
+	}
+
+	assert.Equal(t, "acc-123", *filters.AccountID)
+	assert.Equal(t, 202601, *filters.FromPeriod)
+	assert.Equal(t, 202606, *filters.ToPeriod)
+	assert.NotNil(t, filters.IsPaid)
+	assert.False(t, *filters.IsPaid)
+}
+
+func TestBillingFilters_NilFields(t *testing.T) {
+	filters := BillingFilters{}
+
+	assert.Nil(t, filters.AccountID)
+	assert.Nil(t, filters.FromPeriod)
+	assert.Nil(t, filters.ToPeriod)
+	assert.Nil(t, filters.IsPaid)
+}
+
+func TestBillingFilters_IsPaid_True(t *testing.T) {
+	isPaid := true
+	filters := BillingFilters{IsPaid: &isPaid}
+
+	assert.NotNil(t, filters.IsPaid)
+	assert.True(t, *filters.IsPaid)
+}
+
+func TestBillingFilters_IsPaid_False(t *testing.T) {
+	isPaid := false
+	filters := BillingFilters{IsPaid: &isPaid}
+
+	assert.NotNil(t, filters.IsPaid)
+	assert.False(t, *filters.IsPaid)
+}

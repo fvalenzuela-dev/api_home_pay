@@ -77,23 +77,34 @@ func (h *BillingHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 // Create godoc
 // @Summary     Registrar factura
 // @Description Registra la factura del mes para una cuenta. Si auto_accumulate=true y hay una factura impaga, se crea un carry-over automáticamente.
+// En /accounts/{accountID}/billings el accountID se toma del path.
+// En /billings (top-level) se requiere account_id en el body.
 // @Tags        billings
 // @Security    BearerAuth
 // @Accept      json
 // @Produce     json
-// @Param       accountID  path      string                      true  "Account ID"
+// @Param       accountID  path      string                      false "Account ID (nested routes)"
 // @Param       body       body      models.CreateBillingRequest  true  "Datos de la factura"
 // @Success     201        {object}  map[string]models.AccountBilling
 // @Failure     400        {object}  map[string]string
 // @Failure     401        {object}  map[string]string
 // @Failure     404        {object}  map[string]string
 // @Router      /accounts/{accountID}/billings [post]
+// @Router      /billings [post]
 func (h *BillingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
-	accountID := chi.URLParam(r, "accountID")
 	var req models.CreateBillingRequest
 	if err := decode(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	// Get accountID: from path param (nested) or from body field (top-level)
+	accountID := chi.URLParam(r, "accountID")
+	if accountID == "" {
+		accountID = req.AccountID
+	}
+	if accountID == "" {
+		writeError(w, http.StatusBadRequest, "account_id es requerido")
 		return
 	}
 	billing, err := h.svc.Create(r.Context(), accountID, authUserID, &req)
@@ -222,4 +233,88 @@ func (h *BillingHandler) ListByPeriod(w http.ResponseWriter, r *http.Request) {
 		billings = []models.AccountBillingWithDetails{}
 	}
 	writePaginatedJSON(w, billings, models.NewPaginationMeta(p.Page, p.Limit, total))
+}
+
+// ListAll godoc
+// @Summary     Listar todas las facturas
+// @Description Retorna todas las facturas del usuario con filtros opcionales. Si no se pasa account_id, busca en todas las cuentas.
+// @Tags        billings
+// @Security    BearerAuth
+// @Produce     json
+// @Param       account_id  query     string  false  "Filtrar por account ID"
+// @Param       from_period query     int     false  "Periodo inicio YYYYMM (inclusive)"
+// @Param       to_period   query     int     false  "Periodo fin YYYYMM (inclusive)"
+// @Param       is_paid     query     bool    false  "Filtrar por estado: true=pagadas, false=impagas"
+// @Param       page        query     int     false  "Página (default: 1)"
+// @Param       page_size   query     int     false  "Resultados por página (default: 20, max: 100)"
+// @Success     200         {object}  map[string]interface{}
+// @Failure     401         {object}  map[string]string
+// @Failure     500         {object}  map[string]string
+// @Router      /billings [get]
+func (h *BillingHandler) ListAll(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	filters := parseBillingFilters(r)
+	p := parsePagination(r)
+
+	billings, total, err := h.svc.GetAll(r.Context(), authUserID, filters, p)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	if billings == nil {
+		billings = []models.AccountBilling{}
+	}
+	writePaginatedJSON(w, billings, models.NewPaginationMeta(p.Page, p.Limit, total))
+}
+
+// Delete godoc
+// @Summary     Eliminar factura
+// @Description Realiza un soft-delete de una factura por ID.
+// @Tags        billings
+// @Security    BearerAuth
+// @Param       id  path  string  true  "Billing ID"
+// @Success     204
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
+// @Router      /billings/{id} [delete]
+func (h *BillingHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	authUserID := middleware.GetAuthUserID(r)
+	id := chi.URLParam(r, "id")
+
+	if err := h.svc.Delete(r.Context(), id, authUserID); err != nil {
+		if err.Error() == "not found" {
+			writeError(w, http.StatusNotFound, "no encontrado")
+			return
+		}
+		writeInternalError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// parseBillingFilters extrae los query params de filtrado desde la request.
+func parseBillingFilters(r *http.Request) models.BillingFilters {
+	filters := models.BillingFilters{}
+
+	if accountID := r.URL.Query().Get("account_id"); accountID != "" {
+		filters.AccountID = &accountID
+	}
+	if fromStr := r.URL.Query().Get("from_period"); fromStr != "" {
+		if from, err := strconv.Atoi(fromStr); err == nil {
+			filters.FromPeriod = &from
+		}
+	}
+	if toStr := r.URL.Query().Get("to_period"); toStr != "" {
+		if to, err := strconv.Atoi(toStr); err == nil {
+			filters.ToPeriod = &to
+		}
+	}
+	if isPaidStr := r.URL.Query().Get("is_paid"); isPaidStr != "" {
+		if isPaid, err := strconv.ParseBool(isPaidStr); err == nil {
+			filters.IsPaid = &isPaid
+		}
+	}
+
+	return filters
 }

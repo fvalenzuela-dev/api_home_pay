@@ -78,6 +78,146 @@ func (m *MockBillingService) OpenPeriod(ctx context.Context, authUserID string, 
 	return args.Get(0).(*models.OpenPeriodResponse), args.Error(1)
 }
 
+func (m *MockBillingService) GetAll(ctx context.Context, authUserID string, filters models.BillingFilters, p models.PaginationParams) ([]models.AccountBilling, int, error) {
+	args := m.Called(ctx, authUserID, filters, p)
+	var result []models.AccountBilling
+	if args.Get(0) != nil {
+		result = args.Get(0).([]models.AccountBilling)
+	}
+	return result, args.Int(1), args.Error(2)
+}
+
+func (m *MockBillingService) Delete(ctx context.Context, billingID, authUserID string) error {
+	args := m.Called(ctx, billingID, authUserID)
+	return args.Error(0)
+}
+
+// Tests for top-level /billings endpoints (Phase 4)
+
+func TestBillingHandler_ListAll(t *testing.T) {
+	mockSvc := new(MockBillingService)
+	handler := NewBillingHandler(mockSvc)
+
+	t.Run("success - list all billings", func(t *testing.T) {
+		billings := []models.AccountBilling{
+			{ID: "billing-1", Period: 202603, AmountBilled: 15000},
+			{ID: "billing-2", Period: 202602, AmountBilled: 14000},
+		}
+		mockSvc.On("GetAll", mock.Anything, "user_123", models.BillingFilters{}, mock.Anything).Return(billings, 2, nil)
+
+		req := httptest.NewRequest("GET", "/billings", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListAll(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Contains(t, response, "data")
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("success - list with filters", func(t *testing.T) {
+		billings := []models.AccountBilling{
+			{ID: "billing-1", Period: 202603, IsPaid: false},
+		}
+		isPaid := false
+		filters := models.BillingFilters{IsPaid: &isPaid}
+		mockSvc.On("GetAll", mock.Anything, "user_123", filters, mock.Anything).Return(billings, 1, nil)
+
+		req := httptest.NewRequest("GET", "/billings?is_paid=false", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListAll(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("success - empty list", func(t *testing.T) {
+		mockSvc.ExpectedCalls = nil
+		mockSvc.Calls = nil
+		mockSvc.On("GetAll", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]models.AccountBilling{}, 0, nil)
+
+		req := httptest.NewRequest("GET", "/billings", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListAll(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("error - internal error", func(t *testing.T) {
+		mockSvc.ExpectedCalls = nil
+		mockSvc.Calls = nil
+		mockSvc.On("GetAll", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, 0, errors.New("db error"))
+
+		req := httptest.NewRequest("GET", "/billings", nil)
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.ListAll(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestBillingHandler_Delete(t *testing.T) {
+	mockSvc := new(MockBillingService)
+	handler := NewBillingHandler(mockSvc)
+
+	t.Run("success - delete billing", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "billing-123", "user_123").Return(nil)
+
+		req := httptest.NewRequest("DELETE", "/billings/billing-123", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "billing-123")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("error - not found", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "billing-999", "user_123").Return(errors.New("not found"))
+
+		req := httptest.NewRequest("DELETE", "/billings/billing-999", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "billing-999")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("error - internal", func(t *testing.T) {
+		mockSvc.On("Delete", mock.Anything, "billing-555", "user_123").Return(errors.New("db error"))
+
+		req := httptest.NewRequest("DELETE", "/billings/billing-555", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", "billing-555")
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.AuthUserIDKey, "user_123"))
+		w := httptest.NewRecorder()
+
+		handler.Delete(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
 // Tests for BillingHandler
 func TestBillingHandler_Create(t *testing.T) {
 	mockSvc := new(MockBillingService)
