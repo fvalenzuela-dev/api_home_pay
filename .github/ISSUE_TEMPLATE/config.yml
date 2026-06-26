@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Preguntas y discusiones
+    url: https://github.com/fvalenzuela-dev/api_home_pay/discussions
+    about: Use las discusiones para preguntas generales; reserve los issues para bugs y solicitudes de funcionalidad.

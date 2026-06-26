@@ -1,0 +1,179 @@
+name: Reporte de bug
+description: Reporte un bug de la API de HomePay
+labels: ["bug", "status:needs-review"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Cómo funciona
+
+        1. **Envíe** este reporte de bug → recibirá automáticamente la etiqueta `status:needs-review`
+        2. Una persona mantenedora lo revisará y agregará `status:approved` (o lo cerrará como inválido/duplicado)
+        3. **Solo entonces** debería abrir un PR para corregirlo
+
+        Los PRs que corrijan issues sin `status:approved` pueden ser devueltos o rechazados hasta que el issue vinculado sea aprobado.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Checklist previa
+      options:
+        - label: He buscado en los issues existentes y esto no es un duplicado
+          required: true
+        - label: Entiendo que los PRs pueden ser devueltos o rechazados si el issue vinculado no tiene `status:approved`
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Descripción del bug
+      description: Una descripción clara y concisa del bug.
+      placeholder: Describa el bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔄 Pasos para reproducir
+      description: Pasos necesarios para reproducir el comportamiento.
+      value: |
+        1. 
+        2. 
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ Comportamiento esperado
+      description: ¿Qué esperaba que ocurriera?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ Comportamiento actual
+      description: ¿Qué ocurrió realmente?
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## 🌐 API y entorno
+
+  - type: input
+    id: endpoint
+    attributes:
+      label: Endpoint o ruta afectada
+      description: Indique la ruta afectada, incluyendo parámetros si corresponde.
+      placeholder: "ej. /api/v1/companies/{id}/accounts"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: http_method
+    attributes:
+      label: Método HTTP
+      options:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - Webhook
+        - No aplica
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Entorno
+      description: ¿Dónde ocurre el problema?
+      options:
+        - Local
+        - Docker local
+        - Supabase/dev
+        - Producción
+        - Otro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth_context
+    attributes:
+      label: Contexto de autenticación
+      description: Indique si el endpoint requiere autenticación o si se trata de una ruta pública/webhook.
+      options:
+        - Clerk/JWT requerido
+        - Webhook de Clerk
+        - Ruta pública
+        - No estoy seguro
+        - No aplica
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 📋 Área afectada
+      options:
+        - CI/Workflows
+        - Swagger/OpenAPI
+        - Docker/Deployment
+        - Auth/Clerk
+        - Database/Repository
+        - Handlers/Routes
+        - Services/Business Rules
+        - Models/DTOs
+        - Documentación
+        - Otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_response
+    attributes:
+      label: ✅ Respuesta esperada
+      description: Indique status code, body esperado y cualquier header relevante.
+      placeholder: |
+        Status: 200
+        Body:
+          { ... }
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_response
+    attributes:
+      label: ❌ Respuesta actual
+      description: Indique status code, body recibido, headers relevantes o mensaje de error.
+      placeholder: |
+        Status: 500
+        Body:
+          { ... }
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 💡 Logs relevantes
+      description: Pegue logs de la API, Docker, Supabase o del cliente HTTP. Se formatearán automáticamente como código.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Agregue cualquier otro contexto sobre el problema (payload de request, cURL, datos de prueba, etc.)
+    validations:
+      required: false
