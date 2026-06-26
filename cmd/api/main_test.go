@@ -58,13 +58,13 @@ func TestConfigValidation(t *testing.T) {
 			DatabaseURL:         "",
 			ClerkSecretKey:     "",
 			ClerkWebhookSecret: "",
-			Port:              "8080",
+			Port:              "6011",
 		}
 		if cfg == nil {
 			t.Fatal("config should not be nil")
 		}
-		if cfg.Port != "8080" {
-			t.Errorf("expected port 8080, got %s", cfg.Port)
+		if cfg.Port != "6011" {
+			t.Errorf("expected port 6011, got %s", cfg.Port)
 		}
 	})
 }
@@ -73,7 +73,7 @@ func TestConfigValidation(t *testing.T) {
 func TestAppStructure(t *testing.T) {
 	t.Run("App struct can be created", func(t *testing.T) {
 		app := &App{
-			Config:  &config.Config{Port: "8080"},
+			Config:  &config.Config{Port: "6011"},
 			DB:      &closer{},
 			Router:  http.DefaultServeMux,
 		}
@@ -136,11 +136,11 @@ func (m *mockDB) Ping(ctx context.Context) error {
 // TestGetServerConfig tests getServerConfig function
 func TestGetServerConfig(t *testing.T) {
 	t.Run("default port", func(t *testing.T) {
-		cfg := &config.Config{Port: "8080"}
+		cfg := &config.Config{Port: "6011"}
 		sc := getServerConfig(cfg)
 
-		if sc.Addr != ":8080" {
-			t.Errorf("expected :8080, got %s", sc.Addr)
+		if sc.Addr != ":6011" {
+			t.Errorf("expected :6011, got %s", sc.Addr)
 		}
 	})
 
@@ -216,7 +216,7 @@ func TestInitializeAppWithMockDB(t *testing.T) {
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
 		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
-		Port:            "8080",
+		Port:            "6011",
 	}
 
 	_, err := InitializeApp(cfg)
@@ -231,11 +231,11 @@ func TestInitializeAppWithMockDB(t *testing.T) {
 func TestServerConfigStruct(t *testing.T) {
 	t.Run("create ServerConfig", func(t *testing.T) {
 		sc := ServerConfig{
-			Addr: ":8080",
+			Addr: ":6011",
 		}
 
-		if sc.Addr != ":8080" {
-			t.Errorf("expected :8080, got %s", sc.Addr)
+		if sc.Addr != ":6011" {
+			t.Errorf("expected :6011, got %s", sc.Addr)
 		}
 	})
 }
@@ -305,7 +305,7 @@ func TestMainFlow(t *testing.T) {
 			DatabaseURL:     os.Getenv("DATABASE_URL"),
 			ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
 			ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
-			Port:            "8080",
+			Port:            "6011",
 		}
 
 		_, err := InitializeApp(cfg)
@@ -316,7 +316,7 @@ func TestMainFlow(t *testing.T) {
 
 	t.Run("initialize with missing config", func(t *testing.T) {
 		cfg := &config.Config{
-			Port: "8080",
+			Port: "6011",
 		}
 
 		_, err := InitializeApp(cfg)
@@ -336,7 +336,7 @@ func TestAppIntegration(t *testing.T) {
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
 		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
-		Port:            "8080",
+		Port:            "6011",
 	}
 
 	app, err := InitializeApp(cfg)
@@ -362,7 +362,7 @@ func TestServerConfigAddr(t *testing.T) {
 		port     string
 		expected string
 	}{
-		{"8080", ":8080"},
+		{"6011", ":6011"},
 		{"3000", ":3000"},
 		{"443", ":443"},
 		{"0", ":0"},
@@ -439,7 +439,7 @@ func TestSetupMux(t *testing.T) {
 // TestMainWithMockServer tests the server setup flow
 func TestMainWithMockServer(t *testing.T) {
 	app = &App{
-		Config: &config.Config{Port: "8080"},
+		Config: &config.Config{Port: "6011"},
 		DB:     &mockDB{pingErr: nil},
 		Router: http.NewServeMux(),
 	}
@@ -500,7 +500,7 @@ func TestInitializeAppWrapper(t *testing.T) {
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		ClerkSecretKey:  os.Getenv("CLERK_SECRET_KEY"),
 		ClerkWebhookSecret: os.Getenv("CLERK_WEBHOOK_SECRET"),
-		Port:            "8080",
+		Port:            "6011",
 	}
 
 	_, err := initializeApp(cfg)
@@ -512,9 +512,9 @@ func TestInitializeAppWrapper(t *testing.T) {
 // TestStartServer tests startServer function
 func TestStartServer(t *testing.T) {
 	t.Run("verify server config", func(t *testing.T) {
-		cfg := ServerConfig{Addr: ":8080"}
+		cfg := ServerConfig{Addr: ":6011"}
 
-		if cfg.Addr != ":8080" {
+		if cfg.Addr != ":6011" {
 			t.Error("config incorrect")
 		}
 	})
@@ -524,8 +524,8 @@ func TestStartServer(t *testing.T) {
 			name string
 			addr string
 		}{
-			{"localhost", "localhost:8080"},
-			{"port only", ":8080"},
+			{"localhost", "localhost:6011"},
+			{"port only", ":6011"},
 			{"empty", ""},
 		}
 
@@ -550,7 +550,7 @@ func TestLoadConfigEnv(t *testing.T) {
 		t.Setenv("DATABASE_URL", "localhost:5432/test")
 		t.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 		t.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
-		t.Setenv("PORT", "8080")
+		t.Setenv("PORT", "6011")
 
 		cfg, err := loadConfig()
 		if err != nil {
@@ -627,12 +627,12 @@ func TestConfigCompleteFlow(t *testing.T) {
 
 // TestServerConfigFlow tests full server setup flow
 func TestServerConfigFlow(t *testing.T) {
-	cfg := &config.Config{Port: "8080"}
+	cfg := &config.Config{Port: "6011"}
 	serverCfg := getServerConfig(cfg)
 
 	// Verify server config
-	if serverCfg.Addr != ":8080" {
-		t.Errorf("expected :8080, got %s", serverCfg.Addr)
+	if serverCfg.Addr != ":6011" {
+		t.Errorf("expected :6011, got %s", serverCfg.Addr)
 	}
 
 	// Setup mux
@@ -668,7 +668,7 @@ func TestMainParts(t *testing.T) {
 	})
 
 	t.Run("getServerConfig with various ports", func(t *testing.T) {
-		ports := []string{"80", "443", "9000", "8080"}
+		ports := []string{"80", "443", "9000", "6011"}
 		for _, port := range ports {
 			cfg := &config.Config{Port: port}
 			sc := getServerConfig(cfg)
@@ -690,7 +690,7 @@ func TestMainFlowCoverage(t *testing.T) {
 	os.Setenv("DATABASE_URL", "localhost:5432/test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test_placeholder")
 	os.Setenv("CLERK_WEBHOOK_SECRET", "whsec_placeholder")
-	os.Setenv("PORT", "8080")
+	os.Setenv("PORT", "6011")
 	defer func() {
 		os.Unsetenv("DATABASE_URL")
 		os.Unsetenv("CLERK_SECRET_KEY")

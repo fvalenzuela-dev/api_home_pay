@@ -22,7 +22,7 @@ Este documento describe el API backend de HomePay. Debe leerse junto al PRD Etap
 DATABASE_URL        — connection string de Supabase con search_path=homepay
 CLERK_SECRET_KEY    — clave secreta de Clerk para validar JWT
 CLERK_WEBHOOK_SECRET — secreto para verificar firma de webhooks de Clerk
-PORT                — default 8080
+PORT                — default 6011
 ```
 
 ---

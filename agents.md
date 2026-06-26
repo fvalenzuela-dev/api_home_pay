@@ -100,7 +100,7 @@ users (Clerk)
 | `DATABASE_URL` | Connection string Supabase con `?search_path=homepay` |
 | `CLERK_SECRET_KEY` | Clave secreta Clerk para validar JWT |
 | `CLERK_WEBHOOK_SECRET` | Secreto de firma de webhooks (`whsec_...`) |
-| `PORT` | Puerto HTTP (default `8080`) |
+| `PORT` | Puerto HTTP (default `6011`) |
 
 ## Comandos frecuentes
 
@@ -108,7 +108,7 @@ users (Clerk)
 # Desarrollo
 go run ./cmd/api/main.go
 
-# Docker local (puerto 8082)
+# Docker local (puerto 6011)
 docker compose up --build
 
 # Regenerar Swagger

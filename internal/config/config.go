@@ -34,7 +34,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("CLERK_WEBHOOK_SECRET is required")
 	}
 	if cfg.Port == "" {
-		cfg.Port = "8080"
+		cfg.Port = "6011"
 	}
 
 	return cfg, nil

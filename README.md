@@ -28,7 +28,7 @@ Crea un archivo `.env` en la raíz con las siguientes variables:
 | `DATABASE_URL` | Connection string de Supabase con `search_path=homepay` |
 | `CLERK_SECRET_KEY` | Clave secreta de Clerk para validar JWT |
 | `CLERK_WEBHOOK_SECRET` | Secreto de firma de webhooks de Clerk (`whsec_...`) |
-| `PORT` | Puerto del servidor (default: `8080`) |
+| `PORT` | Puerto del servidor (default: `6011`) |
 
 ## Ejecutar en desarrollo
 
@@ -36,7 +36,7 @@ Crea un archivo `.env` en la raíz con las siguientes variables:
 go run ./cmd/api/main.go
 ```
 
-El servidor arranca en `http://localhost:8080`.
+El servidor arranca en `http://localhost:6011`.
 
 ## Ejecutar en Docker
 
@@ -44,7 +44,7 @@ El servidor arranca en `http://localhost:8080`.
 docker compose up --build
 ```
 
-La app queda expuesta en `http://localhost:8082`.
+La app queda expuesta en `http://localhost:6011`.
 
 ## Compilar binario
 
@@ -177,7 +177,7 @@ Todos los deletes son **soft delete** (`deleted_at = NOW()`). Las categorías so
 | `DATABASE_URL` | Connection string de Supabase con `search_path=homepay` |
 | `CLERK_SECRET_KEY` | Clave secreta de Clerk para validar JWT |
 | `CLERK_WEBHOOK_SECRET` | Secreto de firma de webhooks de Clerk (`whsec_...`) |
-| `PORT` | Puerto del servidor (default: `8080`) |
+| `PORT` | Puerto del servidor (default: `6011`) |
 
 ### Health check
 
