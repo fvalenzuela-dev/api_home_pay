@@ -1,0 +1,98 @@
+name: Solicitud de funcionalidad
+description: Proponga una nueva funcionalidad o mejora para la API de HomePay
+labels: ["enhancement", "status:needs-review"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Cómo funciona
+
+        1. **Envíe** esta solicitud de funcionalidad → recibirá automáticamente la etiqueta `status:needs-review`
+        2. Una persona mantenedora la revisará y agregará `status:approved` (o la cerrará como fuera de alcance/duplicada)
+        3. **Solo entonces** debería abrir un PR para implementarla
+
+        Los PRs que implementen funcionalidades sin `status:approved` en el issue vinculado pueden ser devueltos o rechazados hasta que la solicitud sea aprobada.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Checklist previa
+      options:
+        - label: He buscado en los issues existentes y esto no es un duplicado
+          required: true
+        - label: Entiendo que los PRs pueden ser devueltos o rechazados si el issue vinculado no tiene `status:approved`
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 🔍 Área afectada
+      description: ¿Qué área de la API o del proyecto afectaría esta funcionalidad?
+      options:
+        - CI/Workflows
+        - Swagger/OpenAPI
+        - Docker/Deployment
+        - Auth/Clerk
+        - Database/Repository
+        - Handlers/Routes
+        - Services/Business Rules
+        - Models/DTOs
+        - Documentación
+        - Otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 💡 Problema
+      description: ¿La solicitud está relacionada con un problema, limitación o caso de uso? Descríbalo con claridad.
+      placeholder: |
+        Actualmente no es posible...
+        El endpoint actual no permite...
+        Esta regla de negocio necesita contemplar...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 📦 Solución propuesta
+      description: Describa la solución deseada con el mayor nivel de detalle posible.
+      placeholder: |
+        Endpoint o cambio propuesto:
+          POST /api/v1/...
+
+        Comportamiento esperado:
+          ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: ✅ Criterios de aceptación
+      description: Liste condiciones verificables para considerar completa la funcionalidad.
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternativas o contexto
+      description: Describa otras soluciones consideradas, workarounds actuales, restricciones técnicas o contexto de negocio.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📎 Contexto adicional
+      description: Agregue cualquier otro contexto, ejemplos de request/response, referencias de Swagger/OpenAPI o notas de implementación.
+    validations:
+      required: false
