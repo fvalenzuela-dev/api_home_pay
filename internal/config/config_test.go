@@ -160,7 +160,7 @@ func TestLoad_DefaultPort(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.Port != "8080" {
-		t.Errorf("Port = %v, want default 8080", cfg.Port)
+	if cfg.Port != "6011" {
+		t.Errorf("Port = %v, want default 6011", cfg.Port)
 	}
 }
