@@ -912,13 +912,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account ID",
-                        "name": "accountID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Billing ID",
                         "name": "id",
                         "in": "path",

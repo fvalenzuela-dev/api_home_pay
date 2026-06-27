@@ -96,7 +96,6 @@ func (h *BillingHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Accept      json
 // @Produce     json
-// @Param       accountID  path      string                      true  "Account ID"
 // @Param       id         path      string                      true  "Billing ID"
 // @Param       body       body      models.UpdateBillingRequest  true  "Campos a actualizar"
 // @Success     200        {object}  map[string]models.AccountBilling
