@@ -969,11 +969,6 @@ paths:
     get:
       description: Retorna una factura por ID
       parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
       - description: Billing ID
         in: path
         name: id
