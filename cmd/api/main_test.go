@@ -156,6 +156,21 @@ func TestGetServerConfig(t *testing.T) {
 
 // TestHealthReady tests healthReady handler
 func TestHealthReady(t *testing.T) {
+	t.Run("application unavailable", func(t *testing.T) {
+		previousApp := app
+		app = nil
+		defer func() { app = previousApp }()
+
+		w := httptest.NewRecorder()
+		r, _ := http.NewRequest("GET", "/health/ready", nil)
+
+		healthReady(w, r)
+
+		if w.Code != http.StatusServiceUnavailable {
+			t.Errorf("expected status 503, got %d", w.Code)
+		}
+	})
+
 	t.Run("database available", func(t *testing.T) {
 		app = &App{
 			DB: &mockDB{pingErr: nil},
