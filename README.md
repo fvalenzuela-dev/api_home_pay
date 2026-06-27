@@ -46,6 +46,23 @@ docker compose up --build
 
 La app queda expuesta en `http://localhost:6011`.
 
+### Republicar en Docker Desktop
+
+Para reconstruir la imagen y dejar la API corriendo en segundo plano:
+
+```bash
+docker compose up --build -d
+```
+
+Verificación rápida:
+
+```bash
+docker compose ps
+curl -L http://localhost:6011/docs/
+```
+
+Si el puerto `6011` ya está ocupado por una ejecución local, detené ese proceso y volvé a ejecutar el comando de republicación.
+
 ## Compilar binario
 
 ```bash

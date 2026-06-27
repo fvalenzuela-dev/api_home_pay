@@ -969,11 +969,6 @@ paths:
     get:
       description: Retorna una factura por ID
       parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
       - description: Billing ID
         in: path
         name: id
@@ -1015,11 +1010,6 @@ paths:
       description: Actualiza monto pagado. Si amount_paid >= amount_billed se marca
         automáticamente como pagada.
       parameters:
-      - description: Account ID
-        in: path
-        name: accountID
-        required: true
-        type: string
       - description: Billing ID
         in: path
         name: id

@@ -24,12 +24,11 @@ func NewBillingHandler(svc service.BillingService) *BillingHandler {
 // @Tags        billings
 // @Security    BearerAuth
 // @Produce     json
-// @Param       accountID  path      string  true  "Account ID"
-// @Param       id         path      string  true  "Billing ID"
-// @Success     200        {object}  models.AccountBilling
-// @Failure     401        {object}  map[string]string
-// @Failure     404        {object}  map[string]string
-// @Failure     500        {object}  map[string]string
+// @Param       id   path      string  true  "Billing ID"
+// @Success     200  {object}  models.AccountBilling
+// @Failure     401  {object}  map[string]string
+// @Failure     404  {object}  map[string]string
+// @Failure     500  {object}  map[string]string
 // @Router      /billings/{id} [get]
 func (h *BillingHandler) GetOne(w http.ResponseWriter, r *http.Request) {
 	authUserID := middleware.GetAuthUserID(r)
@@ -97,7 +96,6 @@ func (h *BillingHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Accept      json
 // @Produce     json
-// @Param       accountID  path      string                      true  "Account ID"
 // @Param       id         path      string                      true  "Billing ID"
 // @Param       body       body      models.UpdateBillingRequest  true  "Campos a actualizar"
 // @Success     200        {object}  map[string]models.AccountBilling

@@ -112,6 +112,13 @@ func InitializeApp(cfg *config.Config) (*App, error) {
 // @Failure     503  {object}  map[string]string
 // @Router      /health/ready [get]
 func healthReady(w http.ResponseWriter, r *http.Request) {
+	if app == nil || app.DB == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]string{"error": "application unavailable"})
+		return
+	}
+
 	if err := app.DB.Ping(r.Context()); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -132,7 +139,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	app, err := initializeApp(cfg)
+	app, err = initializeApp(cfg)
 	if err != nil {
 		slog.Error("app initialization error", "error", err)
 		os.Exit(1)
