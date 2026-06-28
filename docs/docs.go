@@ -2619,6 +2619,9 @@ const docTemplate = `{
                 "account_id": {
                     "type": "string"
                 },
+                "account_name": {
+                    "type": "string"
+                },
                 "amount_billed": {
                     "type": "number"
                 },

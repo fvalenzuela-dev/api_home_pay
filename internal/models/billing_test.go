@@ -13,6 +13,7 @@ func TestAccountBilling_Struct(t *testing.T) {
 	billing := AccountBilling{
 		ID:           "billing-123",
 		AccountID:    "account-123",
+		AccountName:  "Main account",
 		Period:       202603,
 		AmountBilled: 15000.00,
 		AmountPaid:   15000.00,
@@ -22,6 +23,7 @@ func TestAccountBilling_Struct(t *testing.T) {
 
 	assert.Equal(t, "billing-123", billing.ID)
 	assert.Equal(t, "account-123", billing.AccountID)
+	assert.Equal(t, "Main account", billing.AccountName)
 	assert.Equal(t, 202603, billing.Period)
 	assert.Equal(t, 15000.00, billing.AmountBilled)
 	assert.Equal(t, 15000.00, billing.AmountPaid)
