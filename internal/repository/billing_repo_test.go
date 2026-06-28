@@ -406,14 +406,16 @@ func TestBillingRepo_CreateCarryOver_Query(t *testing.T) {
 
 func TestBillingRepo_GetByID_Query(t *testing.T) {
 	// Test SELECT with JOIN
-	query := `SELECT ab.id, ab.account_id, ab.period, ab.amount_billed, ab.amount_paid, ab.is_paid, ab.paid_at, ab.carried_from, ab.created_at, ab.deleted_at
+	query := `SELECT ab.id, ab.account_id, ab.period, ab.amount_billed, ab.amount_paid, ab.is_paid, ab.paid_at, ab.carried_from, ab.created_at, ab.deleted_at, a.name
 		FROM homepay.account_billings ab
 		JOIN homepay.accounts a ON a.id = ab.account_id
 		JOIN homepay.companies c ON c.id = a.company_id
-		WHERE ab.id = $1 AND c.auth_user_id = $2 AND ab.deleted_at IS NULL`
+		WHERE ab.id = $1 AND c.auth_user_id = $2 AND ab.deleted_at IS NULL AND a.deleted_at IS NULL AND c.deleted_at IS NULL`
 
 	assert.Contains(t, query, "JOIN homepay.accounts")
 	assert.Contains(t, query, "JOIN homepay.companies")
+	assert.Contains(t, query, "a.name")
+	assert.Contains(t, query, "c.auth_user_id = $2")
 }
 
 func TestBillingRepo_GetByAccountAndPeriod_Query(t *testing.T) {

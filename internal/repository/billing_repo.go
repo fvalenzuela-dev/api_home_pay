@@ -79,13 +79,16 @@ func (r *billingRepo) CreateCarryOver(ctx context.Context, accountID string, per
 
 func (r *billingRepo) GetByID(ctx context.Context, id, authUserID string) (*models.AccountBilling, error) {
 	var b models.AccountBilling
-	err := scanBilling(r.db.QueryRow(ctx, `
-		SELECT `+billingColsAB+`
+	err := r.db.QueryRow(ctx, `
+		SELECT `+billingColsAB+`, a.name
 		FROM homepay.account_billings ab
 		JOIN homepay.accounts a ON a.id = ab.account_id
 		JOIN homepay.companies c ON c.id = a.company_id
-		WHERE ab.id = $1 AND c.auth_user_id = $2 AND ab.deleted_at IS NULL
-	`, id, authUserID), &b)
+		WHERE ab.id = $1 AND c.auth_user_id = $2 AND ab.deleted_at IS NULL AND a.deleted_at IS NULL AND c.deleted_at IS NULL
+	`, id, authUserID).Scan(
+		&b.ID, &b.AccountID, &b.Period, &b.AmountBilled, &b.AmountPaid,
+		&b.IsPaid, &b.PaidAt, &b.CarriedFrom, &b.CreatedAt, &b.DeletedAt, &b.AccountName,
+	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
 	}

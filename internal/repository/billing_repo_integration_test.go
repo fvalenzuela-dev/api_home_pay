@@ -298,6 +298,7 @@ func TestBillingRepo_GetByID_Integration(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, billing)
 		assert.Equal(t, createdBilling.ID, billing.ID)
+		assert.Equal(t, "Test Account", billing.AccountName)
 		assert.Equal(t, 202603, billing.Period)
 	})
 

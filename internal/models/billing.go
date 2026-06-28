@@ -7,6 +7,7 @@ import "time"
 type AccountBilling struct {
 	ID           string     `json:"id"`
 	AccountID    string     `json:"account_id"`
+	AccountName  string     `json:"account_name,omitempty"`
 	Period       int        `json:"period"`
 	AmountBilled float64    `json:"amount_billed"`
 	AmountPaid   float64    `json:"amount_paid"`
@@ -25,9 +26,9 @@ type CreateBillingRequest struct {
 	Period       int        `json:"period"`
 	AmountBilled float64    `json:"amount_billed"`
 	AmountPaid   *float64   `json:"amount_paid,omitempty"`  // opcional; si >= amount_billed se marca como pagada
-	IsPaid       *bool      `json:"is_paid,omitempty"`       // opcional; fuerza estado pagado
-	PaidAt       *time.Time `json:"paid_at,omitempty"`       // opcional; fecha de pago
-	CarriedFrom  *string    `json:"carried_from,omitempty"`  // UUID de factura impaga anterior (carry-over manual)
+	IsPaid       *bool      `json:"is_paid,omitempty"`      // opcional; fuerza estado pagado
+	PaidAt       *time.Time `json:"paid_at,omitempty"`      // opcional; fecha de pago
+	CarriedFrom  *string    `json:"carried_from,omitempty"` // UUID de factura impaga anterior (carry-over manual)
 }
 
 type UpdateBillingRequest struct {

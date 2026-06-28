@@ -315,6 +315,7 @@ func TestBillingHandler_GetOne(t *testing.T) {
 		mockSvc.On("GetByID", mock.Anything, "billing-123", "user_123").Return(&models.AccountBilling{
 			ID:           "billing-123",
 			AccountID:    "account-123",
+			AccountName:  "Main account",
 			Period:       202603,
 			AmountBilled: 15000,
 		}, nil)
@@ -329,6 +330,11 @@ func TestBillingHandler_GetOne(t *testing.T) {
 		handler.GetOne(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		data := response["data"].(map[string]interface{})
+		assert.Equal(t, "Main account", data["account_name"])
 	})
 
 	t.Run("error - not found", func(t *testing.T) {
@@ -345,7 +351,6 @@ func TestBillingHandler_GetOne(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
-
 
 }
 
